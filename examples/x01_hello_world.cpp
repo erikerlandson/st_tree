@@ -26,6 +26,77 @@ using namespace std;
 #include "ootree.h"
 using namespace ootree;
 
+#include <set>
+
 int main(int argc, char** argv) {
+    int* t = new int(4);
+    const int* t2 = new int(5);
+    dref_vmap<int*> tv;
+    cout << tv(t) << "\n";
+
+    {
+    vector<shared_ptr<int> > v;
+    typedef typeof(v.begin()) iterator;
+    v.push_back(shared_ptr<int>(new int(1)));
+    v.push_back(shared_ptr<int>(new int(2)));
+    v.push_back(shared_ptr<int>(new int(3)));
+    typedef valmap_iterator_adaptor<iterator, dref_vmap<iterator::value_type > > vm_iterator;
+    for (vm_iterator j(v.begin()); j != vm_iterator(v.end()); ++j)
+        cout << *j << "\n";
+
+    *(vm_iterator(v.begin())) = 42;
+    for (vm_iterator j(v.begin()); j != vm_iterator(v.end()); ++j)
+        cout << *j << "\n";
+    }
+    
+    {
+    vector<int* > v;
+    typedef typeof(v.begin()) iterator;
+    v.push_back(new int(1));
+    v.push_back(new int(2));
+    v.push_back(new int(3));
+    typedef valmap_iterator_adaptor<iterator, dref_vmap<iterator::value_type > > vm_iterator;
+    for (vm_iterator j(v.begin()); j != vm_iterator(v.end()); ++j)
+        cout << *j << "\n";
+
+    *(vm_iterator(v.begin())) = 42;
+    for (vm_iterator j(v.begin()); j != vm_iterator(v.end()); ++j)
+        cout << *j << "\n";
+    }
+
+
+    {
+    vector<pair<int, int>* > v;
+    typedef typeof(v.begin()) iterator;
+    v.push_back(new pair<int,int>(1,2));
+    v.push_back(new pair<int,int>(2,3));
+    v.push_back(new pair<int,int>(3,4));
+    typedef valmap_iterator_adaptor<iterator, dref_vmap<iterator::value_type > > vm_iterator;
+    for (vm_iterator j(v.begin()); j != vm_iterator(v.end()); ++j)
+        cout << j->first << "\n";
+
+    (vm_iterator(v.begin()))->first = 42;
+    for (vm_iterator j(v.begin()); j != vm_iterator(v.end()); ++j)
+        cout << j->first << "\n";
+
+    }
+
+
+    {
+    vector<pair<int, int>* > v;
+    typedef typeof(v.begin()) iterator;
+    v.push_back(new pair<int,int>(1,2));
+    v.push_back(new pair<int,int>(2,3));
+    v.push_back(new pair<int,int>(3,4));
+    typedef valmap_iterator_adaptor<iterator, dref_second_vmap<iterator::value_type > > vm_iterator;
+    for (vm_iterator j(v.begin()); j != vm_iterator(v.end()); ++j)
+        cout << *j << "\n";
+
+    *(vm_iterator(v.begin())) = 42;
+    for (vm_iterator j(v.begin()); j != vm_iterator(v.end()); ++j)
+        cout << *j << "\n";
+
+    }
+
     return 0;
 }
