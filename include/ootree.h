@@ -170,71 +170,71 @@ struct bad_node_storage_spec {};
 template <typename Data, typename BadSpec> 
 struct cscat_dispatch {
     // In this case catch-all should be compile error:
-    typedef bad_node_storage_spec spec;
+    typedef bad_node_storage_spec cat;
 };
 
 template <typename Data>
 struct cscat_dispatch<Data, raw> {
-    typedef cscat<raw, arg_unused, arg_unused> spec;
+    typedef cscat<raw, arg_unused, arg_unused> cat;
 };
 
 template <typename Data>
 struct cscat_dispatch<Data, cscat<raw, arg_default, arg_default> > {
-    typedef cscat<raw, arg_unused, arg_unused> spec;
+    typedef cscat<raw, arg_unused, arg_unused> cat;
 };
 
 template <typename Data> 
 struct cscat_dispatch<Data, ordered_unique> {
-    typedef cscat<ordered_unique, less<Data>, arg_unused> spec;
+    typedef cscat<ordered_unique, less<Data>, arg_unused> cat;
 };
 
 template <typename Data>
 struct cscat_dispatch<Data, cscat<ordered_unique, arg_default, arg_default> > {
-    typedef cscat<ordered_unique, less<Data>, arg_unused> spec;
+    typedef cscat<ordered_unique, less<Data>, arg_unused> cat;
 };
 
 template <typename Data, typename Comp>
 struct cscat_dispatch<Data, cscat<ordered_unique, Comp, arg_default> > {
-    typedef cscat<ordered_unique, Comp, arg_unused> spec;
+    typedef cscat<ordered_unique, Comp, arg_unused> cat;
 };
 
 template <typename Data> 
 struct cscat_dispatch<Data, ordered> {
-    typedef cscat<ordered, less<Data>, arg_unused> spec;
+    typedef cscat<ordered, less<Data>, arg_unused> cat;
 };
 
 template <typename Data> 
 struct cscat_dispatch<Data, cscat<ordered, arg_default, arg_default> > {
-    typedef cscat<ordered, less<Data>, arg_unused> spec;
+    typedef cscat<ordered, less<Data>, arg_unused> cat;
 };
 
 template <typename Data, typename Comp>
 struct cscat_dispatch<Data, cscat<ordered, Comp, arg_default> > {
-    typedef cscat<ordered, Comp, arg_unused> spec;
+    typedef cscat<ordered, Comp, arg_unused> cat;
 };
 
 template <typename Data, typename Key>
 struct cscat_dispatch<Data, cscat<keyed_unique, Key, arg_default> > {
-    typedef cscat<keyed_unique, Key, less<Key> > spec;
+    typedef cscat<keyed_unique, Key, less<Key> > cat;
 };
 
 template <typename Data, typename Key, typename KeyComp>
 struct cscat_dispatch<Data, cscat<keyed_unique, Key, KeyComp> > {
-    typedef cscat<keyed_unique, Key, KeyComp > spec;
+    typedef cscat<keyed_unique, Key, KeyComp > cat;
 };
 
 template <typename Data, typename Key>
 struct cscat_dispatch<Data, cscat<keyed, Key, arg_default> > {
-    typedef cscat<keyed, Key, less<Key> > spec;
+    typedef cscat<keyed, Key, less<Key> > cat;
 };
 
 template <typename Data, typename Key, typename KeyComp>
 struct cscat_dispatch<Data, cscat<keyed, Key, KeyComp> > {
-    typedef cscat<keyed, Key, KeyComp > spec;
+    typedef cscat<keyed, Key, KeyComp > cat;
 };
 
 
-template <typename Compare> 
+template <typename Compare>
 struct ptr_less_data {
     ptr_less_data() : _comp() {}
     virtual ~ptr_less_data() {}
@@ -265,35 +265,32 @@ struct node_key {
 };
 
 
-template <typename Data, typename ChildContainer>
+template <typename Tree, typename Node, typename ChildContainer>
 struct node_base {
     
 };
 
-/*
-template <typename Tree, typename NodeBase, typename Data>
-    struct node_raw: public node_internal_base<Tree, NodeBase, vector<shared_ptr<node_raw<Tree, NodeBase, InternalData> > > > {
-    typedef node_internal_raw_noleaf<Tree, NodeBase, InternalData> this_type;
-    typedef Tree tree_type;
-    typedef vector<shared_ptr<this_type> > ns_type;
-    typedef node_internal_base<Tree, NodeBase, ns_type> base_type;
-    typedef typename Tree::size_type size_type;
-    typedef this_type internal_type;
-    typedef internal_type leaf_type;
-    typedef InternalData data_type;
 
-    // this variation has no leaf type, so node_type is type of this class itself
+template <typename Tree, typename Data>
+struct node_raw: public node_base<Tree, node_raw<Tree, Data>, vector<shared_ptr<node_raw<Tree, Data> > > > {
+    typedef node_raw<Tree, Data> this_type;
     typedef this_type node_type;
+    typedef Tree tree_type;
+    typedef vector<shared_ptr<node_type> > cs_type;
+    typedef node_base<Tree, node_type, cs_type> base_type;
+    typedef typename Tree::size_type size_type;
+    typedef Data data_type;
 
     // NodeContainer is expected to be a vector<>, or something that provides same interface 
-    typedef typename ns_type::iterator iterator;
-    typedef typename ns_type::const_iterator const_iterator;
+    //typedef typename ns_type::iterator iterator;
+    //typedef typename ns_type::const_iterator const_iterator;
 
     friend class tree_type::tree_type;
 
-    node_internal_raw_noleaf() : base_type() {}
-    virtual ~node_internal_raw_noleaf() {}
+    node_raw() : base_type() {}
+    virtual ~node_raw() {}
 
+/*
     shared_ptr<node_type> operator[](size_type n) { return this->_children[n]; }
     shared_ptr<const node_type> operator[](size_type n) const { return this->_children[n]; }
 
@@ -305,19 +302,126 @@ template <typename Tree, typename NodeBase, typename Data>
         this->_children.push_back(n);
         this->_tree->_size += 1;
     }
-    void insert_leaf(const data_type& data) { insert(data); }
+*/
 };
+
+
+struct node_type_dispatch_failed {};
+
+template <typename Tree, typename CSCat>
+struct node_type_dispatch {
+    // catch-all should be compile error
+    typedef node_type_dispatch_failed node_type;
+};
+
+
+template <typename Tree>
+struct node_type_dispatch<Tree, cscat<raw, arg_unused, arg_unused> > {
+    typedef node_raw<Tree, typename Tree::data_type> node_type;
+    // raw storage class uses vector
+    typedef vector<shared_ptr<node_type> > node_container;
+    // why do I need this?  because of friend declarations, that's why.
+    typedef node_base<Tree, node_type, node_container> base_type;
+};
+
+
+template <typename Data, typename CSCat=raw>
+struct tree {
+    typedef tree<Data, CSCat> this_type;
+    typedef this_type tree_type;
+    typedef unsigned long size_type;
+    typedef Data data_type;
+
+    typedef typename cscat_dispatch<Data, CSCat>::cat cscat;
+    typedef node_type_dispatch<tree_type, cscat> nt_dispatch;
+    typedef typename nt_dispatch::node_type node_type;
+    typedef typename nt_dispatch::base_type base_type;
+
+/*
+    typedef b1st_iterator<node_type> bf_iterator;
+    typedef d1st_post_iterator<node_type> df_post_iterator;
+    typedef d1st_pre_iterator<node_type> df_pre_iterator;
 */
 
-template <typename CSCat>
-struct node_type_dispatch {
-    
-};
+    tree() : _size(0), _root() {}
+    virtual ~tree() { clear(); }
+
+/*
+    tree(const tree& src) : _size(0), _root() { *this = src; }
+
+    tree& operator=(const tree& src) {
+        if (&src == this) return *this;
+        tree_deep_copy<this_type, dt_spec, ns_spec> tdc;
+        tdc(*this, src);
+        return *this;
+    }
+*/
+
+    size_type size() const { return _size; }
+    bool empty() const { return 0 == size(); }
+
+    node_type& root() {
+        if (0 == size()) throw exception();
+        return *_root;
+    }
+
+/*
+    const_node_pointer root() const {
+        if (0 == size()) throw exception();
+        return shared_ptr<node_type const>(_root);
+    }
+*/
+
+    void insert(const data_type& data) {
+/*
+        shared_ptr<internal_type> n(new internal_type);
+        n->_data = data;
+        n->_tree = this;
+        weak_node_pointer null_parent;
+        n->set_parent(null_parent, n);
+        _root = n;
+        _size += 1;
+*/
+    }
+
+    // there is only one node to erase from the tree: the root
+    void erase() {
+/*
+        if (_root == NULL) return;
+        if (_root->is_internal()) internal(_root)->clear();
+        _root->detach();
+        _root.reset();
+        _size = 0;
+*/
+    }
+    void clear() { erase(); }
+
+/*
+    void swap(this_type& src) {
+        if (this == &src) return;
+        std::swap(_root, src._root);
+        std::swap(_size, src._size);
+    }
 
 
-template <typename Data, typename CSCat>
-struct tree {
+/*
+    bf_iterator bf_begin() { return bf_iterator(_root); }
+    bf_iterator bf_end() { return bf_iterator(); }
 
+    df_post_iterator df_post_begin() { return df_post_iterator(_root); }
+    df_post_iterator df_post_end() { return df_post_iterator(); }
+
+    df_pre_iterator df_pre_begin() { return df_pre_iterator(_root); }
+    df_pre_iterator df_pre_end() { return df_pre_iterator(); }
+
+    friend class node_base<tree_type>;
+    friend class node_type_dispatch<tree_type, dt_spec, ns_spec>::internal_base_type;
+    friend class node_type_dispatch<tree_type, dt_spec, ns_spec>::internal_type;
+*/
+
+    protected:
+    shared_ptr<node_type> _root;
+    size_type _size;
 };
 
 
