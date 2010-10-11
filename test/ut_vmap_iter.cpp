@@ -94,6 +94,7 @@ BOOST_AUTO_TEST_CASE(using_dref_map_int_shared_pointer) {
         BOOST_CHECK_EQUAL(*j, **r);
 }
 
+
 BOOST_AUTO_TEST_CASE(using_dref_map_int_pair_pointer) {
     vector<pair<int,int>*> v;
     typedef typeof(v.begin()) iterator;
@@ -155,5 +156,18 @@ BOOST_AUTO_TEST_CASE(using_dref_second_map_int_pair_shared_pointer) {
         BOOST_CHECK(*j == (*r)->second);
 }
 
+
+BOOST_AUTO_TEST_CASE(base_iterator_cast) {
+    vector<shared_ptr<int> > v;
+    typedef typeof(v.begin()) iterator;
+    typedef valmap_iterator_adaptor<iterator, dref_vmap<iterator::value_type > > vm_iterator;
+
+    v.push_back(shared_ptr<int>(new int(1)));
+
+    vm_iterator j(v.begin());
+    iterator r(j);
+    BOOST_CHECK(r == v.begin());
+    BOOST_CHECK_EQUAL(*j, **r);
+}
 
 BOOST_AUTO_TEST_SUITE_END()

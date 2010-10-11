@@ -96,6 +96,7 @@ struct valmap_iterator_adaptor {
     valmap_iterator_adaptor(const valmap& vmap): _base(), _vmap(vmap) {}
 
     // casting
+    operator base() const { return _base; }
     valmap_iterator_adaptor(const base& src): _base(src), _vmap() {}
     valmap_iterator_adaptor(const base& src, const valmap& vmap): _base(src), _vmap(vmap) {}
     valmap_iterator_adaptor& operator=(const base& rhs) {
