@@ -7,6 +7,7 @@ include_directories(${ootree_SOURCE_DIR}/include)
 if (Boost_FOUND)
     add_executable(ootree_unit_test 
                    ootree_unit_test.cpp
+                   ut_vmap_iter.cpp
                    ut_raw.cpp
                   )
     include_directories(${Boost_INCLUDE_DIR})
