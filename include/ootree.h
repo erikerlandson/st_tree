@@ -76,6 +76,11 @@ struct max_maintainer {
         }
     }
 
+    void clear() {
+        _hist.clear();
+        _max = 0;
+    }
+
     protected:
     Unsigned _max;
     vector<Unsigned> _hist;
@@ -441,7 +446,7 @@ struct tree {
     typedef d1st_pre_iterator<node_type> df_pre_iterator;
 */
 
-    tree() : _size(0), _root() {}
+    tree() : _size(0), _root(), _depth() {}
     virtual ~tree() { clear(); }
 
 /*
@@ -471,26 +476,25 @@ struct tree {
     }
 
     void insert(const data_type& data) {
+        clear();
         shared_ptr<node_type> n(new node_type);
         n->_data = data;
         n->_tree = this;
         n->_this = n;
         _root = n;
         _size = 1;
-        if (_depth.max() < 1) _depth.insert(1);
+        _depth.insert(1);
     }
 
     // there is only one node to erase from the tree: the root
-    void erase() {
-/*
-        if (_root == NULL) return;
-        if (_root->is_internal()) internal(_root)->clear();
-        _root->detach();
+    void erase() { clear(); }
+
+    void clear() {
+        if (empty()) return;
         _root.reset();
+        _depth.clear();
         _size = 0;
-*/
     }
-    void clear() { erase(); }
 
 /*
     void swap(this_type& src) {
