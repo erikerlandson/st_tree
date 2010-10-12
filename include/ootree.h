@@ -44,6 +44,32 @@ using std::less;
 using std::pair;
 
 
+// Node storage classes:
+// use this if you want raw unordered child node storage, low overhead, linear-time deletion
+struct raw {};
+// provides ordered child node storage, non-unique
+struct ordered {};
+// this provides ordered child node storage, unique by ordering
+struct ordered_unique {};
+// child nodes are ordered by non-unique external key
+struct keyed {};
+// child nodes are ordered by unique external key
+struct keyed_unique {};
+
+
+// some data types to flag template argument behaviors
+struct arg_default {};
+struct arg_unused {};
+struct arg_void {};
+
+
+struct exception {
+    exception() {}
+    virtual ~exception() {}
+// stub.  This will need some work.
+};
+
+
 template <typename Unsigned>
 struct max_maintainer {
     max_maintainer(): _hist(), _max(0) {}
@@ -124,6 +150,8 @@ struct valmap_iterator_adaptor {
     typedef value_type* pointer;
     typedef value_type& reference;
 
+    typedef Iterator base_iterator;
+
     // default ctor/dtor
     valmap_iterator_adaptor(): _base(), _vmap() {}
     virtual ~valmap_iterator_adaptor() {}
@@ -151,7 +179,7 @@ struct valmap_iterator_adaptor {
 
     // pre-increment:
     valmap_iterator_adaptor operator++() {
-        ++_base;  
+        ++_base;
         return *this;
     }
 
@@ -175,31 +203,60 @@ struct valmap_iterator_adaptor {
 };
 
 
-// Node storage classes:
-// use this if you want raw unordered child node storage, low overhead, linear-time deletion
-struct raw {};
-// provides ordered child node storage, non-unique
-struct ordered {};
-// this provides ordered child node storage, unique by ordering
-struct ordered_unique {};
-// child nodes are ordered by non-unique external key
-struct keyed {};
-// child nodes are ordered by unique external key
-struct keyed_unique {};
+template <typename Node>
+struct b1st_iterator {
+    typedef Node node_type;
+    typedef typename node_type::iterator::base_iterator iterator;
 
+    typedef std::forward_iterator_tag iterator_category;
+    typedef node_type value_type;
+    typedef typename iterator::difference_type difference_type;
+    typedef value_type* pointer;
+    typedef value_type& reference;
 
-// some data types to flag template argument behaviors
-struct arg_default {};
-struct arg_unused {};
-struct arg_void {};
+    b1st_iterator() : _queue() {}
+    virtual ~b1st_iterator() {}
 
+    b1st_iterator(const b1st_iterator& rhs) : _queue(rhs._queue) {}
+    b1st_iterator& operator=(const b1st_iterator& rhs) { _queue = rhs._queue; }
 
-struct exception {
-    exception() {}
-    virtual ~exception() {}
-// stub.  This will need some work.
+    b1st_iterator(const shared_ptr<node_type>& root) {
+        if (root == NULL) return;
+        _queue.push_back(root);
+    }
+
+    reference operator*() const { return *(_queue.front()); }
+    pointer operator->() const { return _queue.front().get(); }
+
+    // pre-increment iterator
+    b1st_iterator operator++() {
+        // if we are already past the end of elements in tree, then this is a no-op
+        if (_queue.empty()) return *this;
+        
+        // take current node off front of the queue
+        shared_ptr<node_type> f(_queue.front());
+        _queue.pop_front();
+
+        if (f->empty()) return *this;
+        for (iterator j(f->begin());  j != iterator(f->end());  ++j)
+            _queue.push_back(*j);
+
+        return *this;
+    }
+
+    // post-increment iterator
+    b1st_iterator operator++(int) {
+        b1st_iterator r(*this);
+        ++(*this);
+        return r;
+    }
+
+    bool operator==(const b1st_iterator& rhs) const { return _queue == rhs._queue; }
+    bool operator!=(const b1st_iterator& rhs) const { return _queue != rhs._queue; }
+
+    protected:
+    deque<shared_ptr<node_type> > _queue;
 };
-
 
 // Node storage spec
 template <typename NodeStorage, typename Arg2=arg_default, typename Arg3=arg_default> 
@@ -335,7 +392,18 @@ struct node_base {
     bool empty() const { return _children.empty(); }
 
     void erase(const iterator& j) {
-        _children.erase(cs_iterator(j));
+        cs_iterator B(j);
+        cs_iterator E(j);
+        ++E;
+        prune_subtree(B, E, NULL);
+    }
+
+    void erase(const iterator& F, const iterator& L) {
+        prune_subtree(cs_iterator(F), cs_iterator(L), NULL); 
+    }
+
+    void clear() {
+        prune_subtree(_children.begin(), _children.end(), NULL);
     }
 
     friend class tree_type::tree_type;
@@ -347,6 +415,38 @@ struct node_base {
     weak_ptr<node_type> _this;
     data_type _data;
     cs_type _children;
+
+    void prune_subtree(const cs_iterator& B, const cs_iterator& E, vector<shared_ptr<node_type> >* nodes = NULL) {
+        if (NULL != nodes) nodes->clear();
+        size_type n = 0;
+        deque<shared_ptr<node_type> > nq;
+        for (cs_iterator j(B);  j != E;  ++j) {
+            if (NULL != nodes) nodes->push_back(*j);
+            n += (*j)->subtree_size();
+            nq.push_back(*j);
+        }
+
+        // erase subtree depth info from parent tree
+        while (!nq.empty()) {
+            shared_ptr<node_type> q(nq.front());
+            nq.pop_front();
+            _tree->_depth.erase(1 + q->_ply);
+            for (cs_iterator j(q->_children.begin());  j != q->_children.end();  ++j) nq.push_back(*j);
+        }
+
+        // percolate the new subtree size up the chain of parents
+        shared_ptr<node_type> q = _this.lock();
+        while (true) {
+            q->_size -= n;
+            if (q->ply() == 0) {
+                _tree->_size -= n;
+                break;
+            }
+            q = q->_parent.lock();
+        }
+
+        _children.erase(B, E);
+    }
 
     void graft_subtree(shared_ptr<node_type>& n) {
         // set new parent for this subtree as current node
@@ -398,6 +498,9 @@ struct node_raw: public node_base<Tree, node_raw<Tree, Data>, vector<shared_ptr<
     node_type& operator[](size_type n) { return *(this->_children[n]); }
     const node_type& operator[](size_type n) const { return *(this->_children[n]); }
 
+    node_type& operator/(size_type n) { return *(this->_children[n]); }
+    const node_type& operator/(size_type n) const { return *(this->_children[n]); }
+
     void insert(const data_type& data) {
         shared_ptr<node_type> n(new node_type);
         n->_data = data;
@@ -440,11 +543,9 @@ struct tree {
     typedef typename nt_dispatch::node_type node_type;
     typedef typename nt_dispatch::base_type base_type;
 
-/*
     typedef b1st_iterator<node_type> bf_iterator;
-    typedef d1st_post_iterator<node_type> df_post_iterator;
-    typedef d1st_pre_iterator<node_type> df_pre_iterator;
-*/
+        //typedef d1st_post_iterator<node_type> df_post_iterator;
+        //typedef d1st_pre_iterator<node_type> df_pre_iterator;
 
     tree() : _size(0), _root(), _depth() {}
     virtual ~tree() { clear(); }
@@ -502,12 +603,12 @@ struct tree {
         std::swap(_root, src._root);
         std::swap(_size, src._size);
     }
+*/
 
-
-/*
     bf_iterator bf_begin() { return bf_iterator(_root); }
     bf_iterator bf_end() { return bf_iterator(); }
 
+/*
     df_post_iterator df_post_begin() { return df_post_iterator(_root); }
     df_post_iterator df_post_end() { return df_post_iterator(); }
 

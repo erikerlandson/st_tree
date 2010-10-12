@@ -7,11 +7,9 @@ using namespace std;
 
 BOOST_AUTO_TEST_SUITE(ut_raw)
 
-typedef tree<int> tree_type;
-//typedef tree_type::bf_iterator bf_iterator;
 
 BOOST_AUTO_TEST_CASE(default_ctor) {
-    tree_type t1;
+    tree<int> t1;
     BOOST_CHECK(t1.empty());
     BOOST_CHECK_EQUAL(t1.size(), 0);
     BOOST_CHECK_EQUAL(t1.depth(), 0);
@@ -19,7 +17,7 @@ BOOST_AUTO_TEST_CASE(default_ctor) {
 }
 
 BOOST_AUTO_TEST_CASE(insert_root) {
-    tree_type t1;
+    tree<int> t1;
     t1.insert(7);
     BOOST_CHECK_EQUAL(t1.empty(), false);
     BOOST_CHECK_EQUAL(t1.size(), 1);
@@ -31,7 +29,7 @@ BOOST_AUTO_TEST_CASE(insert_root) {
 
 
 BOOST_AUTO_TEST_CASE(insert_subnodes) {
-    tree_type t1;
+    tree<int> t1;
 
     t1.insert(7);
     BOOST_CHECK_EQUAL(t1.empty(), false);
@@ -58,7 +56,7 @@ BOOST_AUTO_TEST_CASE(insert_subnodes) {
 
 
 BOOST_AUTO_TEST_CASE(clear) {
-    tree_type t1;
+    tree<int> t1;
 
     t1.insert(7);
     t1.root().insert(8);
@@ -77,7 +75,7 @@ BOOST_AUTO_TEST_CASE(clear) {
 
 
 BOOST_AUTO_TEST_CASE(reinsert) {
-    tree_type t1;
+    tree<int> t1;
 
     t1.insert(7);
     t1.root().insert(8);
@@ -93,6 +91,63 @@ BOOST_AUTO_TEST_CASE(reinsert) {
     BOOST_CHECK_EQUAL(t1.empty(), false);
     BOOST_CHECK_EQUAL(t1.root().size(), 0);
     BOOST_CHECK_EQUAL(t1.root().data(), 3);
+}
+
+
+BOOST_AUTO_TEST_CASE(erase) {
+    tree<int> t1;
+
+    t1.insert(7);
+    t1.root().insert(8);
+
+    t1.root().erase(t1.root().begin());
+    BOOST_CHECK_EQUAL(t1.size(), 1);
+    BOOST_CHECK_EQUAL(t1.depth(), 1);
+    BOOST_CHECK_EQUAL(t1.empty(), false);
+    BOOST_CHECK_EQUAL(t1.root().size(), 0);
+    BOOST_CHECK_EQUAL(t1.root().data(), 7);
+}
+
+
+BOOST_AUTO_TEST_CASE(bf_iterator_empty) {
+    tree<int> t1;
+    BOOST_CHECK_EQUAL(t1.bf_begin() == t1.bf_end(), true);
+    BOOST_CHECK_EQUAL(t1.bf_begin() != t1.bf_end(), false);
+}
+
+
+BOOST_AUTO_TEST_CASE(bf_iterator) {
+    tree<int> t1;
+    t1.insert(2);
+    t1.root().insert(3);
+    t1.root().insert(5);
+    t1.root()[0].insert(7);
+    t1.root()[1].insert(13);
+    t1.root()[0].insert(11);
+    t1.root()[1].insert(17);
+    BOOST_CHECK_EQUAL(t1.size(), 7);
+    BOOST_CHECK_EQUAL(t1.depth(), 3);
+
+    int ref[] = { 2, 3, 5, 7, 11, 13, 17 };
+    int nref = sizeof(ref)/sizeof(*ref);
+
+    BOOST_CHECK_EQUAL(int(t1.size()), nref);
+
+    // pre-increment
+    int* jr = ref;
+    for (typeof(t1.bf_end()) j(t1.bf_begin());  j != t1.bf_end();  ++j,++jr) {
+        if (jr - ref  >= nref) break;
+        BOOST_CHECK_EQUAL(j->data(), *jr);
+    }
+    BOOST_CHECK_EQUAL(int(jr-ref), nref);
+
+    // post-increment
+    jr = ref;
+    for (typeof(t1.bf_end()) j(t1.bf_begin());  j != t1.bf_end();  j++,++jr) {
+        if (jr - ref  >= nref) break;
+        BOOST_CHECK_EQUAL(j->data(), *jr);
+    }
+    BOOST_CHECK_EQUAL(int(jr-ref), nref);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
