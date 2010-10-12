@@ -14,6 +14,38 @@ BOOST_AUTO_TEST_CASE(default_ctor) {
     tree_type t1;
     BOOST_CHECK_EQUAL(t1.size(), 0);
     BOOST_CHECK(t1.empty());
+    BOOST_CHECK_THROW(t1.root(), ootree::exception);
 }
+
+BOOST_AUTO_TEST_CASE(insert_root) {
+    tree_type t1;
+    t1.insert(7);
+    BOOST_CHECK_EQUAL(t1.size(), 1);
+    BOOST_CHECK_EQUAL(t1.root().is_root(), true);
+    BOOST_CHECK_EQUAL(t1.root().data(), 7);
+    BOOST_CHECK_THROW(t1.root().parent(), ootree::exception);
+}
+
+
+BOOST_AUTO_TEST_CASE(insert_subnodes) {
+    tree_type t1;
+
+    t1.insert(7);
+    BOOST_CHECK_EQUAL(t1.root().size(), 0);
+    BOOST_CHECK_EQUAL(t1.size(), 1);
+
+    t1.root().insert(8);
+    BOOST_CHECK_EQUAL(t1.root().size(), 1);
+    BOOST_CHECK_EQUAL(t1.size(), 2);
+
+    t1.root().insert(9);
+    BOOST_CHECK_EQUAL(t1.root().size(), 2);
+    BOOST_CHECK_EQUAL(t1.size(), 3);
+
+    BOOST_CHECK_EQUAL(t1.root().data(), 7);
+    BOOST_CHECK_EQUAL(t1.root()[0].data(), 8);
+    BOOST_CHECK_EQUAL(t1.root()[1].data(), 9);
+}
+
 
 BOOST_AUTO_TEST_SUITE_END()

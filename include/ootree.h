@@ -247,28 +247,57 @@ struct ptr_less_data {
 };
 
 
-// Any node containing an external key inherits from this
-// to use a storage class w/ external key, both internal and
-// leaf nodes will need this, and it will need to be
-// in base class
-template <typename Key, typename Tree>
-struct node_key {
-    typedef Tree tree_type;
-    typedef Key key_type;
-
-    node_key() : _key() {}
-    virtual ~node_key() {}
-
-    const key_type& key() const { return _key; }
-
-    protected:
-    key_type _key;
-};
-
-
 template <typename Tree, typename Node, typename ChildContainer>
 struct node_base {
+    typedef node_base<Tree, Node, ChildContainer> this_type;
+    typedef Tree tree_type;
+    typedef Node node_type;
+    typedef ChildContainer cs_type;
+    typedef typename tree_type::size_type size_type;
+    typedef typename tree_type::data_type data_type;
+
+    node_base() : _tree(NULL), _ply(0), _parent(), _this(), _data(), _children() {}
+    virtual ~node_base() {}
+
+    size_type ply() const { return _ply; }
+    bool is_root() const { return ply() == 0; }
+
+    node_type& parent() {
+        if (ply() == 0) throw exception();
+        return *(_parent.lock());
+    }
+    const node_type& parent() const {
+        if (ply() == 0) throw exception();
+        return *(_parent.lock()); 
+    }
+
+    data_type& data() { return _data; }
+    const data_type& data() const { return _data; }
+
+    protected:
+    typedef typename cs_type::iterator cs_iterator;
     
+    public:
+    typedef valmap_iterator_adaptor<cs_iterator, dref_vmap<typename cs_iterator::value_type> > iterator;
+
+    iterator begin() { return iterator(_children.begin()); }
+    iterator end() { return iterator(_children.end()); }
+
+    size_type size() const { return _children.size(); }
+    bool empty() const { return _children.empty(); }
+
+    void erase(const iterator& j) {
+        _children.erase(j);
+    }
+
+    friend class tree_type::tree_type;
+    protected:
+    tree_type* _tree;
+    size_type _ply;
+    weak_ptr<node_type> _parent;
+    weak_ptr<node_type> _this;
+    data_type _data;
+    cs_type _children;
 };
 
 
@@ -282,28 +311,25 @@ struct node_raw: public node_base<Tree, node_raw<Tree, Data>, vector<shared_ptr<
     typedef typename Tree::size_type size_type;
     typedef Data data_type;
 
-    // NodeContainer is expected to be a vector<>, or something that provides same interface 
-    //typedef typename ns_type::iterator iterator;
-    //typedef typename ns_type::const_iterator const_iterator;
+    typedef typename base_type::iterator iterator;
 
     friend class tree_type::tree_type;
 
     node_raw() : base_type() {}
     virtual ~node_raw() {}
 
-/*
-    shared_ptr<node_type> operator[](size_type n) { return this->_children[n]; }
-    shared_ptr<const node_type> operator[](size_type n) const { return this->_children[n]; }
+    node_type& operator[](size_type n) { return *(this->_children[n]); }
+    const node_type& operator[](size_type n) const { return *(this->_children[n]); }
 
     void insert(const data_type& data) {
-        shared_ptr<internal_type> n(new internal_type);
+        shared_ptr<node_type> n(new node_type);
         n->_data = data;
         n->_tree = this->_tree;
-        n->set_parent(this->_this, n);
+        n->_parent = this->_this;
+        n->_this = n;
         this->_children.push_back(n);
         this->_tree->_size += 1;
     }
-*/
 };
 
 
@@ -366,23 +392,18 @@ struct tree {
         return *_root;
     }
 
-/*
-    const_node_pointer root() const {
+    const node_type& root() const {
         if (0 == size()) throw exception();
-        return shared_ptr<node_type const>(_root);
+        return *_root;
     }
-*/
 
     void insert(const data_type& data) {
-/*
-        shared_ptr<internal_type> n(new internal_type);
+        shared_ptr<node_type> n(new node_type);
         n->_data = data;
         n->_tree = this;
-        weak_node_pointer null_parent;
-        n->set_parent(null_parent, n);
+        n->_this = n;
         _root = n;
         _size += 1;
-*/
     }
 
     // there is only one node to erase from the tree: the root
@@ -414,11 +435,11 @@ struct tree {
 
     df_pre_iterator df_pre_begin() { return df_pre_iterator(_root); }
     df_pre_iterator df_pre_end() { return df_pre_iterator(); }
-
-    friend class node_base<tree_type>;
-    friend class node_type_dispatch<tree_type, dt_spec, ns_spec>::internal_base_type;
-    friend class node_type_dispatch<tree_type, dt_spec, ns_spec>::internal_type;
 */
+
+    // compile will not let me use just node_type here
+    friend class node_type_dispatch<tree_type, cscat>::node_type;
+    friend class node_type_dispatch<tree_type, cscat>::base_type;
 
     protected:
     shared_ptr<node_type> _root;
