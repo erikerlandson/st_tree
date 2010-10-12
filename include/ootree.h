@@ -29,6 +29,8 @@ limitations under the License.
 #include <functional>
 #include <algorithm>
 #include <iterator>
+#include <limits>
+#include "stdio.h"
 
 namespace ootree {
 using std::tr1::shared_ptr;
@@ -40,6 +42,44 @@ using std::set;
 using std::multiset;
 using std::less;
 using std::pair;
+
+
+template <typename Unsigned>
+struct max_maintainer {
+    max_maintainer(): _hist(), _max(0) {}
+    virtual ~max_maintainer() {}
+
+    max_maintainer(const max_maintainer& src) { *this = src; }
+    max_maintainer& operator=(const max_maintainer& rhs) {
+        if (this == &rhs) return *this;
+        _max = rhs._max;
+        _hist = rhs._hist;
+        return *this;
+    }
+
+    Unsigned max() const { return _max; }
+
+    void insert(const Unsigned& n) {
+        if (n >= _hist.size()) _hist.resize(1+n, 0);
+        _hist[n] += 1;
+        if (n > _max) _max = n;
+    }
+
+    void erase(const Unsigned& n) {
+        if (n > _max) return;
+        _hist[n] -= 1;
+        if (_hist[_max] > 0) return;
+        while (true) {
+            if (_max == 0) break;
+            _max -= 1;
+            if (_hist[_max] > 0) break;
+        }
+    }
+
+    protected:
+    Unsigned _max;
+    vector<Unsigned> _hist;
+};
 
 
 template <typename X>
@@ -256,10 +296,13 @@ struct node_base {
     typedef typename tree_type::size_type size_type;
     typedef typename tree_type::data_type data_type;
 
-    node_base() : _tree(NULL), _ply(0), _parent(), _this(), _data(), _children() {}
+    node_base() : _tree(NULL), _ply(0), _size(0), _parent(), _this(), _data(), _children() {}
     virtual ~node_base() {}
 
     size_type ply() const { return _ply; }
+    size_type depth() const { return _tree->depth() - _ply; }
+    size_type subtree_size() const { return _size; }
+
     bool is_root() const { return ply() == 0; }
 
     node_type& parent() {
@@ -287,17 +330,46 @@ struct node_base {
     bool empty() const { return _children.empty(); }
 
     void erase(const iterator& j) {
-        _children.erase(j);
+        _children.erase(cs_iterator(j));
     }
 
     friend class tree_type::tree_type;
     protected:
     tree_type* _tree;
     size_type _ply;
+    size_type _size;
     weak_ptr<node_type> _parent;
     weak_ptr<node_type> _this;
     data_type _data;
     cs_type _children;
+
+    void graft_subtree(shared_ptr<node_type>& n) {
+        // set new parent for this subtree as current node
+        shared_ptr<node_type> q = _this.lock();
+        n->_parent = q;
+ 
+        // percolate the new subtree size up the chain of parents
+        while (true) {
+            q->_size += n->_size;
+            if (q->ply() == 0) {
+                _tree->_size += n->_size;
+                break;
+            }
+            q = q->_parent.lock();
+        }
+
+        // percolate new ply values and tree ptr down the subtree, recursively
+        deque<shared_ptr<node_type> > nq;
+        nq.push_back(n);
+        while (!nq.empty()) {
+            q = nq.front();
+            nq.pop_front();
+            q->_tree = _tree;
+            q->_ply = 1 + q->_parent.lock()->_ply;
+            _tree->_depth.insert(1 + q->_ply);
+            for (cs_iterator j(q->_children.begin());  j != q->_children.end();  ++j) nq.push_back(*j);
+        }
+    }
 };
 
 
@@ -324,11 +396,10 @@ struct node_raw: public node_base<Tree, node_raw<Tree, Data>, vector<shared_ptr<
     void insert(const data_type& data) {
         shared_ptr<node_type> n(new node_type);
         n->_data = data;
-        n->_tree = this->_tree;
-        n->_parent = this->_this;
         n->_this = n;
+        n->_size = 1;
         this->_children.push_back(n);
-        this->_tree->_size += 1;
+        this->graft_subtree(n);
     }
 };
 
@@ -387,6 +458,8 @@ struct tree {
     size_type size() const { return _size; }
     bool empty() const { return 0 == size(); }
 
+    size_type depth() const { return _depth.max(); }
+
     node_type& root() {
         if (0 == size()) throw exception();
         return *_root;
@@ -403,7 +476,8 @@ struct tree {
         n->_tree = this;
         n->_this = n;
         _root = n;
-        _size += 1;
+        _size = 1;
+        if (_depth.max() < 1) _depth.insert(1);
     }
 
     // there is only one node to erase from the tree: the root
@@ -444,6 +518,7 @@ struct tree {
     protected:
     shared_ptr<node_type> _root;
     size_type _size;
+    max_maintainer<size_type> _depth;
 };
 
 
