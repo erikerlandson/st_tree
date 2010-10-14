@@ -260,4 +260,53 @@ BOOST_AUTO_TEST_CASE(node_op_equal_root) {
 }
 
 
+BOOST_AUTO_TEST_CASE(tree_op_equal_lhs_n_rhs_e) {
+    tree<int> t1;
+    t1.insert(2);
+    t1.root().insert(3);
+
+    tree<int> t2;
+
+    t1 = t2;
+
+    BOOST_CHECK_EQUAL(t1.empty(), true);
+    BOOST_CHECK_EQUAL(t2.empty(), true);
+
+    check_tree_data(t1, "");
+}
+
+BOOST_AUTO_TEST_CASE(tree_op_equal_lhs_e_rhs_n) {
+    tree<int> t1;
+
+    tree<int> t2;
+    t2.insert(2);
+    t2.root().insert(3);
+
+    t1 = t2;
+
+    BOOST_CHECK_EQUAL(t1.empty(), false);
+    BOOST_CHECK_EQUAL(t2.empty(), false);
+
+    check_tree_data(t1, "2 3");
+    check_tree_ply(t1, "0 1");
+}
+
+BOOST_AUTO_TEST_CASE(tree_op_equal_lhs_n_rhs_n) {
+    tree<int> t1;
+    t1.insert(31);
+    t1.root().insert(41);
+
+    tree<int> t2;
+    t2.insert(2);
+    t2.root().insert(3);
+
+    t1 = t2;
+
+    BOOST_CHECK_EQUAL(t1.empty(), false);
+    BOOST_CHECK_EQUAL(t2.empty(), false);
+
+    check_tree_data(t1, "2 3");
+    check_tree_ply(t1, "0 1");
+}
+
 BOOST_AUTO_TEST_SUITE_END()
