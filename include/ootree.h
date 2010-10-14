@@ -381,9 +381,11 @@ struct node_base {
 
     protected:
     typedef typename cs_type::iterator cs_iterator;
+    typedef typename cs_type::const_iterator cs_const_iterator;
     
     public:
     typedef valmap_iterator_adaptor<cs_iterator, dref_vmap<typename cs_iterator::value_type> > iterator;
+    typedef valmap_iterator_adaptor<cs_const_iterator, dref_vmap<typename cs_const_iterator::value_type> > const_iterator;
 
     iterator begin() { return iterator(_children.begin()); }
     iterator end() { return iterator(_children.end()); }
@@ -392,18 +394,24 @@ struct node_base {
     bool empty() const { return _children.empty(); }
 
     void erase(const iterator& j) {
-        cs_iterator B(j);
-        cs_iterator E(j);
-        ++E;
-        prune_subtree(B, E, NULL);
+        cs_iterator csj(j);
+        shared_ptr<node_type> n((*csj)->_this.lock());
+        _prune(n);
+        _children.erase(csj);
     }
 
     void erase(const iterator& F, const iterator& L) {
-        prune_subtree(cs_iterator(F), cs_iterator(L), NULL); 
+        cs_iterator csF(F);
+        cs_iterator csL(L);
+        for (cs_iterator j(csF);  j != csL;  ++j) {
+            shared_ptr<node_type> n((*j)->_this.lock());
+            _prune(n);
+        }
+        _children.erase(csF, csL);
     }
 
     void clear() {
-        prune_subtree(_children.begin(), _children.end(), NULL);
+        erase(begin(), end());
     }
 
     friend class tree_type::tree_type;
@@ -416,39 +424,30 @@ struct node_base {
     data_type _data;
     cs_type _children;
 
-    void prune_subtree(const cs_iterator& B, const cs_iterator& E, vector<shared_ptr<node_type> >* nodes = NULL) {
-        if (NULL != nodes) nodes->clear();
-        size_type n = 0;
-        deque<shared_ptr<node_type> > nq;
-        for (cs_iterator j(B);  j != E;  ++j) {
-            if (NULL != nodes) nodes->push_back(*j);
-            n += (*j)->subtree_size();
-            nq.push_back(*j);
-        }
-
-        // erase subtree depth info from parent tree
-        while (!nq.empty()) {
-            shared_ptr<node_type> q(nq.front());
-            nq.pop_front();
-            _tree->_depth.erase(1 + q->_ply);
-            for (cs_iterator j(q->_children.begin());  j != q->_children.end();  ++j) nq.push_back(*j);
-        }
-
+    void _prune(shared_ptr<node_type>& n) {
         // percolate the new subtree size up the chain of parents
         shared_ptr<node_type> q = _this.lock();
         while (true) {
-            q->_size -= n;
+            q->_size -= n->_size;
             if (q->ply() == 0) {
-                _tree->_size -= n;
+                _tree->_size -= n->_size;
                 break;
             }
             q = q->_parent.lock();
         }
 
-        _children.erase(B, E);
+        // erase subtree depth info from parent tree
+        deque<shared_ptr<node_type> > nq;
+        nq.push_back(n);
+        while (!nq.empty()) {
+            q = nq.front();
+            nq.pop_front();
+            _tree->_depth.erase(1 + q->_ply);
+            for (cs_iterator j(q->_children.begin());  j != q->_children.end();  ++j) nq.push_back(*j);
+        }
     }
 
-    void graft_subtree(shared_ptr<node_type>& n) {
+    void _graft(shared_ptr<node_type>& n) {
         // set new parent for this subtree as current node
         shared_ptr<node_type> q = _this.lock();
         n->_parent = q;
@@ -475,6 +474,16 @@ struct node_base {
             for (cs_iterator j(q->_children.begin());  j != q->_children.end();  ++j) nq.push_back(*j);
         }
     }
+
+    void _thread(shared_ptr<node_type>& n) {
+        n->_this = n;
+        n->_size = 1;
+        for (cs_iterator j(n->_children.begin());  j !=  n->_children.end();  ++j) {
+            (*j)->_parent = n;
+            _thread(*j);
+            n->_size += (*j)->_size;
+        }
+    }
 };
 
 
@@ -489,11 +498,29 @@ struct node_raw: public node_base<Tree, node_raw<Tree, Data>, vector<shared_ptr<
     typedef Data data_type;
 
     typedef typename base_type::iterator iterator;
+    typedef typename base_type::const_iterator const_iterator;
 
     friend class tree_type::tree_type;
+    friend class node_base<Tree, node_type, cs_type>;
 
     node_raw() : base_type() {}
     virtual ~node_raw() {}
+
+    node_raw(const node_raw& src) { *this = src; }
+    node_raw& operator=(const node_raw& rhs) {
+        if (this == &rhs) return *this;
+        // in the case of vector storage, I can just leave current node where it is
+        this->clear();
+        this->_data = rhs._data;
+        // do the copying work for children only
+        for (cs_const_iterator j(rhs._children.begin());  j != rhs._children.end();  ++j) {
+            shared_ptr<node_type> n((*j)->_copy_data());
+            this->_children.push_back(n);
+            this->_thread(n);
+            this->_graft(n);
+        }
+        return *this;
+    }
 
     node_type& operator[](size_type n) { return *(this->_children[n]); }
     const node_type& operator[](size_type n) const { return *(this->_children[n]); }
@@ -507,7 +534,30 @@ struct node_raw: public node_base<Tree, node_raw<Tree, Data>, vector<shared_ptr<
         n->_this = n;
         n->_size = 1;
         this->_children.push_back(n);
-        this->graft_subtree(n);
+        this->_graft(n);
+    }
+
+    protected:
+    typedef typename base_type::cs_iterator cs_iterator;
+    typedef typename base_type::cs_const_iterator cs_const_iterator;
+
+    cs_iterator _cs_iterator() {
+        if (this->is_root()) throw exception();
+        cs_iterator j(this->parent()._children.begin());
+        cs_iterator jend(this->parent()._children.end());
+        for (;  j != jend;  ++j) if (*j == this) break;
+        if (j == jend) throw exception();
+        return j;
+    }
+
+    iterator _iterator() { return iterator(_cs_iterator()); }
+
+    shared_ptr<node_type> _copy_data() {
+        shared_ptr<node_type> n(new node_type);
+        n->_data = this->_data;
+        for (cs_iterator j(this->_children.begin()); j != this->_children.end(); ++j)
+            n->_children.push_back((*j)->_copy_data());
+        return n;
     }
 };
 
@@ -550,16 +600,30 @@ struct tree {
     tree() : _size(0), _root(), _depth() {}
     virtual ~tree() { clear(); }
 
-/*
-    tree(const tree& src) : _size(0), _root() { *this = src; }
+
+    tree(const tree& src) { *this = src; }
 
     tree& operator=(const tree& src) {
         if (&src == this) return *this;
-        tree_deep_copy<this_type, dt_spec, ns_spec> tdc;
-        tdc(*this, src);
+
+        if (src.empty()) {
+            clear();
+            return *this;
+        }
+
+        if (empty()) {
+            _root.reset(new node_type);
+            _root->_tree = this;
+            _root->_this = _root;
+            _size = 1;
+            _depth.insert(1);
+        }
+
+        *_root = src.root();
+
         return *this;
     }
-*/
+
 
     size_type size() const { return _size; }
     bool empty() const { return 0 == size(); }
@@ -567,22 +631,21 @@ struct tree {
     size_type depth() const { return _depth.max(); }
 
     node_type& root() {
-        if (0 == size()) throw exception();
+        if (empty()) throw exception();
         return *_root;
     }
 
     const node_type& root() const {
-        if (0 == size()) throw exception();
+        if (empty()) throw exception();
         return *_root;
     }
 
     void insert(const data_type& data) {
         clear();
-        shared_ptr<node_type> n(new node_type);
-        n->_data = data;
-        n->_tree = this;
-        n->_this = n;
-        _root = n;
+        _root.reset(new node_type);
+        _root->_data = data;
+        _root->_tree = this;
+        _root->_this = _root;
         _size = 1;
         _depth.insert(1);
     }
