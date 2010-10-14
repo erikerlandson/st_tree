@@ -1,1 +1,4 @@
 The ootree library implements an STL-style template container class for storing data in arbitrary tree structures.  ootree is short for "oober tree" or I suppose "object oriented tree."
+
+The ootree repository is published under the Apache License, Version 2.0:
+http://www.apache.org/licenses/LICENSE-2.0
