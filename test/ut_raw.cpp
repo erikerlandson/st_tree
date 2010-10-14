@@ -10,26 +10,14 @@ using namespace std;
 BOOST_AUTO_TEST_SUITE(ut_raw)
 
 
-template <typename Tree>
-void check_tree_data(Tree& t, const char* ref) {
-    stringstream tst;
-
-    for (typeof(t.bf_end()) j(t.bf_begin());  j != t.bf_end();  ++j) {
-        if (j != t.bf_begin()) tst << " ";
-        tst << j->data();
-    }
-    BOOST_CHECK(tst.str() == ref);
-}
-
-template <typename Tree>
-void check_tree_ply(Tree& t, const char* ref) {
-    stringstream tst;
-
-    for (typeof(t.bf_end()) j(t.bf_begin());  j != t.bf_end();  ++j) {
-        if (j != t.bf_begin()) tst << " ";
-        tst << j->ply();
-    }
-    BOOST_CHECK(tst.str() == ref);
+#define CHECK_TREE(t, meth, ref) { \
+    stringstream tst; \
+\
+    for (typeof(t.bf_end()) j(t.bf_begin());  j != t.bf_end();  ++j) { \
+        if (j != t.bf_begin()) tst << " "; \
+        tst << j->meth; \
+    } \
+    BOOST_CHECK(tst.str() == ref); \
 }
 
 
@@ -192,8 +180,8 @@ BOOST_AUTO_TEST_CASE(erase_node) {
     BOOST_CHECK_EQUAL(t1.size(), 4);
     BOOST_CHECK_EQUAL(t1.depth(), 3);
 
-    check_tree_data(t1, "2 5 13 17");
-    check_tree_ply(t1, "0 1 2 2");
+    CHECK_TREE(t1, data(), "2 5 13 17");
+    CHECK_TREE(t1, ply(), "0 1 2 2");
 }
 
 BOOST_AUTO_TEST_CASE(clear_node) {
@@ -212,8 +200,8 @@ BOOST_AUTO_TEST_CASE(clear_node) {
     BOOST_CHECK_EQUAL(t1.size(), 1);
     BOOST_CHECK_EQUAL(t1.depth(), 1);
 
-    check_tree_data(t1, "2");
-    check_tree_ply(t1, "0");
+    CHECK_TREE(t1, data(), "2");
+    CHECK_TREE(t1, ply(), "0");
 }
 
 BOOST_AUTO_TEST_CASE(node_op_equal) {
@@ -230,11 +218,11 @@ BOOST_AUTO_TEST_CASE(node_op_equal) {
     BOOST_CHECK_EQUAL(t1.size(), 4);
     BOOST_CHECK_EQUAL(t1.depth(), 3);
 
-    check_tree_data(t1, "2 5 7 11");
-    check_tree_ply(t1, "0 1 2 2");
+    CHECK_TREE(t1, data(), "2 5 7 11");
+    CHECK_TREE(t1, ply(), "0 1 2 2");
 
-    check_tree_data(t2, "5 7 11");
-    check_tree_ply(t2, "0 1 1");
+    CHECK_TREE(t2, data(), "5 7 11");
+    CHECK_TREE(t2, ply(), "0 1 1");
 }
 
 
@@ -252,11 +240,11 @@ BOOST_AUTO_TEST_CASE(node_op_equal_root) {
     BOOST_CHECK_EQUAL(t1.size(), 3);
     BOOST_CHECK_EQUAL(t1.depth(), 2);
 
-    check_tree_data(t1, "5 7 11");
-    check_tree_ply(t1, "0 1 1");
+    CHECK_TREE(t1, data(), "5 7 11");
+    CHECK_TREE(t1, ply(), "0 1 1");
 
-    check_tree_data(t2, "5 7 11");
-    check_tree_ply(t2, "0 1 1");
+    CHECK_TREE(t2, data(), "5 7 11");
+    CHECK_TREE(t2, ply(), "0 1 1");
 }
 
 
@@ -272,7 +260,7 @@ BOOST_AUTO_TEST_CASE(tree_op_equal_lhs_n_rhs_e) {
     BOOST_CHECK_EQUAL(t1.empty(), true);
     BOOST_CHECK_EQUAL(t2.empty(), true);
 
-    check_tree_data(t1, "");
+    CHECK_TREE(t1, data(), "");
 }
 
 BOOST_AUTO_TEST_CASE(tree_op_equal_lhs_e_rhs_n) {
@@ -287,8 +275,8 @@ BOOST_AUTO_TEST_CASE(tree_op_equal_lhs_e_rhs_n) {
     BOOST_CHECK_EQUAL(t1.empty(), false);
     BOOST_CHECK_EQUAL(t2.empty(), false);
 
-    check_tree_data(t1, "2 3");
-    check_tree_ply(t1, "0 1");
+    CHECK_TREE(t1, data(), "2 3");
+    CHECK_TREE(t1, ply(), "0 1");
 }
 
 BOOST_AUTO_TEST_CASE(tree_op_equal_lhs_n_rhs_n) {
@@ -305,8 +293,8 @@ BOOST_AUTO_TEST_CASE(tree_op_equal_lhs_n_rhs_n) {
     BOOST_CHECK_EQUAL(t1.empty(), false);
     BOOST_CHECK_EQUAL(t2.empty(), false);
 
-    check_tree_data(t1, "2 3");
-    check_tree_ply(t1, "0 1");
+    CHECK_TREE(t1, data(), "2 3");
+    CHECK_TREE(t1, ply(), "0 1");
 }
 
 BOOST_AUTO_TEST_SUITE_END()
