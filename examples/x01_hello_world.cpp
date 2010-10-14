@@ -22,7 +22,7 @@ limitations under the License.
 #include <iostream>
 using namespace std;
 
-// use the mtree header and namespace
+// use the ootree header and namespace
 #include "ootree.h"
 using namespace ootree;
 
