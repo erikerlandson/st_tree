@@ -27,5 +27,24 @@ using namespace std;
 using namespace ootree;
 
 int main(int argc, char** argv) {
+    // declare a tree of strings 
+    tree<const char*> t;
+    typedef tree<const char*>::bf_iterator bf_iterator;
+
+    // insert a string at root (ply 0)
+    t.insert("Hello");
+
+    // insert strings at ply 1
+    t.root().insert(" ");
+    t.root().insert("world");
+
+    // insert strings at ply 2
+    t.root()[0].insert("!");
+    t.root()[1].insert("\n");
+
+    // output data in breadth first order to print a traditional message
+    for (bf_iterator j(t.bf_begin());  j != t.bf_end();  ++j)
+        cout << j->data();
+
     return 0;
 }
