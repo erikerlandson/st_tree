@@ -107,6 +107,12 @@ struct max_maintainer {
         _max = 0;
     }
 
+    void swap(max_maintainer& src) {
+        if (this == &src) return;
+        std::swap(_max, src._max);
+        _hist.swap(src._hist);
+    }
+
     protected:
     Unsigned _max;
     vector<Unsigned> _hist;
@@ -660,13 +666,12 @@ struct tree {
         _size = 0;
     }
 
-/*
     void swap(this_type& src) {
         if (this == &src) return;
-        std::swap(_root, src._root);
+        _root.swap(src._root);
         std::swap(_size, src._size);
+        _depth.swap(src._depth);
     }
-*/
 
     bf_iterator bf_begin() { return bf_iterator(_root); }
     bf_iterator bf_end() { return bf_iterator(); }
@@ -689,6 +694,16 @@ struct tree {
     max_maintainer<size_type> _depth;
 };
 
+
+};  // namespace ootree
+
+
+namespace std {
+
+template <typename Data, typename CSCat>
+void swap(ootree::tree<Data, CSCat>& a, ootree::tree<Data, CSCat>& b) {
+    a.swap(b);
+}
 
 };  // namespace ootree
 

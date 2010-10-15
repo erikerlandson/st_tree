@@ -416,4 +416,24 @@ BOOST_AUTO_TEST_CASE(tree_op_equal_lhs_n_rhs_n) {
 }
 
 
+BOOST_AUTO_TEST_CASE(tree_swap) {
+    tree<int> t1;
+    tree<int> t2;
+
+    t1.insert(2);
+    t2.insert(3);
+
+    // method version
+    t1.swap(t2);
+
+    CHECK_TREE(t1, data(), "3");
+    CHECK_TREE(t2, data(), "2");
+
+    // function version
+    swap(t1, t2);
+
+    CHECK_TREE(t1, data(), "2");
+    CHECK_TREE(t2, data(), "3");
+}
+
 BOOST_AUTO_TEST_SUITE_END()
