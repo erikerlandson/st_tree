@@ -1,11 +1,13 @@
 #include <boost/test/unit_test.hpp>
 
+#include <iostream>
 #include <sstream>
 
 #include "ootree.h"
 
 using namespace ootree;
 using namespace std;
+
 
 BOOST_AUTO_TEST_SUITE(ut_raw)
 
@@ -17,7 +19,7 @@ BOOST_AUTO_TEST_SUITE(ut_raw)
         if (j != t.bf_begin()) tst << " "; \
         tst << j->meth; \
     } \
-    BOOST_CHECK(tst.str() == ref); \
+    BOOST_CHECK_MESSAGE(tst.str() == ref, "Expected \"" << ref << "\" received \"" << tst.str() << "\"\n"); \
 }
 
 
@@ -164,6 +166,114 @@ BOOST_AUTO_TEST_CASE(bf_iterator) {
 }
 
 
+BOOST_AUTO_TEST_CASE(node_ply) {
+    tree<int> t1;
+
+    t1.insert(2);
+    CHECK_TREE(t1, data(), "2");
+    CHECK_TREE(t1, ply(), "0");
+
+    t1.root().insert(3);
+    t1.root().insert(5);
+    CHECK_TREE(t1, data(), "2 3 5");
+    CHECK_TREE(t1, ply(), "0 1 1");
+
+    t1.root()[0].insert(7);
+    t1.root()[0].insert(11);
+    t1.root()[1].insert(13);
+    t1.root()[1].insert(17);
+    CHECK_TREE(t1, data(), "2 3 5 7 11 13 17");
+    CHECK_TREE(t1, ply(), "0 1 1 2 2 2 2");
+
+    t1.root().insert(77);
+    CHECK_TREE(t1, data(), "2 3 5 77 7 11 13 17");
+    CHECK_TREE(t1, ply(), "0 1 1 1 2 2 2 2");
+
+    t1.root().erase(t1.root().begin());
+    CHECK_TREE(t1, data(), "2 5 77 13 17");
+    CHECK_TREE(t1, ply(), "0 1 1 2 2");
+
+    t1.root().erase(t1.root().begin());
+    CHECK_TREE(t1, data(), "2 77");
+    CHECK_TREE(t1, ply(), "0 1");
+
+    t1.root().erase(t1.root().begin());
+    CHECK_TREE(t1, data(), "2");
+    CHECK_TREE(t1, ply(), "0");
+}
+
+BOOST_AUTO_TEST_CASE(node_depth) {
+    tree<int> t1;
+
+    t1.insert(2);
+    CHECK_TREE(t1, data(), "2");
+    CHECK_TREE(t1, depth(), "1");
+
+    t1.root().insert(3);
+    t1.root().insert(5);
+    CHECK_TREE(t1, data(), "2 3 5");
+    CHECK_TREE(t1, depth(), "2 1 1");
+
+    t1.root()[0].insert(7);
+    t1.root()[0].insert(11);
+    t1.root()[1].insert(13);
+    t1.root()[1].insert(17);
+    CHECK_TREE(t1, data(), "2 3 5 7 11 13 17");
+    CHECK_TREE(t1, depth(), "3 2 2 1 1 1 1");
+
+    t1.root().insert(77);
+    CHECK_TREE(t1, data(), "2 3 5 77 7 11 13 17");
+    CHECK_TREE(t1, depth(), "3 2 2 2 1 1 1 1");
+
+    t1.root().erase(t1.root().begin());
+    CHECK_TREE(t1, data(), "2 5 77 13 17");
+    CHECK_TREE(t1, depth(), "3 2 2 1 1");
+
+    t1.root().erase(t1.root().begin());
+    CHECK_TREE(t1, data(), "2 77");
+    CHECK_TREE(t1, depth(), "2 1");
+
+    t1.root().erase(t1.root().begin());
+    CHECK_TREE(t1, data(), "2");
+    CHECK_TREE(t1, depth(), "1");
+}
+
+BOOST_AUTO_TEST_CASE(node_subtree_size) {
+    tree<int> t1;
+
+    t1.insert(2);
+    CHECK_TREE(t1, data(), "2");
+    CHECK_TREE(t1, subtree_size(), "1");
+
+    t1.root().insert(3);
+    t1.root().insert(5);
+    CHECK_TREE(t1, data(), "2 3 5");
+    CHECK_TREE(t1, subtree_size(), "3 1 1");
+
+    t1.root()[0].insert(7);
+    t1.root()[0].insert(11);
+    t1.root()[1].insert(13);
+    t1.root()[1].insert(17);
+    CHECK_TREE(t1, data(), "2 3 5 7 11 13 17");
+    CHECK_TREE(t1, subtree_size(), "7 3 3 1 1 1 1");
+
+    t1.root().insert(77);
+    CHECK_TREE(t1, data(), "2 3 5 77 7 11 13 17");
+    CHECK_TREE(t1, subtree_size(), "8 3 3 1 1 1 1 1");
+
+    t1.root().erase(t1.root().begin());
+    CHECK_TREE(t1, data(), "2 5 77 13 17");
+    CHECK_TREE(t1, subtree_size(), "5 3 1 1 1");
+
+    t1.root().erase(t1.root().begin());
+    CHECK_TREE(t1, data(), "2 77");
+    CHECK_TREE(t1, subtree_size(), "2 1");
+
+    t1.root().erase(t1.root().begin());
+    CHECK_TREE(t1, data(), "2");
+    CHECK_TREE(t1, subtree_size(), "1");
+}
+
 BOOST_AUTO_TEST_CASE(erase_node) {
     tree<int> t1;
     t1.insert(2);
@@ -182,6 +292,7 @@ BOOST_AUTO_TEST_CASE(erase_node) {
 
     CHECK_TREE(t1, data(), "2 5 13 17");
     CHECK_TREE(t1, ply(), "0 1 2 2");
+    CHECK_TREE(t1, subtree_size(), "4 3 1 1");
 }
 
 BOOST_AUTO_TEST_CASE(clear_node) {
@@ -202,6 +313,7 @@ BOOST_AUTO_TEST_CASE(clear_node) {
 
     CHECK_TREE(t1, data(), "2");
     CHECK_TREE(t1, ply(), "0");
+    CHECK_TREE(t1, subtree_size(), "1");
 }
 
 BOOST_AUTO_TEST_CASE(node_op_equal) {
@@ -220,9 +332,11 @@ BOOST_AUTO_TEST_CASE(node_op_equal) {
 
     CHECK_TREE(t1, data(), "2 5 7 11");
     CHECK_TREE(t1, ply(), "0 1 2 2");
+    CHECK_TREE(t1, subtree_size(), "4 3 1 1");
 
     CHECK_TREE(t2, data(), "5 7 11");
     CHECK_TREE(t2, ply(), "0 1 1");
+    CHECK_TREE(t2, subtree_size(), "3 1 1");
 }
 
 
@@ -242,9 +356,11 @@ BOOST_AUTO_TEST_CASE(node_op_equal_root) {
 
     CHECK_TREE(t1, data(), "5 7 11");
     CHECK_TREE(t1, ply(), "0 1 1");
+    CHECK_TREE(t1, subtree_size(), "3 1 1");
 
     CHECK_TREE(t2, data(), "5 7 11");
     CHECK_TREE(t2, ply(), "0 1 1");
+    CHECK_TREE(t1, subtree_size(), "3 1 1");
 }
 
 
@@ -277,6 +393,7 @@ BOOST_AUTO_TEST_CASE(tree_op_equal_lhs_e_rhs_n) {
 
     CHECK_TREE(t1, data(), "2 3");
     CHECK_TREE(t1, ply(), "0 1");
+    CHECK_TREE(t1, subtree_size(), "2 1");
 }
 
 BOOST_AUTO_TEST_CASE(tree_op_equal_lhs_n_rhs_n) {
@@ -295,6 +412,8 @@ BOOST_AUTO_TEST_CASE(tree_op_equal_lhs_n_rhs_n) {
 
     CHECK_TREE(t1, data(), "2 3");
     CHECK_TREE(t1, ply(), "0 1");
+    CHECK_TREE(t1, subtree_size(), "2 1");
 }
+
 
 BOOST_AUTO_TEST_SUITE_END()

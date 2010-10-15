@@ -358,7 +358,7 @@ struct node_base {
     typedef typename tree_type::size_type size_type;
     typedef typename tree_type::data_type data_type;
 
-    node_base() : _tree(NULL), _ply(0), _size(0), _parent(), _this(), _data(), _children() {}
+    node_base() : _tree(NULL), _ply(0), _size(1), _parent(), _this(), _data(), _children() {}
     virtual ~node_base() {}
 
     size_type ply() const { return _ply; }
