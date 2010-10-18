@@ -23,6 +23,28 @@ BOOST_AUTO_TEST_SUITE(ut_raw)
 }
 
 
+#define CHECK_TREE_DF_POST(t, meth, ref) { \
+    stringstream tst; \
+\
+    for (typeof(t.df_post_end()) j(t.df_post_begin());  j != t.df_post_end();  ++j) { \
+        if (j != t.df_post_begin()) tst << " "; \
+        tst << j->meth; \
+    } \
+    BOOST_CHECK_MESSAGE(tst.str() == ref, "Expected \"" << ref << "\" received \"" << tst.str() << "\"\n"); \
+}
+
+
+#define CHECK_TREE_DF_PRE(t, meth, ref) { \
+    stringstream tst; \
+\
+    for (typeof(t.df_pre_end()) j(t.df_pre_begin());  j != t.df_pre_end();  ++j) { \
+        if (j != t.df_pre_begin()) tst << " "; \
+        tst << j->meth; \
+    } \
+    BOOST_CHECK_MESSAGE(tst.str() == ref, "Expected \"" << ref << "\" received \"" << tst.str() << "\"\n"); \
+}
+
+
 BOOST_AUTO_TEST_CASE(default_ctor) {
     tree<int> t1;
     BOOST_CHECK(t1.empty());
@@ -133,37 +155,74 @@ BOOST_AUTO_TEST_CASE(bf_iterator_empty) {
 
 BOOST_AUTO_TEST_CASE(bf_iterator) {
     tree<int> t1;
+    CHECK_TREE(t1, data(), "");
+
     t1.insert(2);
+    CHECK_TREE(t1, data(), "2");
+
     t1.root().insert(3);
     t1.root().insert(5);
+    CHECK_TREE(t1, data(), "2 3 5");
+
     t1.root()[0].insert(7);
     t1.root()[1].insert(13);
     t1.root()[0].insert(11);
     t1.root()[1].insert(17);
-    BOOST_CHECK_EQUAL(t1.size(), 7);
-    BOOST_CHECK_EQUAL(t1.depth(), 3);
-
-    int ref[] = { 2, 3, 5, 7, 11, 13, 17 };
-    int nref = sizeof(ref)/sizeof(*ref);
-
-    BOOST_CHECK_EQUAL(int(t1.size()), nref);
-
-    // pre-increment
-    int* jr = ref;
-    for (typeof(t1.bf_end()) j(t1.bf_begin());  j != t1.bf_end();  ++j,++jr) {
-        if (jr - ref  >= nref) break;
-        BOOST_CHECK_EQUAL(j->data(), *jr);
-    }
-    BOOST_CHECK_EQUAL(int(jr-ref), nref);
-
-    // post-increment
-    jr = ref;
-    for (typeof(t1.bf_end()) j(t1.bf_begin());  j != t1.bf_end();  j++,++jr) {
-        if (jr - ref  >= nref) break;
-        BOOST_CHECK_EQUAL(j->data(), *jr);
-    }
-    BOOST_CHECK_EQUAL(int(jr-ref), nref);
+    CHECK_TREE(t1, data(), "2 3 5 7 11 13 17");
 }
+
+
+BOOST_AUTO_TEST_CASE(df_post_iterator_empty) {
+    tree<int> t1;
+    BOOST_CHECK_EQUAL(t1.df_post_begin() == t1.df_post_end(), true);
+    BOOST_CHECK_EQUAL(t1.df_post_begin() != t1.df_post_end(), false);
+}
+
+
+BOOST_AUTO_TEST_CASE(df_post_iterator) {
+    tree<int> t1;
+    CHECK_TREE_DF_POST(t1, data(), "");
+
+    t1.insert(2);
+    CHECK_TREE_DF_POST(t1, data(), "2");
+
+    t1.root().insert(3);
+    t1.root().insert(5);
+    CHECK_TREE_DF_POST(t1, data(), "3 5 2");
+
+    t1.root()[0].insert(7);
+    t1.root()[1].insert(13);
+    t1.root()[0].insert(11);
+    t1.root()[1].insert(17);
+    CHECK_TREE_DF_POST(t1, data(), "7 11 3 13 17 5 2");
+}
+
+
+BOOST_AUTO_TEST_CASE(df_pre_iterator_empty) {
+    tree<int> t1;
+    BOOST_CHECK_EQUAL(t1.df_pre_begin() == t1.df_pre_end(), true);
+    BOOST_CHECK_EQUAL(t1.df_pre_begin() != t1.df_pre_end(), false);
+}
+
+
+BOOST_AUTO_TEST_CASE(df_pre_iterator) {
+    tree<int> t1;
+    CHECK_TREE_DF_PRE(t1, data(), "");
+
+    t1.insert(2);
+    CHECK_TREE_DF_PRE(t1, data(), "2");
+
+    t1.root().insert(3);
+    t1.root().insert(5);
+    CHECK_TREE_DF_PRE(t1, data(), "2 3 5");
+
+    t1.root()[0].insert(7);
+    t1.root()[1].insert(13);
+    t1.root()[0].insert(11);
+    t1.root()[1].insert(17);
+    CHECK_TREE_DF_PRE(t1, data(), "2 3 7 11 5 13 17");
+}
+
 
 
 BOOST_AUTO_TEST_CASE(node_ply) {

@@ -264,6 +264,201 @@ struct b1st_iterator {
     deque<shared_ptr<node_type> > _queue;
 };
 
+
+template <typename Node>
+struct d1st_post_iterator {
+    typedef Node node_type;
+    typedef typename node_type::iterator::base_iterator iterator;
+
+    typedef std::forward_iterator_tag iterator_category;
+    typedef node_type value_type;
+    typedef typename iterator::difference_type difference_type;
+    typedef value_type* pointer;
+    typedef value_type& reference;
+
+    struct frame {
+        frame(): first(), second(), visited() {}
+        virtual ~frame() {}
+        frame(const frame& rhs): first(rhs.first), second(rhs.second), visited(rhs.visited) {}
+        frame& operator=(const frame& rhs) { first=rhs.first; second=rhs.second; visited=rhs.visited; }
+        frame(const shared_ptr<node_type>& first_, const iterator& second_, const bool& visited_) {
+            first = first_;  second = second_;  visited = visited_;
+        }
+        bool operator==(const frame& rhs) const {
+            if (first != rhs.first) return false;
+            if (second != rhs.second) return false;
+            if (visited != rhs.visited) return false;
+            return true;
+        }
+        bool operator!=(const frame& rhs) const { return !(*this == rhs); }
+        shared_ptr<node_type> first;
+        iterator second;
+        bool visited;
+    };
+
+    d1st_post_iterator() : _stack() {}
+    virtual ~d1st_post_iterator() {}
+
+    d1st_post_iterator(const d1st_post_iterator& rhs) : _stack(rhs._stack) { }
+    d1st_post_iterator& operator=(const d1st_post_iterator& rhs) { _stack = rhs._stack; }
+
+    d1st_post_iterator(const shared_ptr<node_type>& root) {
+        if (root == NULL) return;
+        _stack.push_back(frame(root, iterator(root->begin()), false));
+        while (true) {
+            if (_stack.back().first->empty()) {
+                _stack.back().visited = true;
+                break;
+            }
+            iterator b(_stack.back().first->begin());
+            _stack.push_back(frame(*b, iterator((*b)->begin()), false));
+        }
+    }
+
+    reference operator*() const { return *(_stack.back().first); }
+    pointer operator->() const { return _stack.back().first.get(); }
+
+    // pre-increment
+    d1st_post_iterator operator++() {
+        // if we are already past the end of elements in tree, then this is a no-op
+        if (_stack.empty()) return *this;
+
+        // check whether we are ready to pop the current frame
+        if (_stack.back().visited) _stack.pop_back();
+
+        // empty stack flags that we just incremented past last element in tree, so leave in that state
+        if (_stack.empty()) return *this;
+
+        // we just popped up stack, so move to next child at this ply:
+        ++(_stack.back().second);
+
+        // if we have visited all the children, set the visited flag for this node
+        if (_stack.back().second == iterator(_stack.back().first->end())) {
+            _stack.back().visited = true;
+            return *this;
+        }
+
+        // we found a next child at current ply: push down its first children to the bottom
+        _stack.push_back(frame(*(_stack.back().second), iterator((*_stack.back().second)->begin()), false));
+        while (true) {
+            if (_stack.back().first->empty()) {
+                _stack.back().visited = true;
+                break;
+            }
+            iterator b(_stack.back().first->begin());
+            _stack.push_back(frame(*b, iterator((*b)->begin()), false));                
+        }
+
+        return *this;
+    }
+
+    // post-increment
+    d1st_post_iterator operator++(int) {
+        d1st_post_iterator r(*this);
+        ++(*this);
+        return r;
+    }
+
+    bool operator==(const d1st_post_iterator& rhs) const { return _stack == rhs._stack; }
+    bool operator!=(const d1st_post_iterator& rhs) const { return _stack != rhs._stack; }
+
+    protected:
+    vector<frame> _stack;
+};
+
+
+template <typename Node>
+struct d1st_pre_iterator {
+    typedef Node node_type;
+    typedef typename node_type::iterator::base_iterator iterator;
+
+    typedef std::forward_iterator_tag iterator_category;
+    typedef node_type value_type;
+    typedef typename iterator::difference_type difference_type;
+    typedef value_type* pointer;
+    typedef value_type& reference;
+
+    struct frame {
+        frame(): first(), second(), visited() {}
+        virtual ~frame() {}
+        frame(const frame& rhs): first(rhs.first), second(rhs.second), visited(rhs.visited) {}
+        frame& operator=(const frame& rhs) { first=rhs.first; second=rhs.second; visited=rhs.visited; }
+        frame(const shared_ptr<node_type>& first_, const iterator& second_, const bool& visited_) {
+            first = first_;  second = second_;  visited = visited_;
+        }
+        bool operator==(const frame& rhs) const {
+            if (first != rhs.first) return false;
+            if (second != rhs.second) return false;
+            if (visited != rhs.visited) return false;
+            return true;
+        }
+        bool operator!=(const frame& rhs) const { return !(*this == rhs); }
+        shared_ptr<node_type> first;
+        iterator second;
+        bool visited;
+    };
+
+    d1st_pre_iterator() : _stack() {}
+    virtual ~d1st_pre_iterator() {}
+
+    d1st_pre_iterator(const d1st_pre_iterator& rhs) : _stack(rhs._stack) { }
+    d1st_pre_iterator& operator=(const d1st_pre_iterator& rhs) { _stack = rhs._stack; }
+
+    d1st_pre_iterator(const shared_ptr<node_type>& root) {
+        if (root == NULL) return;
+        _stack.push_back(frame(root, iterator(root->begin()), false));
+    }
+
+    reference operator*() const { return *(_stack.back().first); }
+    pointer operator->() const { return _stack.back().first.get(); }
+
+    // pre-increment
+    d1st_pre_iterator operator++() {
+        // if we are already past the end of elements in tree, then this is a no-op
+        if (_stack.empty()) return *this;
+
+        // check the case where this is node we have just visited pre-order
+        if (!_stack.back().visited) {
+            _stack.back().visited = true;
+            if (!_stack.back().first->empty()) {
+                _stack.push_back(frame(*(_stack.back().second), iterator((*(_stack.back().second))->begin()), false));
+                return *this;
+            }
+        }
+
+        // pop off any frames we're finished with
+        while (true) {
+            if (!_stack.back().first->empty()) {
+                ++(_stack.back().second);
+                // in this case, we're not finished at this frame:
+                if (_stack.back().second != iterator(_stack.back().first->end())) break;
+            }
+            _stack.pop_back();
+            // if we emptied the stack, we're at end of tree elements
+            if (_stack.empty()) return *this;
+        }
+
+        // push the next child
+        _stack.push_back(frame(*(_stack.back().second), iterator((*(_stack.back().second))->begin()), false));
+
+        return *this;
+    }
+
+    // post-increment
+    d1st_pre_iterator operator++(int) {
+        d1st_pre_iterator r(*this);
+        ++(*this);
+        return r;
+    }
+
+    bool operator==(const d1st_pre_iterator& rhs) const { return _stack == rhs._stack; }
+    bool operator!=(const d1st_pre_iterator& rhs) const { return _stack != rhs._stack; }
+
+    protected:
+    vector<frame> _stack;
+};
+
+
 // Node storage spec
 template <typename NodeStorage, typename Arg2=arg_default, typename Arg3=arg_default> 
 struct cscat {
@@ -600,8 +795,8 @@ struct tree {
     typedef typename nt_dispatch::base_type base_type;
 
     typedef b1st_iterator<node_type> bf_iterator;
-        //typedef d1st_post_iterator<node_type> df_post_iterator;
-        //typedef d1st_pre_iterator<node_type> df_pre_iterator;
+    typedef d1st_post_iterator<node_type> df_post_iterator;
+    typedef d1st_pre_iterator<node_type> df_pre_iterator;
 
     tree() : _size(0), _root(), _depth() {}
     virtual ~tree() { clear(); }
@@ -676,13 +871,11 @@ struct tree {
     bf_iterator bf_begin() { return bf_iterator(_root); }
     bf_iterator bf_end() { return bf_iterator(); }
 
-/*
     df_post_iterator df_post_begin() { return df_post_iterator(_root); }
     df_post_iterator df_post_end() { return df_post_iterator(); }
 
     df_pre_iterator df_pre_begin() { return df_pre_iterator(_root); }
     df_pre_iterator df_pre_end() { return df_pre_iterator(); }
-*/
 
     // compile will not let me use just node_type here
     friend class node_type_dispatch<tree_type, cscat>::node_type;
