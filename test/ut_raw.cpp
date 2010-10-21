@@ -146,6 +146,30 @@ BOOST_AUTO_TEST_CASE(erase) {
 }
 
 
+BOOST_AUTO_TEST_CASE(erase_noarg) {
+    tree<int> t1;
+
+    t1.insert(2);
+    t1.root().insert(3);
+    t1.root().insert(5);
+    t1.root()[0].insert(7);
+    t1.root()[0].insert(11);
+    t1.root()[1].insert(13);
+    t1.root()[1].insert(17);
+
+    CHECK_TREE(t1, data(), "2 3 5 7 11 13 17");
+    t1.root()[1].erase();
+    CHECK_TREE(t1, data(), "2 3 7 11");
+
+    t1.root()[0][1].erase();
+    CHECK_TREE(t1, data(), "2 3 7");
+
+    t1.root().erase();
+    BOOST_CHECK_EQUAL(t1.empty(), true);
+    CHECK_TREE(t1, data(), "");
+}
+
+
 BOOST_AUTO_TEST_CASE(bf_iterator_empty) {
     tree<int> t1;
     BOOST_CHECK_EQUAL(t1.bf_begin() == t1.bf_end(), true);

@@ -611,6 +611,11 @@ struct node_base {
         _children.erase(csF, csL);
     }
 
+    void erase() {
+        if (is_root()) _tree->erase();
+        else parent().erase(_iterator());
+    }
+
     void clear() {
         erase(begin(), end());
     }
@@ -624,6 +629,8 @@ struct node_base {
     weak_ptr<node_type> _this;
     data_type _data;
     cs_type _children;
+
+    iterator _iterator() { return iterator(node_type::_cs_iterator(*static_cast<node_type*>(this))); }
 
     void _prune(shared_ptr<node_type>& n) {
         // percolate the new subtree size up the chain of parents
@@ -738,20 +745,22 @@ struct node_raw: public node_base<Tree, node_raw<Tree, Data>, vector<shared_ptr<
         this->_graft(n);
     }
 
+    void _erase() {
+        this->parent().erase(this->_iterator());
+    }
+
     protected:
     typedef typename base_type::cs_iterator cs_iterator;
     typedef typename base_type::cs_const_iterator cs_const_iterator;
 
-    cs_iterator _cs_iterator() {
-        if (this->is_root()) throw exception();
-        cs_iterator j(this->parent()._children.begin());
-        cs_iterator jend(this->parent()._children.end());
-        for (;  j != jend;  ++j) if (*j == this) break;
+    static cs_iterator _cs_iterator(node_type& n) {
+        if (n.is_root()) throw exception();
+        cs_iterator j(n.parent()._children.begin());
+        cs_iterator jend(n.parent()._children.end());
+        for (;  j != jend;  ++j) if (j->get() == &n) break;
         if (j == jend) throw exception();
         return j;
     }
-
-    iterator _iterator() { return iterator(_cs_iterator()); }
 
     shared_ptr<node_type> _copy_data() {
         shared_ptr<node_type> n(new node_type);
