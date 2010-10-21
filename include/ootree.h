@@ -745,10 +745,6 @@ struct node_raw: public node_base<Tree, node_raw<Tree, Data>, vector<shared_ptr<
         this->_graft(n);
     }
 
-    void _erase() {
-        this->parent().erase(this->_iterator());
-    }
-
     protected:
     typedef typename base_type::cs_iterator cs_iterator;
     typedef typename base_type::cs_const_iterator cs_const_iterator;
