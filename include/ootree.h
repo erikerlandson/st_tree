@@ -30,6 +30,7 @@ limitations under the License.
 #include <algorithm>
 #include <iterator>
 #include <limits>
+#include <iostream>
 #include "stdio.h"
 
 namespace ootree {
@@ -42,6 +43,7 @@ using std::set;
 using std::multiset;
 using std::less;
 using std::pair;
+using std::cerr;
 
 
 // Node storage classes:
@@ -568,6 +570,17 @@ struct node_base {
 
     bool is_root() const { return ply() == 0; }
 
+    bool is_ancestor(const node_type& n) const {
+        shared_ptr<node_type> a(_this.lock());
+        shared_ptr<node_type> q(n._this.lock());
+        while (true) {
+            if (q->is_root()) return false;
+            q = q->_parent.lock();
+            if (q == a) return true;
+        }
+        return false;
+    }
+
     node_type& parent() {
         if (ply() == 0) throw exception();
         return *(_parent.lock());
@@ -645,12 +658,16 @@ struct node_base {
         }
 
         // erase subtree depth info from parent tree
+        _prune_subtree(n, _tree);
+    }
+
+    static void _prune_subtree(shared_ptr<node_type>& n, tree_type* tree_) {
         deque<shared_ptr<node_type> > nq;
         nq.push_back(n);
         while (!nq.empty()) {
-            q = nq.front();
+            shared_ptr<node_type> q(nq.front());
             nq.pop_front();
-            _tree->_depth.erase(1 + q->_ply);
+            tree_->_depth.erase(1 + q->_ply);
             for (cs_iterator j(q->_children.begin());  j != q->_children.end();  ++j) nq.push_back(*j);
         }
     }
@@ -671,19 +688,24 @@ struct node_base {
         }
 
         // percolate new ply values and tree ptr down the subtree, recursively
+        _graft_subtree(n, _tree);
+    }
+
+    static void _graft_subtree(shared_ptr<node_type>& n, tree_type* tree_) {
         deque<shared_ptr<node_type> > nq;
         nq.push_back(n);
         while (!nq.empty()) {
-            q = nq.front();
+            shared_ptr<node_type> q(nq.front());
             nq.pop_front();
-            q->_tree = _tree;
-            q->_ply = 1 + q->_parent.lock()->_ply;
-            _tree->_depth.insert(1 + q->_ply);
+            q->_tree = tree_;
+            shared_ptr<node_type> p(q->_parent.lock());
+            q->_ply = (p == NULL) ? 0 : 1 + p->_ply;
+            tree_->_depth.insert(1 + q->_ply);
             for (cs_iterator j(q->_children.begin());  j != q->_children.end();  ++j) nq.push_back(*j);
         }
     }
 
-    void _thread(shared_ptr<node_type>& n) {
+    static void _thread(shared_ptr<node_type>& n) {
         n->_this = n;
         n->_size = 1;
         for (cs_iterator j(n->_children.begin());  j !=  n->_children.end();  ++j) {
@@ -717,24 +739,66 @@ struct node_raw: public node_base<Tree, node_raw<Tree, Data>, vector<shared_ptr<
     node_raw(const node_raw& src) { *this = src; }
     node_raw& operator=(const node_raw& rhs) {
         if (this == &rhs) return *this;
+        
+        // this would introduce cycles
+        if (rhs.is_ancestor(*this)) throw exception();
+
+        // important if rhs is child of "this", to prevent it from getting deallocated by clear()
+        shared_ptr<node_type> r(rhs._this.lock());
+
         // in the case of vector storage, I can just leave current node where it is
         this->clear();
         this->_data = rhs._data;
         // do the copying work for children only
-        for (cs_const_iterator j(rhs._children.begin());  j != rhs._children.end();  ++j) {
+        for (cs_const_iterator j(r->_children.begin());  j != r->_children.end();  ++j) {
             shared_ptr<node_type> n((*j)->_copy_data());
             this->_children.push_back(n);
-            this->_thread(n);
+            base_type::_thread(n);
             this->_graft(n);
         }
         return *this;
     }
 
+    void swap(node_type& b) {
+        node_type& a = *this;
+
+        if (&a == &b) return;
+
+
+        // this would introduce cycles 
+        if (a.is_ancestor(b) || b.is_ancestor(a)) throw exception();
+
+        tree_type* ta = a._tree;
+        tree_type* tb = b._tree;
+        bool ira = a.is_root();
+        bool irb = b.is_root();
+
+        shared_ptr<node_type>& qa = (ira) ? ta->_root : *(node_type::_cs_iterator(a));
+        shared_ptr<node_type>& qb = (irb) ? tb->_root : *(node_type::_cs_iterator(b));
+        shared_ptr<node_type> ra = qa;
+        shared_ptr<node_type> rb = qb;
+
+        shared_ptr<node_type> pa;
+        if (!a.is_root()) pa = a._parent.lock();
+        shared_ptr<node_type> pb;
+        if (!b.is_root()) pb = b._parent.lock();
+
+        if (ira) ta->_prune(ra);
+        else     pa->_prune(ra);
+        if (irb) tb->_prune(rb);
+        else     pb->_prune(rb);
+
+        qa = rb;
+        qb = ra;
+
+        if (ira) ta->_graft(rb);
+        else     pa->_graft(rb);
+        if (irb) tb->_graft(ra);
+        else     pb->_graft(ra);
+    }
+
     node_type& operator[](size_type n) { return *(this->_children[n]); }
     const node_type& operator[](size_type n) const { return *(this->_children[n]); }
-
-    node_type& operator/(size_type n) { return *(this->_children[n]); }
-    const node_type& operator/(size_type n) const { return *(this->_children[n]); }
 
     void insert(const data_type& data) {
         shared_ptr<node_type> n(new node_type);
@@ -797,7 +861,7 @@ struct tree {
     typedef typename cscat_dispatch<Data, CSCat>::cat cscat;
     typedef node_type_dispatch<tree_type, cscat> nt_dispatch;
     typedef typename nt_dispatch::node_type node_type;
-    typedef typename nt_dispatch::base_type base_type;
+    typedef typename nt_dispatch::base_type node_base_type;
 
     typedef b1st_iterator<node_type> bf_iterator;
     typedef d1st_post_iterator<node_type> df_post_iterator;
@@ -890,6 +954,19 @@ struct tree {
     shared_ptr<node_type> _root;
     size_type _size;
     max_maintainer<size_type> _depth;
+
+    void _prune(shared_ptr<node_type>& n) {
+        // pruning analog for root node at tree is just clearing out size/depth
+        _size = 0;
+        _depth.clear();
+    }
+
+    void _graft(shared_ptr<node_type>& n) {
+        n->_parent.reset();
+        _size = n->_size;
+        _depth.clear();
+        node_base_type::_graft_subtree(n, this);
+    }
 };
 
 
@@ -900,6 +977,11 @@ namespace std {
 
 template <typename Data, typename CSCat>
 void swap(ootree::tree<Data, CSCat>& a, ootree::tree<Data, CSCat>& b) {
+    a.swap(b);
+}
+
+template <typename Tree, typename Data>
+void swap(ootree::node_raw<Tree, Data>&a, ootree::node_raw<Tree, Data>& b) {
     a.swap(b);
 }
 
