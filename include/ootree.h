@@ -565,7 +565,7 @@ struct node_base {
     virtual ~node_base() {}
 
     size_type ply() const { return _ply; }
-    size_type depth() const { return _tree->depth() - _ply; }
+    size_type depth() const { return _depth.max(); }
     size_type subtree_size() const { return _size; }
 
     bool is_root() const { return ply() == 0; }
@@ -638,6 +638,7 @@ struct node_base {
     tree_type* _tree;
     size_type _ply;
     size_type _size;
+    max_maintainer<size_type> _depth;
     weak_ptr<node_type> _parent;
     weak_ptr<node_type> _this;
     data_type _data;
@@ -667,6 +668,9 @@ struct node_base {
         while (!nq.empty()) {
             shared_ptr<node_type> q(nq.front());
             nq.pop_front();
+            for (shared_ptr<node_type> dp(n->_parent.lock());  dp.get() != NULL;  dp = dp->_parent.lock()) {
+                dp->_depth.erase(1 + q->_ply - dp->_ply);
+            }
             tree_->_depth.erase(1 + q->_ply);
             for (cs_iterator j(q->_children.begin());  j != q->_children.end();  ++j) nq.push_back(*j);
         }
@@ -699,7 +703,10 @@ struct node_base {
             nq.pop_front();
             q->_tree = tree_;
             shared_ptr<node_type> p(q->_parent.lock());
-            q->_ply = (p == NULL) ? 0 : 1 + p->_ply;
+            q->_ply = (p.get() == NULL) ? 0 : 1 + p->_ply;
+            for (shared_ptr<node_type> dp(n->_parent.lock());  dp.get() != NULL;  dp = dp->_parent.lock()) {
+                dp->_depth.insert(1 + q->_ply - dp->_ply);
+            }
             tree_->_depth.insert(1 + q->_ply);
             for (cs_iterator j(q->_children.begin());  j != q->_children.end();  ++j) nq.push_back(*j);
         }
@@ -805,6 +812,7 @@ struct node_raw: public node_base<Tree, node_raw<Tree, Data>, vector<shared_ptr<
         n->_data = data;
         n->_this = n;
         n->_size = 1;
+        n->_depth.insert(1);
         this->_children.push_back(n);
         this->_graft(n);
     }
@@ -916,6 +924,7 @@ struct tree {
         _root->_data = data;
         _root->_tree = this;
         _root->_this = _root;
+        _root->_depth.insert(1);
         _size = 1;
         _depth.insert(1);
     }
