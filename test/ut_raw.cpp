@@ -583,7 +583,7 @@ BOOST_AUTO_TEST_CASE(node_swap) {
 }
 
 
-BOOST_AUTO_TEST_CASE(node_op_equal_comp) {
+BOOST_AUTO_TEST_CASE(node_op_equality) {
     tree<int> t1;
 
     t1.insert(2);
@@ -665,6 +665,70 @@ BOOST_AUTO_TEST_CASE(node_derived_comp_ops) {
     BOOST_CHECK_EQUAL(t2.root() <= t1.root(), false);
     BOOST_CHECK_EQUAL(t1.root() >= t2.root(), false);
     BOOST_CHECK_EQUAL(t2.root() >= t1.root(), true);
+}
+
+
+BOOST_AUTO_TEST_CASE(tree_op_equality) {
+    tree<int> t1;
+    tree<int> t2;
+
+    BOOST_CHECK_EQUAL(t1 == t2, true);
+
+    t2.insert(2);
+    BOOST_CHECK_EQUAL(t1 == t2, false);
+
+    t1.insert(2);
+    BOOST_CHECK_EQUAL(t1 == t2, true);
+
+    t2.root().data() = 3;
+    BOOST_CHECK_EQUAL(t1 == t2, false);
+}
+
+
+BOOST_AUTO_TEST_CASE(tree_op_lessthan) {
+    tree<int> t1;
+    tree<int> t2;
+    BOOST_CHECK_EQUAL(t1 < t2, false);
+
+    t2.insert(2);
+    BOOST_CHECK_EQUAL(t1 < t2, true);
+    BOOST_CHECK_EQUAL(t2 < t1, false);
+
+    t1.insert(2);
+    BOOST_CHECK_EQUAL(t1 < t2, false);
+
+    t2.root().data() = 3;
+    BOOST_CHECK_EQUAL(t1 < t2, true);
+    BOOST_CHECK_EQUAL(t2 < t1, false);
+
+    BOOST_CHECK_EQUAL(t1 < t1, false);
+}
+
+
+BOOST_AUTO_TEST_CASE(tree_derived_comp_ops) {
+    tree<int> t1;
+    tree<int> t2;
+
+    t1.insert(2);
+    t2.insert(2);
+    BOOST_CHECK_EQUAL(t1 != t2, false);
+    BOOST_CHECK_EQUAL(t2 != t1, false);
+    BOOST_CHECK_EQUAL(t1 >  t2, false);
+    BOOST_CHECK_EQUAL(t2 >  t1, false);
+    BOOST_CHECK_EQUAL(t1 <= t2, true);
+    BOOST_CHECK_EQUAL(t2 <= t1, true);
+    BOOST_CHECK_EQUAL(t1 >= t2, true);
+    BOOST_CHECK_EQUAL(t2 >= t1, true);
+
+    t2.root().data() = 3;
+    BOOST_CHECK_EQUAL(t1 != t2, true);
+    BOOST_CHECK_EQUAL(t2 != t1, true);
+    BOOST_CHECK_EQUAL(t1 >  t2, false);
+    BOOST_CHECK_EQUAL(t2 >  t1, true);
+    BOOST_CHECK_EQUAL(t1 <= t2, true);
+    BOOST_CHECK_EQUAL(t2 <= t1, false);
+    BOOST_CHECK_EQUAL(t1 >= t2, false);
+    BOOST_CHECK_EQUAL(t2 >= t1, true);
 }
 
 

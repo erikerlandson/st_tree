@@ -963,6 +963,22 @@ struct tree {
         _depth.swap(src._depth);
     }
 
+    bool operator==(const tree& rhs) const {
+        if (size() != rhs.size()) return false;
+        if (size() == 0) return true;
+        return root() == rhs.root();
+    }
+    bool operator!=(const tree& rhs) const { return !(*this == rhs); }
+
+    bool operator<(const tree& rhs) const {
+        if (empty()) return !rhs.empty();
+        if (rhs.empty()) return false;
+        return root() < rhs.root();
+    }
+    bool operator>(const tree& rhs) const { return rhs < *this; }
+    bool operator<=(const tree& rhs) const { return !(rhs < *this); }
+    bool operator>=(const tree& rhs) const { return !(*this < rhs); }
+
     bf_iterator bf_begin() { return bf_iterator(_root); }
     bf_iterator bf_end() { return bf_iterator(); }
 
