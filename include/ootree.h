@@ -551,6 +551,10 @@ struct ptr_less_data {
     Compare _comp;
 };
 
+struct dereferenceable_lessthan {
+    template <typename D>
+    bool operator()(const D& a, const D& b) const { return *a < *b; }
+};
 
 template <typename Tree, typename Node, typename ChildContainer>
 struct node_base {
@@ -632,6 +636,26 @@ struct node_base {
     void clear() {
         erase(begin(), end());
     }
+
+    bool operator==(const node_base& rhs) const {
+        if (this == &rhs) return true;
+        if (_children.size() != rhs._children.size()) return false;
+        if (_data != rhs._data) return false;
+        for (cs_const_iterator jL(_children.begin()), jR(rhs._children.begin());  jL != _children.end();  ++jL,++jR)
+            if (**jL != **jR) return false;
+        return true;
+    }
+    bool operator!=(const node_base& rhs) const { return !(*this == rhs); }
+
+    bool operator<(const node_base& rhs) const {
+        if (this == &rhs) return false;
+        if (_data != rhs._data) return (_data < rhs._data);
+        dereferenceable_lessthan lt;
+        return std::lexicographical_compare(_children.begin(), _children.end(), rhs._children.begin(), rhs._children.end(), lt);
+    }
+    bool operator>(const node_base& rhs) const { return rhs < *this; }
+    bool operator<=(const node_base& rhs) const { return !(rhs < *this); }
+    bool operator>=(const node_base& rhs) const { return !(*this < rhs); }
 
     friend class tree_type::tree_type;
     protected:
@@ -771,7 +795,6 @@ struct node_raw: public node_base<Tree, node_raw<Tree, Data>, vector<shared_ptr<
 
         if (&a == &b) return;
 
-
         // this would introduce cycles 
         if (a.is_ancestor(b) || b.is_ancestor(a)) throw exception();
 
@@ -785,23 +808,17 @@ struct node_raw: public node_base<Tree, node_raw<Tree, Data>, vector<shared_ptr<
         shared_ptr<node_type> ra = qa;
         shared_ptr<node_type> rb = qb;
 
-        shared_ptr<node_type> pa;
-        if (!a.is_root()) pa = a._parent.lock();
-        shared_ptr<node_type> pb;
-        if (!b.is_root()) pb = b._parent.lock();
+        shared_ptr<node_type> pa; if (!a.is_root()) pa = a._parent.lock();
+        shared_ptr<node_type> pb; if (!b.is_root()) pb = b._parent.lock();
 
-        if (ira) ta->_prune(ra);
-        else     pa->_prune(ra);
-        if (irb) tb->_prune(rb);
-        else     pb->_prune(rb);
+        if (ira) ta->_prune(ra);   else pa->_prune(ra);
+        if (irb) tb->_prune(rb);   else pb->_prune(rb);
 
         qa = rb;
         qb = ra;
 
-        if (ira) ta->_graft(rb);
-        else     pa->_graft(rb);
-        if (irb) tb->_graft(ra);
-        else     pb->_graft(ra);
+        if (ira) ta->_graft(rb);   else pa->_graft(rb);
+        if (irb) tb->_graft(ra);   else pb->_graft(ra);
     }
 
     node_type& operator[](size_type n) { return *(this->_children[n]); }
