@@ -413,6 +413,8 @@ BOOST_AUTO_TEST_CASE(node_op_equal) {
     t2.root().insert(7);
     t2.root().insert(11);
 
+    BOOST_CHECK_EQUAL(t1.root().data(), 2);
+
     t1.root()[0] = t2.root();
     BOOST_CHECK_EQUAL(t1.size(), 4);
     BOOST_CHECK_EQUAL(t1.depth(), 3);

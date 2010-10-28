@@ -74,6 +74,8 @@ struct exception {
 
 template <typename Unsigned>
 struct max_maintainer {
+    typedef typename vector<Unsigned>::size_type size_type;
+
     max_maintainer(): _hist(), _max(0) {}
     virtual ~max_maintainer() {}
 
@@ -96,12 +98,23 @@ struct max_maintainer {
     void erase(const Unsigned& n) {
         if (n > _max) return;
         _hist[n] -= 1;
-        if (_hist[_max] > 0) return;
-        while (true) {
-            if (_max == 0) break;
-            _max -= 1;
-            if (_hist[_max] > 0) break;
-        }
+        while ((_max > 0) && (_hist[_max] <= 0)) _max -= 1;
+    }
+
+    void insert(const max_maintainer& src, const Unsigned& d) {
+        if (src._hist.size() <= 0) return;
+        if ((src._max + d) > _max) _max = src._max + d;
+        if (_max >= _hist.size()) _hist.resize(1+_max, 0);
+        for (size_type s = 0;  s <= src._max;  ++s) _hist[s + d] += src._hist[s];
+    }
+
+    void erase(const max_maintainer& src, const Unsigned& d) {
+        if (src._hist.size() <= 0) return;
+        size_type n = src._max;
+        if (d > _max) return;
+        if ((_max-d) < n) n = _max-d;
+        for (size_type s = 0;  s <= n;  ++s) _hist[s + d] -= src._hist[s];
+        while ((_max > 0) && (_hist[_max] <= 0)) _max -= 1;
     }
 
     void clear() {
@@ -139,7 +152,6 @@ struct dref_second_vmap {
     bool operator==(const dref_second_vmap& rhs) const { return true; }
     bool operator!=(const dref_second_vmap& rhs) const { return false; }
 };
-
 
 
 template <typename Iterator, typename ValMap>
@@ -687,15 +699,16 @@ struct node_base {
     }
 
     static void _prune_subtree(shared_ptr<node_type>& n, tree_type* tree_) {
+        size_type dd = 0;
+        for (shared_ptr<node_type> dp(n->_parent.lock());  dp.get() != NULL;  dp = dp->_parent.lock()) {
+            dd += 1;
+            dp->_depth.erase(n->_depth, dd);
+        }
         deque<shared_ptr<node_type> > nq;
         nq.push_back(n);
         while (!nq.empty()) {
             shared_ptr<node_type> q(nq.front());
             nq.pop_front();
-            for (shared_ptr<node_type> dp(n->_parent.lock());  dp.get() != NULL;  dp = dp->_parent.lock()) {
-                dp->_depth.erase(1 + q->_ply - dp->_ply);
-            }
-            tree_->_depth.erase(1 + q->_ply);
             for (cs_iterator j(q->_children.begin());  j != q->_children.end();  ++j) nq.push_back(*j);
         }
     }
@@ -720,6 +733,11 @@ struct node_base {
     }
 
     static void _graft_subtree(shared_ptr<node_type>& n, tree_type* tree_) {
+        size_type dd = 0;
+        for (shared_ptr<node_type> dp(n->_parent.lock());  dp.get() != NULL;  dp = dp->_parent.lock()) {
+            dd += 1;
+            dp->_depth.insert(n->_depth, dd);
+        }
         deque<shared_ptr<node_type> > nq;
         nq.push_back(n);
         while (!nq.empty()) {
@@ -728,10 +746,6 @@ struct node_base {
             q->_tree = tree_;
             shared_ptr<node_type> p(q->_parent.lock());
             q->_ply = (p.get() == NULL) ? 0 : 1 + p->_ply;
-            for (shared_ptr<node_type> dp(n->_parent.lock());  dp.get() != NULL;  dp = dp->_parent.lock()) {
-                dp->_depth.insert(1 + q->_ply - dp->_ply);
-            }
-            tree_->_depth.insert(1 + q->_ply);
             for (cs_iterator j(q->_children.begin());  j != q->_children.end();  ++j) nq.push_back(*j);
         }
     }
@@ -850,6 +864,7 @@ struct node_raw: public node_base<Tree, node_raw<Tree, Data>, vector<shared_ptr<
     shared_ptr<node_type> _copy_data() {
         shared_ptr<node_type> n(new node_type);
         n->_data = this->_data;
+        n->_depth = this->_depth;
         for (cs_iterator j(this->_children.begin()); j != this->_children.end(); ++j)
             n->_children.push_back((*j)->_copy_data());
         return n;
@@ -892,7 +907,7 @@ struct tree {
     typedef d1st_post_iterator<node_type> df_post_iterator;
     typedef d1st_pre_iterator<node_type> df_pre_iterator;
 
-    tree() : _size(0), _root(), _depth() {}
+    tree() : _size(0), _root() {}
     virtual ~tree() { clear(); }
 
 
@@ -910,8 +925,8 @@ struct tree {
             _root.reset(new node_type);
             _root->_tree = this;
             _root->_this = _root;
+            _root->_depth.insert(1);
             _size = 1;
-            _depth.insert(1);
         }
 
         *_root = src.root();
@@ -923,7 +938,7 @@ struct tree {
     size_type size() const { return _size; }
     bool empty() const { return 0 == size(); }
 
-    size_type depth() const { return _depth.max(); }
+    size_type depth() const { return (empty()) ? 0 : root().depth(); }
 
     node_type& root() {
         if (empty()) throw exception();
@@ -943,7 +958,6 @@ struct tree {
         _root->_this = _root;
         _root->_depth.insert(1);
         _size = 1;
-        _depth.insert(1);
     }
 
     // there is only one node to erase from the tree: the root
@@ -952,7 +966,6 @@ struct tree {
     void clear() {
         if (empty()) return;
         _root.reset();
-        _depth.clear();
         _size = 0;
     }
 
@@ -960,7 +973,6 @@ struct tree {
         if (this == &src) return;
         _root.swap(src._root);
         std::swap(_size, src._size);
-        _depth.swap(src._depth);
     }
 
     bool operator==(const tree& rhs) const {
@@ -995,18 +1007,14 @@ struct tree {
     protected:
     shared_ptr<node_type> _root;
     size_type _size;
-    max_maintainer<size_type> _depth;
 
     void _prune(shared_ptr<node_type>& n) {
-        // pruning analog for root node at tree is just clearing out size/depth
         _size = 0;
-        _depth.clear();
     }
 
     void _graft(shared_ptr<node_type>& n) {
         n->_parent.reset();
         _size = n->_size;
-        _depth.clear();
         node_base_type::_graft_subtree(n, this);
     }
 };
