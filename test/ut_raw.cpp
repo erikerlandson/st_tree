@@ -30,7 +30,7 @@ BOOST_AUTO_TEST_SUITE(ut_raw)
         if (j != t.df_post_begin()) tst << " "; \
         tst << j->meth; \
     } \
-    BOOST_CHECK_MESSAGE(tst.str() == ref, "Expected \"" << ref << "\" received \"" << tst.str() << "\"\n"); \
+    BOOST_CHECK_MESSAGE(tst.str() == ref, "Checking " << #meth << ": Expected \"" << ref << "\" received \"" << tst.str() << "\"\n"); \
 }
 
 
@@ -41,7 +41,7 @@ BOOST_AUTO_TEST_SUITE(ut_raw)
         if (j != t.df_pre_begin()) tst << " "; \
         tst << j->meth; \
     } \
-    BOOST_CHECK_MESSAGE(tst.str() == ref, "Expected \"" << ref << "\" received \"" << tst.str() << "\"\n"); \
+    BOOST_CHECK_MESSAGE(tst.str() == ref, "Checking " << #meth << ": Expected \"" << ref << "\" received \"" << tst.str() << "\"\n"); \
 }
 
 
