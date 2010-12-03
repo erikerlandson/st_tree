@@ -585,6 +585,52 @@ BOOST_AUTO_TEST_CASE(node_swap) {
 }
 
 
+BOOST_AUTO_TEST_CASE(graft) {
+    tree<int> t1;
+    tree<int> t2;
+
+    t1.insert(2);    
+
+    t2.graft(t1.root());
+
+    CHECK_TREE(t1, data(), "");
+    CHECK_TREE(t2, data(), "2");
+
+    t1.insert(2);
+    t2.graft(t1);
+
+    CHECK_TREE(t1, data(), "");
+    CHECK_TREE(t2, data(), "2");
+
+    t1.insert(2);
+    t1.root().insert(3);
+    t1.root().insert(5);
+
+    t2.graft(t1.root());
+    CHECK_TREE(t1, data(), "");
+    CHECK_TREE(t2, data(), "2 3 5");    
+
+    t1.insert(2);
+    t1.root().insert(3);
+    t1.root().insert(5);
+
+    t2.graft(t1);
+    CHECK_TREE(t1, data(), "");
+    CHECK_TREE(t2, data(), "2 3 5");    
+}
+
+BOOST_AUTO_TEST_CASE(insert_node) {
+    tree<int> t1;
+    tree<int> t2;
+
+    t1.insert(2);    
+
+    t2.insert(t1.root());
+
+    CHECK_TREE(t1, data(), "2");
+    CHECK_TREE(t2, data(), "2");    
+}
+
 BOOST_AUTO_TEST_CASE(node_op_equality) {
     tree<int> t1;
 

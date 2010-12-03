@@ -835,6 +835,28 @@ struct node_raw: public node_base<Tree, node_raw<Tree, Data>, vector<shared_ptr<
         if (irb) tb->_graft(ra);   else pb->_graft(ra);
     }
 
+
+    void graft(node_type& b) {
+        node_type& a = *this;
+
+        // this would introduce cycles 
+        if (&a == &b) throw exception();
+        if (b.is_ancestor(a)) throw exception();
+
+        // remove b from its current location
+        shared_ptr<node_type> rb = b._this.lock();
+        b.erase();
+
+        // graft b to current location
+        a._children.push_back(rb);
+        a._graft(rb);
+    }
+
+    void graft(tree_type& b) {
+        if (b.empty()) return;
+        graft(b.root());
+    }
+
     node_type& operator[](size_type n) { return *(this->_children[n]); }
     const node_type& operator[](size_type n) const { return *(this->_children[n]); }
 
@@ -846,6 +868,17 @@ struct node_raw: public node_base<Tree, node_raw<Tree, Data>, vector<shared_ptr<
         n->_depth.insert(1);
         this->_children.push_back(n);
         this->_graft(n);
+    }
+
+    void insert(const node_type& b) {
+        shared_ptr<node_type> n(b._copy_data());
+        base_type::_thread(n);
+        this->_children.push_back(n);
+        this->_graft(n);
+    }
+    void insert(const tree_type& b) {
+        if (b.empty()) return;
+        insert(b.root());
     }
 
     protected:
@@ -861,11 +894,11 @@ struct node_raw: public node_base<Tree, node_raw<Tree, Data>, vector<shared_ptr<
         return j;
     }
 
-    shared_ptr<node_type> _copy_data() {
+    shared_ptr<node_type> _copy_data() const {
         shared_ptr<node_type> n(new node_type);
         n->_data = this->_data;
         n->_depth = this->_depth;
-        for (cs_iterator j(this->_children.begin()); j != this->_children.end(); ++j)
+        for (cs_const_iterator j(this->_children.begin()); j != this->_children.end(); ++j)
             n->_children.push_back((*j)->_copy_data());
         return n;
     }
@@ -973,6 +1006,30 @@ struct tree {
         if (this == &src) return;
         _root.swap(src._root);
         std::swap(_size, src._size);
+    }
+
+    void graft(node_type& b) {
+        shared_ptr<node_type> rb = b._this.lock();
+        b.erase();
+        _root = rb;
+        _graft(rb);
+    }
+
+    void graft(tree_type& b) {
+        if (b.empty()) erase();
+        else           graft(b.root());
+    }
+
+    void insert(const node_type& b) {
+        shared_ptr<node_type> n(b._copy_data());
+        node_type::base_type::_thread(n);
+        _root = n;
+        _graft(n);
+    }
+
+    void insert(tree_type& b) {
+        if (b.empty()) erase();
+        else           insert(b.root());
     }
 
     bool operator==(const tree& rhs) const {
