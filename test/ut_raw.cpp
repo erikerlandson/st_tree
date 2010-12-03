@@ -589,47 +589,200 @@ BOOST_AUTO_TEST_CASE(graft) {
     tree<int> t1;
     tree<int> t2;
 
-    t1.insert(2);    
-
-    t2.graft(t1.root());
-
-    CHECK_TREE(t1, data(), "");
-    CHECK_TREE(t2, data(), "2");
-
+    // start with the node/tree overloadings
+    // graft node -> tree
     t1.insert(2);
-    t2.graft(t1);
-
+    t2.insert(1);
+    t2.graft(t1.root());
     CHECK_TREE(t1, data(), "");
     CHECK_TREE(t2, data(), "2");
+    CHECK_TREE(t2, depth(), "1");
+    CHECK_TREE(t2, ply(), "0");
+    CHECK_TREE(t2, subtree_size(), "1");
 
     t1.insert(2);
     t1.root().insert(3);
     t1.root().insert(5);
-
     t2.graft(t1.root());
     CHECK_TREE(t1, data(), "");
-    CHECK_TREE(t2, data(), "2 3 5");    
+    CHECK_TREE(t2, data(), "2 3 5");
+    CHECK_TREE(t2, depth(), "2 1 1");
+    CHECK_TREE(t2, ply(), "0 1 1");
+    CHECK_TREE(t2, subtree_size(), "3 1 1");
 
     t1.insert(2);
     t1.root().insert(3);
     t1.root().insert(5);
+    t2.graft(t1.root()[1]);
+    CHECK_TREE(t1, data(), "2 3");
+    CHECK_TREE(t1, depth(), "2 1");
+    CHECK_TREE(t1, ply(), "0 1");
+    CHECK_TREE(t1, subtree_size(), "2 1");
+    CHECK_TREE(t2, data(), "5");
+    CHECK_TREE(t2, depth(), "1");
+    CHECK_TREE(t2, ply(), "0");
+    CHECK_TREE(t2, subtree_size(), "1");
 
+    // graft tree -> tree (empty)
+    t1.clear();
     t2.graft(t1);
     CHECK_TREE(t1, data(), "");
-    CHECK_TREE(t2, data(), "2 3 5");    
+    CHECK_TREE(t2, data(), "");
+
+    // graft tree -> tree (non-empty)
+    t1.insert(2);
+    t2.graft(t1);
+    CHECK_TREE(t1, data(), "");
+    CHECK_TREE(t2, data(), "2");
+
+    // graft tree -> node (empty)
+    t2.root().graft(t1);
+    CHECK_TREE(t1, data(), "");
+    CHECK_TREE(t2, data(), "2");
+
+    // graft tree -> node (non-empty)
+    t1.insert(2);
+    t2.insert(1);
+    t2.root().graft(t1);
+    CHECK_TREE(t1, data(), "");
+    CHECK_TREE(t2, data(), "1 2");
+
+    // node --> node
+    t1.insert(2);
+    t2.insert(1);
+    t2.root().graft(t1.root());
+    CHECK_TREE(t1, data(), "");
+    CHECK_TREE(t2, data(), "1 2");
+    CHECK_TREE(t2, depth(), "2 1");
+    CHECK_TREE(t2, ply(), "0 1");
+    CHECK_TREE(t2, subtree_size(), "2 1");
+
+    t1.insert(2);
+    t1.root().insert(3);
+    t1.root().insert(5);
+    t2.insert(1);
+    t2.root().graft(t1.root());
+    CHECK_TREE(t1, data(), "");
+    CHECK_TREE(t2, data(), "1 2 3 5");
+    CHECK_TREE(t2, depth(), "3 2 1 1");
+    CHECK_TREE(t2, ply(), "0 1 2 2");
+    CHECK_TREE(t2, subtree_size(), "4 3 1 1");
+
+    t1.insert(2);
+    t1.root().insert(3);
+    t1.root().insert(5);
+    t2.insert(1);
+    t2.root().graft(t1.root()[1]);
+    CHECK_TREE(t1, data(), "2 3");
+    CHECK_TREE(t1, depth(), "2 1");
+    CHECK_TREE(t1, ply(), "0 1");
+    CHECK_TREE(t1, subtree_size(), "2 1");
+    CHECK_TREE(t2, data(), "1 5");
+    CHECK_TREE(t2, depth(), "2 1");
+    CHECK_TREE(t2, ply(), "0 1");
+    CHECK_TREE(t2, subtree_size(), "2 1");
 }
+
 
 BOOST_AUTO_TEST_CASE(insert_node) {
     tree<int> t1;
     tree<int> t2;
 
-    t1.insert(2);    
-
+    // start with the node/tree overloadings
+    // insert node -> tree
+    t1.insert(2);
+    t2.insert(1);
     t2.insert(t1.root());
-
     CHECK_TREE(t1, data(), "2");
-    CHECK_TREE(t2, data(), "2");    
+    CHECK_TREE(t2, data(), "2");
+    CHECK_TREE(t2, depth(), "1");
+    CHECK_TREE(t2, ply(), "0");
+    CHECK_TREE(t2, subtree_size(), "1");
+
+    t1.insert(2);
+    t1.root().insert(3);
+    t1.root().insert(5);
+    t2.insert(t1.root());
+    CHECK_TREE(t1, data(), "2 3 5");
+    CHECK_TREE(t2, data(), "2 3 5");
+    CHECK_TREE(t2, depth(), "2 1 1");
+    CHECK_TREE(t2, ply(), "0 1 1");
+    CHECK_TREE(t2, subtree_size(), "3 1 1");
+
+    t1.insert(2);
+    t1.root().insert(3);
+    t1.root().insert(5);
+    t2.insert(t1.root()[1]);
+    CHECK_TREE(t1, data(), "2 3 5");
+    CHECK_TREE(t1, depth(), "2 1 1");
+    CHECK_TREE(t1, ply(), "0 1 1");
+    CHECK_TREE(t1, subtree_size(), "3 1 1");
+    CHECK_TREE(t2, data(), "5");
+    CHECK_TREE(t2, depth(), "1");
+    CHECK_TREE(t2, ply(), "0");
+    CHECK_TREE(t2, subtree_size(), "1");
+
+    // insert tree -> tree (empty)
+    t1.clear();
+    t2.insert(t1);
+    CHECK_TREE(t1, data(), "");
+    CHECK_TREE(t2, data(), "");
+
+    // insert tree -> tree (non-empty)
+    t1.insert(2);
+    t2.insert(t1);
+    CHECK_TREE(t1, data(), "2");
+    CHECK_TREE(t2, data(), "2");
+
+    // insert tree -> node (empty)
+    t1.clear();
+    t2.root().insert(t1);
+    CHECK_TREE(t1, data(), "");
+    CHECK_TREE(t2, data(), "2");
+
+    // insert tree -> node (non-empty)
+    t1.insert(2);
+    t2.insert(1);
+    t2.root().insert(t1);
+    CHECK_TREE(t1, data(), "2");
+    CHECK_TREE(t2, data(), "1 2");
+
+    // node --> node
+    t1.insert(2);
+    t2.insert(1);
+    t2.root().insert(t1.root());
+    CHECK_TREE(t1, data(), "2");
+    CHECK_TREE(t2, data(), "1 2");
+    CHECK_TREE(t2, depth(), "2 1");
+    CHECK_TREE(t2, ply(), "0 1");
+    CHECK_TREE(t2, subtree_size(), "2 1");
+
+    t1.insert(2);
+    t1.root().insert(3);
+    t1.root().insert(5);
+    t2.insert(1);
+    t2.root().insert(t1.root());
+    CHECK_TREE(t1, data(), "2 3 5");
+    CHECK_TREE(t2, data(), "1 2 3 5");
+    CHECK_TREE(t2, depth(), "3 2 1 1");
+    CHECK_TREE(t2, ply(), "0 1 2 2");
+    CHECK_TREE(t2, subtree_size(), "4 3 1 1");
+
+    t1.insert(2);
+    t1.root().insert(3);
+    t1.root().insert(5);
+    t2.insert(1);
+    t2.root().insert(t1.root()[1]);
+    CHECK_TREE(t1, data(), "2 3 5");
+    CHECK_TREE(t1, depth(), "2 1 1");
+    CHECK_TREE(t1, ply(), "0 1 1");
+    CHECK_TREE(t1, subtree_size(), "3 1 1");
+    CHECK_TREE(t2, data(), "1 5");
+    CHECK_TREE(t2, depth(), "2 1");
+    CHECK_TREE(t2, ply(), "0 1");
+    CHECK_TREE(t2, subtree_size(), "2 1");
 }
+
 
 BOOST_AUTO_TEST_CASE(node_op_equality) {
     tree<int> t1;
