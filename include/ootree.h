@@ -704,13 +704,6 @@ struct node_base {
             dd += 1;
             dp->_depth.erase(n->_depth, dd);
         }
-        deque<shared_ptr<node_type> > nq;
-        nq.push_back(n);
-        while (!nq.empty()) {
-            shared_ptr<node_type> q(nq.front());
-            nq.pop_front();
-            for (cs_iterator j(q->_children.begin());  j != q->_children.end();  ++j) nq.push_back(*j);
-        }
     }
 
     void _graft(shared_ptr<node_type>& n) {
