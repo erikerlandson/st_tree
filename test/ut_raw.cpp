@@ -361,6 +361,33 @@ BOOST_AUTO_TEST_CASE(node_subtree_size) {
     CHECK_TREE(t1, subtree_size(), "1");
 }
 
+
+BOOST_AUTO_TEST_CASE(node_parent) {
+    tree<int> t1;
+    t1.insert(2);
+    BOOST_CHECK_THROW(t1.root().parent(), ootree::exception);
+    t1.root().insert(3);
+    BOOST_CHECK_EQUAL(t1.root()[0].parent().data(), 2);
+    const tree<int>& t2 = t1;
+    BOOST_CHECK_EQUAL(t2.root()[0].parent().data(), 2);    
+}
+
+
+BOOST_AUTO_TEST_CASE(node_tree) {
+    tree<int> t1;
+    t1.insert(2);
+    t1.root().insert(3);
+    t1.root().insert(5);
+    tree<int>& t2 = t1.root().tree();
+    BOOST_CHECK_EQUAL(t1 == t2, true);
+    t2 = t1.root()[0].tree();
+    BOOST_CHECK_EQUAL(t1 == t2, true);
+    const tree<int>& t3 = t1;
+    const tree<int>& t4 = t3.root().tree();
+    BOOST_CHECK_EQUAL(t1 == t4, true);
+}
+
+
 BOOST_AUTO_TEST_CASE(erase_node) {
     tree<int> t1;
     t1.insert(2);
