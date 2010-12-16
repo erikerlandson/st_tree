@@ -685,7 +685,6 @@ struct node_base {
             q->_size -= n->_size;
             q->_depth.erase(n->_depth, dd);
             if (q->is_root()) {
-                q->_tree->_size -= n->_size;
                 break;
             }
             q = q->_parent.lock();
@@ -705,7 +704,6 @@ struct node_base {
             q->_depth.insert(n->_depth, dd);
             q->_size += n->_size;
             if (q->is_root()) {
-                q->_tree->_size += n->_size;
                 break;
             }
             q = q->_parent.lock();
@@ -1065,7 +1063,7 @@ struct tree {
     typedef d1st_post_iterator<node_type> df_post_iterator;
     typedef d1st_pre_iterator<node_type> df_pre_iterator;
 
-    tree() : _size(0), _root() {}
+    tree() : _root() {}
     virtual ~tree() { clear(); }
 
 
@@ -1084,7 +1082,6 @@ struct tree {
             _root->_tree = this;
             _root->_this = _root;
             _root->_depth.insert(1);
-            _size = 1;
         }
 
         *_root = src.root();
@@ -1093,9 +1090,8 @@ struct tree {
     }
 
 
-    size_type size() const { return _size; }
-    bool empty() const { return 0 == size(); }
-
+    bool empty() const { return _root == NULL; }
+    size_type size() const { return (empty()) ? 0 : root().subtree_size(); }
     size_type depth() const { return (empty()) ? 0 : root().depth(); }
 
     node_type& root() {
@@ -1115,7 +1111,6 @@ struct tree {
         _root->_tree = this;
         _root->_this = _root;
         _root->_depth.insert(1);
-        _size = 1;
     }
 
     // there is only one node to erase from the tree: the root
@@ -1124,13 +1119,11 @@ struct tree {
     void clear() {
         if (empty()) return;
         _root.reset();
-        _size = 0;
     }
 
     void swap(this_type& src) {
         if (this == &src) return;
         _root.swap(src._root);
-        std::swap(_size, src._size);
     }
 
     void graft(node_type& b) {
@@ -1188,16 +1181,13 @@ struct tree {
 
     protected:
     shared_ptr<node_type> _root;
-    size_type _size;
 
     void _prune(shared_ptr<node_type>& n) {
-        _size = 0;
     }
 
     void _graft(shared_ptr<node_type>& n) {
         n->_parent.reset();
         n->_tree = this;
-        _size = n->_size;
     }
 };
 
