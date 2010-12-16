@@ -577,14 +577,39 @@ struct node_base {
     typedef typename tree_type::size_type size_type;
     typedef typename tree_type::data_type data_type;
 
-    node_base() : _tree(NULL), _ply(0), _size(1), _parent(), _this(), _data(), _children() {}
+    node_base() : _tree(NULL), _size(1), _parent(), _this(), _data(), _children() {}
     virtual ~node_base() {}
 
-    size_type ply() const { return _ply; }
+    size_type ply() const {
+        size_type p = 0;
+        shared_ptr<node_type> q(_this.lock());
+        while (!q->is_root()) {
+            q = q->_parent.lock();
+            p += 1;
+        }
+        return p;
+    }
+
+    tree_type& tree() {
+        shared_ptr<node_type> q(_this.lock());
+        while (!q->is_root()) {
+            q = q->_parent.lock();
+        }
+        return *(q->_tree);
+    }
+
+    const tree_type& tree() const { 
+        shared_ptr<const node_type> q(_this.lock());
+        while (!q->is_root()) {
+            q = q->_parent.lock();
+        }
+        return *(q->_tree);
+    }
+
     size_type depth() const { return _depth.max(); }
     size_type subtree_size() const { return _size; }
 
-    bool is_root() const { return ply() == 0; }
+    bool is_root() const { return _tree != NULL; }
 
     bool is_ancestor(const node_type& n) const {
         shared_ptr<node_type> a(_this.lock());
@@ -598,11 +623,11 @@ struct node_base {
     }
 
     node_type& parent() {
-        if (ply() == 0) throw exception();
+        if (is_root()) throw exception();
         return *(_parent.lock());
     }
     const node_type& parent() const {
-        if (ply() == 0) throw exception();
+        if (is_root()) throw exception();
         return *(_parent.lock()); 
     }
 
@@ -672,7 +697,6 @@ struct node_base {
     friend class tree_type::tree_type;
     protected:
     tree_type* _tree;
-    size_type _ply;
     size_type _size;
     max_maintainer<size_type> _depth;
     weak_ptr<node_type> _parent;
@@ -685,24 +709,16 @@ struct node_base {
     void _prune(shared_ptr<node_type>& n) {
         // percolate the new subtree size up the chain of parents
         shared_ptr<node_type> q = _this.lock();
+        size_type dd = 1;
         while (true) {
             q->_size -= n->_size;
-            if (q->ply() == 0) {
-                _tree->_size -= n->_size;
+            q->_depth.erase(n->_depth, dd);
+            if (q->is_root()) {
+                q->_tree->_size -= n->_size;
                 break;
             }
             q = q->_parent.lock();
-        }
-
-        // erase subtree depth info from parent tree
-        _prune_subtree(n, _tree);
-    }
-
-    static void _prune_subtree(shared_ptr<node_type>& n, tree_type* tree_) {
-        size_type dd = 0;
-        for (shared_ptr<node_type> dp(n->_parent.lock());  dp.get() != NULL;  dp = dp->_parent.lock()) {
             dd += 1;
-            dp->_depth.erase(n->_depth, dd);
         }
     }
 
@@ -710,36 +726,19 @@ struct node_base {
         // set new parent for this subtree as current node
         shared_ptr<node_type> q = _this.lock();
         n->_parent = q;
+        n->_tree = NULL;
  
         // percolate the new subtree size up the chain of parents
+        size_type dd = 1;
         while (true) {
+            q->_depth.insert(n->_depth, dd);
             q->_size += n->_size;
-            if (q->ply() == 0) {
-                _tree->_size += n->_size;
+            if (q->is_root()) {
+                q->_tree->_size += n->_size;
                 break;
             }
             q = q->_parent.lock();
-        }
-
-        // percolate new ply values and tree ptr down the subtree, recursively
-        _graft_subtree(n, _tree);
-    }
-
-    static void _graft_subtree(shared_ptr<node_type>& n, tree_type* tree_) {
-        size_type dd = 0;
-        for (shared_ptr<node_type> dp(n->_parent.lock());  dp.get() != NULL;  dp = dp->_parent.lock()) {
             dd += 1;
-            dp->_depth.insert(n->_depth, dd);
-        }
-        deque<shared_ptr<node_type> > nq;
-        nq.push_back(n);
-        while (!nq.empty()) {
-            shared_ptr<node_type> q(nq.front());
-            nq.pop_front();
-            q->_tree = tree_;
-            shared_ptr<node_type> p(q->_parent.lock());
-            q->_ply = (p.get() == NULL) ? 0 : 1 + p->_ply;
-            for (cs_iterator j(q->_children.begin());  j != q->_children.end();  ++j) nq.push_back(*j);
         }
     }
 
@@ -805,8 +804,8 @@ struct node_raw: public node_base<Tree, node_raw<Tree, Data>, vector<shared_ptr<
         // this would introduce cycles 
         if (a.is_ancestor(b) || b.is_ancestor(a)) throw exception();
 
-        tree_type* ta = a._tree;
-        tree_type* tb = b._tree;
+        tree_type* ta = &a.tree();
+        tree_type* tb = &b.tree();
         bool ira = a.is_root();
         bool irb = b.is_root();
 
@@ -1064,8 +1063,8 @@ struct tree {
 
     void _graft(shared_ptr<node_type>& n) {
         n->_parent.reset();
+        n->_tree = this;
         _size = n->_size;
-        node_base_type::_graft_subtree(n, this);
     }
 };
 
