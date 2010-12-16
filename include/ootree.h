@@ -868,22 +868,184 @@ struct node_raw: public node_base<Tree, node_raw<Tree, Data>, vector<shared_ptr<
 };
 
 
+template <typename Tree, typename Data, typename Compare>
+struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare>, multiset<shared_ptr<node_ordered<Tree, Data, Compare> >, ptr_less_data<Compare> > > {
+    typedef node_ordered<Tree, Data, Compare> this_type;
+    typedef this_type node_type;
+    typedef Tree tree_type;
+    typedef multiset<shared_ptr<node_type>, ptr_less_data<Compare> > cs_type;
+    typedef node_base<Tree, node_type, cs_type> base_type;
+    typedef typename Tree::size_type size_type;
+    typedef Data data_type;
+
+    typedef typename base_type::iterator iterator;
+    typedef typename base_type::const_iterator const_iterator;
+
+    friend class tree_type::tree_type;
+    friend class node_base<Tree, node_type, cs_type>;
+
+    node_ordered() : base_type() {}
+    virtual ~node_ordered() {}
+
+#if 0
+    node_ordered(const node_ordered& src) { *this = src; }
+    node_ordered& operator=(const node_ordered& rhs) {
+        if (this == &rhs) return *this;
+
+#if 0
+        // this would introduce cycles
+        if (rhs.is_ancestor(*this)) throw exception();
+
+        // important if rhs is child of "this", to prevent it from getting deallocated by clear()
+        shared_ptr<node_type> r(rhs._this.lock());
+
+        // in the case of vector storage, I can just leave current node where it is
+        this->clear();
+        this->_data = rhs._data;
+        // do the copying work for children only
+        for (cs_const_iterator j(r->_children.begin());  j != r->_children.end();  ++j) {
+            shared_ptr<node_type> n((*j)->_copy_data());
+            this->_children.push_back(n);
+            base_type::_thread(n);
+            this->_graft(n);
+        }
+#endif
+        return *this;
+    }
+
+    void swap(node_type& b) {
+#if 0
+        node_type& a = *this;
+
+        if (&a == &b) return;
+
+        // this would introduce cycles 
+        if (a.is_ancestor(b) || b.is_ancestor(a)) throw exception();
+
+        tree_type* ta = &a.tree();
+        tree_type* tb = &b.tree();
+        bool ira = a.is_root();
+        bool irb = b.is_root();
+
+        shared_ptr<node_type>& qa = (ira) ? ta->_root : *(node_type::_cs_iterator(a));
+        shared_ptr<node_type>& qb = (irb) ? tb->_root : *(node_type::_cs_iterator(b));
+        shared_ptr<node_type> ra = qa;
+        shared_ptr<node_type> rb = qb;
+
+        shared_ptr<node_type> pa; if (!a.is_root()) pa = a._parent.lock();
+        shared_ptr<node_type> pb; if (!b.is_root()) pb = b._parent.lock();
+
+        if (ira) ta->_prune(ra);   else pa->_prune(ra);
+        if (irb) tb->_prune(rb);   else pb->_prune(rb);
+
+        qa = rb;
+        qb = ra;
+
+        if (ira) ta->_graft(rb);   else pa->_graft(rb);
+        if (irb) tb->_graft(ra);   else pb->_graft(ra);
+    }
+#endif
+
+    void graft(node_type& b) {
+#if 0
+        node_type& a = *this;
+
+        // this would introduce cycles 
+        if (&a == &b) throw exception();
+        if (b.is_ancestor(a)) throw exception();
+
+        // remove b from its current location
+        shared_ptr<node_type> rb = b._this.lock();
+        b.erase();
+
+        // graft b to current location
+        a._children.push_back(rb);
+        a._graft(rb);
+#endif
+    }
+
+    void graft(tree_type& b) {
+        if (b.empty()) return;
+        graft(b.root());
+    }
+
+    void insert(const data_type& data) {
+#if 0
+        shared_ptr<node_type> n(new node_type);
+        n->_data = data;
+        n->_this = n;
+        n->_size = 1;
+        n->_depth.insert(1);
+        this->_children.push_back(n);
+        this->_graft(n);
+#endif
+    }
+
+    void insert(const node_type& b) {
+#if 0
+        shared_ptr<node_type> n(b._copy_data());
+        base_type::_thread(n);
+        this->_children.push_back(n);
+        this->_graft(n);
+#endif
+    }
+    void insert(const tree_type& b) {
+        if (b.empty()) return;
+        insert(b.root());
+    }
+
+    protected:
+    typedef typename base_type::cs_iterator cs_iterator;
+    typedef typename base_type::cs_const_iterator cs_const_iterator;
+
+    static cs_iterator _cs_iterator(node_type& n) {
+#if 0
+        if (n.is_root()) throw exception();
+        cs_iterator j(n.parent()._children.begin());
+        cs_iterator jend(n.parent()._children.end());
+        for (;  j != jend;  ++j) if (j->get() == &n) break;
+        if (j == jend) throw exception();
+        return j;
+#else
+        return cs_iterator();
+#endif
+    }
+
+    shared_ptr<node_type> _copy_data() const {
+        shared_ptr<node_type> n(new node_type);
+#if 0
+        n->_data = this->_data;
+        n->_depth = this->_depth;
+        for (cs_const_iterator j(this->_children.begin()); j != this->_children.end(); ++j)
+            n->_children.push_back((*j)->_copy_data());
+#endif
+        return n;
+    }
+#endif
+};
+
+
 struct node_type_dispatch_failed {};
 
 template <typename Tree, typename CSCat>
 struct node_type_dispatch {
     // catch-all should be compile error
     typedef node_type_dispatch_failed node_type;
+    typedef node_type_dispatch_failed base_type;
 };
 
 
 template <typename Tree>
 struct node_type_dispatch<Tree, cscat<raw, arg_unused, arg_unused> > {
     typedef node_raw<Tree, typename Tree::data_type> node_type;
-    // raw storage class uses vector
-    typedef vector<shared_ptr<node_type> > node_container;
     // why do I need this?  because of friend declarations, that's why.
-    typedef node_base<Tree, node_type, node_container> base_type;
+    typedef typename node_type::base_type base_type;
+};
+
+template <typename Tree, typename Compare>
+struct node_type_dispatch<Tree, cscat<ordered, Compare, arg_unused> > {
+    typedef node_ordered<Tree, typename Tree::data_type, Compare> node_type;
+    typedef typename node_type::base_type base_type;
 };
 
 
