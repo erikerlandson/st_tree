@@ -47,16 +47,12 @@ using std::cerr;
 
 
 // Node storage classes:
-// use this if you want raw unordered child node storage, low overhead, linear-time deletion
+// use this if you want raw (vector) unordered child node storage
 struct raw {};
-// provides ordered child node storage, non-unique
+// provides ordered child node storage
 struct ordered {};
-// this provides ordered child node storage, unique by ordering
-struct ordered_unique {};
-// child nodes are ordered by non-unique external key
+// child nodes are indexed by external key
 struct keyed {};
-// child nodes are ordered by unique external key
-struct keyed_unique {};
 
 
 // some data types to flag template argument behaviors
@@ -502,21 +498,6 @@ struct cscat_dispatch<Data, cscat<raw, arg_default, arg_default> > {
 };
 
 template <typename Data> 
-struct cscat_dispatch<Data, ordered_unique> {
-    typedef cscat<ordered_unique, less<Data>, arg_unused> cat;
-};
-
-template <typename Data>
-struct cscat_dispatch<Data, cscat<ordered_unique, arg_default, arg_default> > {
-    typedef cscat<ordered_unique, less<Data>, arg_unused> cat;
-};
-
-template <typename Data, typename Comp>
-struct cscat_dispatch<Data, cscat<ordered_unique, Comp, arg_default> > {
-    typedef cscat<ordered_unique, Comp, arg_unused> cat;
-};
-
-template <typename Data> 
 struct cscat_dispatch<Data, ordered> {
     typedef cscat<ordered, less<Data>, arg_unused> cat;
 };
@@ -529,16 +510,6 @@ struct cscat_dispatch<Data, cscat<ordered, arg_default, arg_default> > {
 template <typename Data, typename Comp>
 struct cscat_dispatch<Data, cscat<ordered, Comp, arg_default> > {
     typedef cscat<ordered, Comp, arg_unused> cat;
-};
-
-template <typename Data, typename Key>
-struct cscat_dispatch<Data, cscat<keyed_unique, Key, arg_default> > {
-    typedef cscat<keyed_unique, Key, less<Key> > cat;
-};
-
-template <typename Data, typename Key, typename KeyComp>
-struct cscat_dispatch<Data, cscat<keyed_unique, Key, KeyComp> > {
-    typedef cscat<keyed_unique, Key, KeyComp > cat;
 };
 
 template <typename Data, typename Key>
