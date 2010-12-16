@@ -15,9 +15,8 @@ BOOST_AUTO_TEST_CASE(default_ctor) {
     BOOST_CHECK_THROW(t1.root(), ootree::exception);
 }
 
-#if 0
 BOOST_AUTO_TEST_CASE(insert_root) {
-    tree<int> t1;
+    tree<int, ordered> t1;
     t1.insert(7);
     BOOST_CHECK_EQUAL(t1.empty(), false);
     BOOST_CHECK_EQUAL(t1.size(), 1);
@@ -28,6 +27,7 @@ BOOST_AUTO_TEST_CASE(insert_root) {
 }
 
 
+#if 0
 BOOST_AUTO_TEST_CASE(insert_subnodes) {
     tree<int> t1;
 
