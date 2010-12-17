@@ -54,11 +54,9 @@ BOOST_AUTO_TEST_CASE(insert_subnodes) {
     CHECK_TREE(t1, subtree_size(), "3 1 1");
 }
 
-#if 0
-
 
 BOOST_AUTO_TEST_CASE(clear) {
-    tree<int> t1;
+    tree<int, ordered> t1;
 
     t1.insert(7);
     t1.root().insert(8);
@@ -77,7 +75,7 @@ BOOST_AUTO_TEST_CASE(clear) {
 
 
 BOOST_AUTO_TEST_CASE(reinsert) {
-    tree<int> t1;
+    tree<int, ordered> t1;
 
     t1.insert(7);
     t1.root().insert(8);
@@ -97,7 +95,7 @@ BOOST_AUTO_TEST_CASE(reinsert) {
 
 
 BOOST_AUTO_TEST_CASE(erase) {
-    tree<int> t1;
+    tree<int, ordered> t1;
 
     t1.insert(7);
     t1.root().insert(8);
@@ -111,17 +109,22 @@ BOOST_AUTO_TEST_CASE(erase) {
 }
 
 
+#if 0
+
 BOOST_AUTO_TEST_CASE(erase_noarg) {
-    tree<int> t1;
+    tree<int, ordered> t1;
+    typedef typeof(t1.root().begin()) iterator;
 
     t1.insert(2);
     t1.root().insert(3);
     t1.root().insert(5);
-    t1.root()[0].insert(7);
-    t1.root()[0].insert(11);
-    t1.root()[1].insert(13);
-    t1.root()[1].insert(17);
-
+    iterator j = t1.root().begin();
+    j->insert(7);
+    j->insert(11);
+    ++j;
+    j->insert(13);
+    j->insert(17);
+    
     CHECK_TREE(t1, data(), "2 3 5 7 11 13 17");
     t1.root()[1].erase();
     CHECK_TREE(t1, data(), "2 3 7 11");
@@ -133,6 +136,7 @@ BOOST_AUTO_TEST_CASE(erase_noarg) {
     BOOST_CHECK_EQUAL(t1.empty(), true);
     CHECK_TREE(t1, data(), "");
 }
+
 
 
 BOOST_AUTO_TEST_CASE(bf_iterator_empty) {
