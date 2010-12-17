@@ -135,6 +135,7 @@ struct dref_vmap {
     // X is a type that is de-referenceable: supports the unary "*" dereference operator 
     typedef typeof(*(X())) drX;
     drX& operator()(X& x) const { return *x; }
+    const drX& operator()(const X& x) const { return *x; }
     bool operator==(const dref_vmap& rhs) const { return true; }
     bool operator!=(const dref_vmap& rhs) const { return false; }
 };
@@ -966,19 +967,19 @@ struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare>, m
         if (b.empty()) return;
         graft(b.root());
     }
+#endif
 
     void insert(const data_type& data) {
-#if 0
         shared_ptr<node_type> n(new node_type);
         n->_data = data;
         n->_this = n;
         n->_size = 1;
         n->_depth.insert(1);
-        this->_children.push_back(n);
+        this->_children.insert(n);
         this->_graft(n);
-#endif
     }
 
+#if 0
     void insert(const node_type& b) {
 #if 0
         shared_ptr<node_type> n(b._copy_data());

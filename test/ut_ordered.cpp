@@ -27,9 +27,8 @@ BOOST_AUTO_TEST_CASE(insert_root) {
 }
 
 
-#if 0
 BOOST_AUTO_TEST_CASE(insert_subnodes) {
-    tree<int> t1;
+    tree<int, ordered> t1;
 
     t1.insert(7);
     BOOST_CHECK_EQUAL(t1.empty(), false);
@@ -49,10 +48,13 @@ BOOST_AUTO_TEST_CASE(insert_subnodes) {
     BOOST_CHECK_EQUAL(t1.empty(), false);
     BOOST_CHECK_EQUAL(t1.root().size(), 2);
 
-    BOOST_CHECK_EQUAL(t1.root().data(), 7);
-    BOOST_CHECK_EQUAL(t1.root()[0].data(), 8);
-    BOOST_CHECK_EQUAL(t1.root()[1].data(), 9);
+    CHECK_TREE(t1, data(), "7 8 9");
+    CHECK_TREE(t1, ply(), "0 1 1");
+    CHECK_TREE(t1, depth(), "2 1 1");
+    CHECK_TREE(t1, subtree_size(), "3 1 1");
 }
+
+#if 0
 
 
 BOOST_AUTO_TEST_CASE(clear) {
