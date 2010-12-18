@@ -822,7 +822,7 @@ struct node_raw: public node_base<Tree, node_raw<Tree, Data>, vector<shared_ptr<
     node_type& operator[](size_type n) { return *(this->_children[n]); }
     const node_type& operator[](size_type n) const { return *(this->_children[n]); }
 
-    void insert(const data_type& data) {
+    iterator insert(const data_type& data) {
         shared_ptr<node_type> n(new node_type);
         n->_data = data;
         n->_this = n;
@@ -830,17 +830,19 @@ struct node_raw: public node_base<Tree, node_raw<Tree, Data>, vector<shared_ptr<
         n->_depth.insert(1);
         this->_children.push_back(n);
         this->_graft(n);
+        return iterator(this->_children.begin()+(this->_children.size()-1));
     }
 
-    void insert(const node_type& b) {
+    iterator insert(const node_type& b) {
         shared_ptr<node_type> n(b._copy_data());
         base_type::_thread(n);
         this->_children.push_back(n);
         this->_graft(n);
+        return iterator(this->_children.begin()+(this->_children.size()-1));
     }
-    void insert(const tree_type& b) {
-        if (b.empty()) return;
-        insert(b.root());
+    iterator insert(const tree_type& b) {
+        if (b.empty()) return this->end();
+        return insert(b.root());
     }
 
     protected:
