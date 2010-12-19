@@ -135,7 +135,7 @@ struct dref_vmap {
     // X is a type that is de-referenceable: supports the unary "*" dereference operator 
     typedef typeof(*(X())) drX;
     drX& operator()(X& x) const { return *x; }
-    const drX& operator()(const X& x) const { return *x; }
+    drX& operator()(const X& x) const { return const_cast<drX&>(*x); }
     bool operator==(const dref_vmap& rhs) const { return true; }
     bool operator!=(const dref_vmap& rhs) const { return false; }
 };
@@ -603,9 +603,6 @@ struct node_base {
         return *(_parent.lock()); 
     }
 
-    data_type& data() { return _data; }
-    const data_type& data() const { return _data; }
-
     protected:
     typedef typename cs_type::iterator cs_iterator;
     typedef typename cs_type::const_iterator cs_const_iterator;
@@ -819,6 +816,10 @@ struct node_raw: public node_base<Tree, node_raw<Tree, Data>, vector<shared_ptr<
         graft(b.root());
     }
 
+    // data can be non-const or const for this class
+    data_type& data() { return this->_data; }
+    const data_type& data() const { return this->_data; }
+
     node_type& operator[](size_type n) { return *(this->_children[n]); }
     const node_type& operator[](size_type n) const { return *(this->_children[n]); }
 
@@ -885,6 +886,11 @@ struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare>, m
     friend class tree_type::tree_type;
     friend class node_base<Tree, node_type, cs_type>;
 
+    protected:
+    typedef typename base_type::cs_iterator cs_iterator;
+    typedef typename base_type::cs_const_iterator cs_const_iterator;
+
+    public:
     node_ordered() : base_type() {}
     virtual ~node_ordered() {}
 
@@ -971,14 +977,19 @@ struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare>, m
     }
 #endif
 
-    void insert(const data_type& data) {
+    // data needs to be immutable for this class, since it's the sort key, so
+    // only const access allowed
+    const data_type& data() const { return this->_data; }
+
+    iterator insert(const data_type& data) {
         shared_ptr<node_type> n(new node_type);
         n->_data = data;
         n->_this = n;
         n->_size = 1;
         n->_depth.insert(1);
-        this->_children.insert(n);
+        cs_iterator r = this->_children.insert(n);
         this->_graft(n);
+        return iterator(r);
     }
 
 #if 0
@@ -995,21 +1006,15 @@ struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare>, m
         insert(b.root());
     }
 
-    protected:
-    typedef typename base_type::cs_iterator cs_iterator;
-    typedef typename base_type::cs_const_iterator cs_const_iterator;
+#endif
 
+    protected:
     static cs_iterator _cs_iterator(node_type& n) {
-#if 0
         if (n.is_root()) throw exception();
-        cs_iterator j(n.parent()._children.begin());
+        cs_iterator j(n.parent()._children.find(n._this.lock()));
         cs_iterator jend(n.parent()._children.end());
-        for (;  j != jend;  ++j) if (j->get() == &n) break;
         if (j == jend) throw exception();
         return j;
-#else
-        return cs_iterator();
-#endif
     }
 
     shared_ptr<node_type> _copy_data() const {
@@ -1022,7 +1027,6 @@ struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare>, m
 #endif
         return n;
     }
-#endif
 };
 
 

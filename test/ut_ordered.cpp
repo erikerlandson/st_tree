@@ -109,33 +109,35 @@ BOOST_AUTO_TEST_CASE(erase) {
 }
 
 
-#if 0
-
 BOOST_AUTO_TEST_CASE(erase_noarg) {
     tree<int, ordered> t1;
+    typedef tree<int, ordered>::node_type node_type;
     typedef typeof(t1.root().begin()) iterator;
 
+
     t1.insert(2);
-    t1.root().insert(3);
-    t1.root().insert(5);
-    iterator j = t1.root().begin();
-    j->insert(7);
-    j->insert(11);
-    ++j;
-    j->insert(13);
-    j->insert(17);
+    node_type& n3 = *t1.root().insert(3);
+    node_type& n5 = *t1.root().insert(5);
+
+    n3.insert(7);
+    node_type& n11 = *n3.insert(11);
+    n5.insert(13);
+    n5.insert(17);
     
     CHECK_TREE(t1, data(), "2 3 5 7 11 13 17");
-    t1.root()[1].erase();
+
+    n5.erase();
     CHECK_TREE(t1, data(), "2 3 7 11");
 
-    t1.root()[0][1].erase();
+    n11.erase();
     CHECK_TREE(t1, data(), "2 3 7");
 
     t1.root().erase();
     BOOST_CHECK_EQUAL(t1.empty(), true);
     CHECK_TREE(t1, data(), "");
 }
+
+#if 0
 
 
 
