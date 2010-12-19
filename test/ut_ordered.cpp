@@ -137,7 +137,6 @@ BOOST_AUTO_TEST_CASE(erase_noarg) {
     CHECK_TREE(t1, data(), "");
 }
 
-#if 0
 
 
 
@@ -219,6 +218,7 @@ BOOST_AUTO_TEST_CASE(df_pre_iterator) {
 }
 
 
+#if 0
 
 BOOST_AUTO_TEST_CASE(node_ply) {
     tree<int> t1;
