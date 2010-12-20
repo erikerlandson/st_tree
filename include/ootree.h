@@ -134,18 +134,29 @@ template <typename X>
 struct dref_vmap {
     // X is a type that is de-referenceable: supports the unary "*" dereference operator 
     typedef typeof(*(X())) drX;
+
+    // These both return a non-const reference -- this enables me to handle
+    // (multi)set iterators in a useful way below: those iterators are always const,
+    // however I need non-const behavior for many ops.  It is only the data field that
+    // must remain const, because it is the true sorting key
     drX& operator()(X& x) const { return *x; }
     drX& operator()(const X& x) const { return const_cast<drX&>(*x); }
+
     bool operator==(const dref_vmap& rhs) const { return true; }
     bool operator!=(const dref_vmap& rhs) const { return false; }
 };
+
 
 template <typename X>
 struct dref_second_vmap {
     // X is a type that is de-referenceable: supports the unary "*" dereference operator 
     typedef typeof(*(X())) drX;
-    typedef typeof(drX().first) R;
+    typedef typeof(drX().second) R;
+
+    // Set these both to return non-const reference (see dref_vmap comment above)
     R& operator()(X& x) const { return x->second; }
+    R& operator()(const X& x) const { return x->second; }
+
     bool operator==(const dref_second_vmap& rhs) const { return true; }
     bool operator!=(const dref_second_vmap& rhs) const { return false; }
 };
@@ -894,7 +905,6 @@ struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare>, m
     node_ordered() : base_type() {}
     virtual ~node_ordered() {}
 
-#if 0
     node_ordered(const node_ordered& src) { *this = src; }
     node_ordered& operator=(const node_ordered& rhs) {
         if (this == &rhs) return *this;
@@ -920,6 +930,7 @@ struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare>, m
         return *this;
     }
 
+#if 0
     void swap(node_type& b) {
 #if 0
         node_type& a = *this;

@@ -221,24 +221,23 @@ BOOST_AUTO_TEST_CASE(df_pre_iterator) {
 }
 
 
-#if 0
-
 BOOST_AUTO_TEST_CASE(node_ply) {
     tree<int, ordered> t1;
+    typedef tree<int, ordered>::node_type node_type;
 
     t1.insert(2);
     CHECK_TREE(t1, data(), "2");
     CHECK_TREE(t1, ply(), "0");
 
-    t1.root().insert(3);
-    t1.root().insert(5);
+    node_type& n3 = *t1.root().insert(3);
+    node_type& n5 = *t1.root().insert(5);
     CHECK_TREE(t1, data(), "2 3 5");
     CHECK_TREE(t1, ply(), "0 1 1");
 
-    t1.root()[0].insert(7);
-    t1.root()[0].insert(11);
-    t1.root()[1].insert(13);
-    t1.root()[1].insert(17);
+    n3.insert(7);
+    n3.insert(11);
+    n5.insert(13);
+    n5.insert(17);
     CHECK_TREE(t1, data(), "2 3 5 7 11 13 17");
     CHECK_TREE(t1, ply(), "0 1 1 2 2 2 2");
 
@@ -259,24 +258,26 @@ BOOST_AUTO_TEST_CASE(node_ply) {
     CHECK_TREE(t1, ply(), "0");
 }
 
+
 BOOST_AUTO_TEST_CASE(node_depth) {
     tree<int, ordered> t1;
+    typedef tree<int, ordered>::node_type node_type;
 
     t1.insert(2);
     CHECK_TREE(t1, data(), "2");
     CHECK_TREE(t1, depth(), "1");
     CHECK_TREE(t1, ply(), "0");
 
-    t1.root().insert(3);
-    t1.root().insert(5);
+    node_type& n3 = *t1.root().insert(3);
+    node_type& n5 = *t1.root().insert(5);
     CHECK_TREE(t1, data(), "2 3 5");
     CHECK_TREE(t1, depth(), "2 1 1");
     CHECK_TREE(t1, ply(), "0 1 1");
 
-    t1.root()[0].insert(7);
-    t1.root()[0].insert(11);
-    t1.root()[1].insert(13);
-    t1.root()[1].insert(17);
+    n3.insert(7);
+    n3.insert(11);
+    n5.insert(13);
+    n5.insert(17);
     CHECK_TREE(t1, data(), "2 3 5 7 11 13 17");
     CHECK_TREE(t1, depth(), "3 2 2 1 1 1 1");
     CHECK_TREE(t1, ply(), "0 1 1 2 2 2 2");
@@ -299,22 +300,24 @@ BOOST_AUTO_TEST_CASE(node_depth) {
     CHECK_TREE(t1, depth(), "1");
 }
 
+
 BOOST_AUTO_TEST_CASE(node_subtree_size) {
     tree<int, ordered> t1;
+    typedef tree<int, ordered>::node_type node_type;
 
     t1.insert(2);
     CHECK_TREE(t1, data(), "2");
     CHECK_TREE(t1, subtree_size(), "1");
 
-    t1.root().insert(3);
-    t1.root().insert(5);
+    node_type& n3 = *t1.root().insert(3);
+    node_type& n5 = *t1.root().insert(5);
     CHECK_TREE(t1, data(), "2 3 5");
     CHECK_TREE(t1, subtree_size(), "3 1 1");
 
-    t1.root()[0].insert(7);
-    t1.root()[0].insert(11);
-    t1.root()[1].insert(13);
-    t1.root()[1].insert(17);
+    n3.insert(7);
+    n3.insert(11);
+    n5.insert(13);
+    n5.insert(17);
     CHECK_TREE(t1, data(), "2 3 5 7 11 13 17");
     CHECK_TREE(t1, subtree_size(), "7 3 3 1 1 1 1");
 
@@ -338,39 +341,53 @@ BOOST_AUTO_TEST_CASE(node_subtree_size) {
 
 BOOST_AUTO_TEST_CASE(node_parent) {
     tree<int, ordered> t1;
+    typedef tree<int, ordered>::node_type node_type;
+
     t1.insert(2);
     BOOST_CHECK_THROW(t1.root().parent(), ootree::exception);
-    t1.root().insert(3);
-    BOOST_CHECK_EQUAL(t1.root()[0].parent().data(), 2);
-    const tree<int, ordered>& t2 = t1;
-    BOOST_CHECK_EQUAL(t2.root()[0].parent().data(), 2);    
+
+    node_type& n3 = *t1.root().insert(3);
+    BOOST_CHECK_EQUAL(n3.parent().data(), 2);
+
+    const node_type& n3c = n3;
+    BOOST_CHECK_EQUAL(n3c.parent().data(), 2);    
 }
 
 
 BOOST_AUTO_TEST_CASE(node_tree) {
     tree<int, ordered> t1;
+    typedef tree<int, ordered>::node_type node_type;
+
     t1.insert(2);
-    t1.root().insert(3);
-    t1.root().insert(5);
+    node_type& n3 = *t1.root().insert(3);
+    node_type& n5 = *t1.root().insert(5);
+
     tree<int, ordered>& t2 = t1.root().tree();
     BOOST_CHECK_EQUAL(t1 == t2, true);
-    t2 = t1.root()[0].tree();
+
+    t2 = n3.tree();
     BOOST_CHECK_EQUAL(t1 == t2, true);
+
+    const node_type& n5c = n5;
     const tree<int, ordered>& t3 = t1;
-    const tree<int, ordered>& t4 = t3.root().tree();
+    const tree<int, ordered>& t4 = n5c.tree();
+    BOOST_CHECK_EQUAL(t3 == t4, true);
     BOOST_CHECK_EQUAL(t1 == t4, true);
 }
 
 
+
 BOOST_AUTO_TEST_CASE(erase_node) {
     tree<int, ordered> t1;
+    typedef tree<int, ordered>::node_type node_type;
+
     t1.insert(2);
-    t1.root().insert(3);
-    t1.root().insert(5);
-    t1.root()[0].insert(7);
-    t1.root()[1].insert(13);
-    t1.root()[0].insert(11);
-    t1.root()[1].insert(17);
+    node_type& n3 = *t1.root().insert(3);
+    node_type& n5 = *t1.root().insert(5);
+    n3.insert(7);
+    n5.insert(13);
+    n3.insert(11);
+    n5.insert(17);
     BOOST_CHECK_EQUAL(t1.size(), 7);
     BOOST_CHECK_EQUAL(t1.depth(), 3);
 
@@ -383,15 +400,19 @@ BOOST_AUTO_TEST_CASE(erase_node) {
     CHECK_TREE(t1, subtree_size(), "4 3 1 1");
 }
 
+
 BOOST_AUTO_TEST_CASE(clear_node) {
     tree<int, ordered> t1;
+    typedef tree<int, ordered>::node_type node_type;
+
     t1.insert(2);
-    t1.root().insert(3);
-    t1.root().insert(5);
-    t1.root()[0].insert(7);
-    t1.root()[1].insert(13);
-    t1.root()[0].insert(11);
-    t1.root()[1].insert(17);
+    node_type& n3 = *t1.root().insert(3);
+    node_type& n5 = *t1.root().insert(5);
+    n3.insert(7);
+    n5.insert(13);
+    n3.insert(11);
+    n5.insert(17);
+
     BOOST_CHECK_EQUAL(t1.size(), 7);
     BOOST_CHECK_EQUAL(t1.depth(), 3);
 
@@ -404,19 +425,23 @@ BOOST_AUTO_TEST_CASE(clear_node) {
     CHECK_TREE(t1, subtree_size(), "1");
 }
 
-BOOST_AUTO_TEST_CASE(node_op_equal) {
+#if 0
+
+BOOST_AUTO_TEST_CASE(node_assign_op) {
     tree<int, ordered> t1;
+    typedef tree<int, ordered>::node_type node_type;
+
     t1.insert(2);
-    t1.root().insert(3);
+    node_type& n3 = *t1.root().insert(3);
 
     tree<int, ordered> t2;
     t2.insert(5);
-    t2.root().insert(7);
-    t2.root().insert(11);
+    node_type& n7 = *t2.root().insert(7);
+    node_type& n11 = *t2.root().insert(11);
 
     BOOST_CHECK_EQUAL(t1.root().data(), 2);
 
-    t1.root()[0] = t2.root();
+    n3 = t2.root();
     BOOST_CHECK_EQUAL(t1.size(), 4);
     BOOST_CHECK_EQUAL(t1.depth(), 3);
 
@@ -432,6 +457,7 @@ BOOST_AUTO_TEST_CASE(node_op_equal) {
 
 BOOST_AUTO_TEST_CASE(node_op_equal_root) {
     tree<int, ordered> t1;
+    typedef tree<int, ordered>::node_type node_type;
     t1.insert(2);
     t1.root().insert(3);
 
@@ -456,6 +482,7 @@ BOOST_AUTO_TEST_CASE(node_op_equal_root) {
 
 BOOST_AUTO_TEST_CASE(node_op_equal_subtree) {
     tree<int, ordered> t1;
+    typedef tree<int, ordered>::node_type node_type;
 
     t1.insert(2);
     t1.root().insert(3);
@@ -482,6 +509,7 @@ BOOST_AUTO_TEST_CASE(node_op_equal_subtree) {
 BOOST_AUTO_TEST_CASE(node_swap) {
     tree<int, ordered> t1;
     tree<int, ordered> t2;
+    typedef tree<int, ordered>::node_type node_type;
     
     t1.insert(2);
     t1.root().insert(3);
@@ -589,6 +617,7 @@ BOOST_AUTO_TEST_CASE(node_swap) {
 BOOST_AUTO_TEST_CASE(graft) {
     tree<int, ordered> t1;
     tree<int, ordered> t2;
+    typedef tree<int, ordered>::node_type node_type;
 
     // start with the node/tree overloadings
     // graft node -> tree
@@ -688,6 +717,7 @@ BOOST_AUTO_TEST_CASE(graft) {
 BOOST_AUTO_TEST_CASE(insert_node) {
     tree<int, ordered> t1;
     tree<int, ordered> t2;
+    typedef tree<int, ordered>::node_type node_type;
 
     // start with the node/tree overloadings
     // insert node -> tree
@@ -787,6 +817,7 @@ BOOST_AUTO_TEST_CASE(insert_node) {
 
 BOOST_AUTO_TEST_CASE(node_op_equality) {
     tree<int, ordered> t1;
+    typedef tree<int, ordered>::node_type node_type;
 
     t1.insert(2);
     t1.root().insert(3);
@@ -821,6 +852,7 @@ BOOST_AUTO_TEST_CASE(node_op_equality) {
 BOOST_AUTO_TEST_CASE(node_op_lessthan) {
     tree<int, ordered> t1;
     tree<int, ordered> t2;
+    typedef tree<int, ordered>::node_type node_type;
 
     t1.insert(2);
     t2.insert(2);
@@ -846,6 +878,7 @@ BOOST_AUTO_TEST_CASE(node_op_lessthan) {
 BOOST_AUTO_TEST_CASE(node_derived_comp_ops) {
     tree<int, ordered> t1;
     tree<int, ordered> t2;
+    typedef tree<int, ordered>::node_type node_type;
 
     t1.insert(2);
     t2.insert(2);
@@ -873,6 +906,7 @@ BOOST_AUTO_TEST_CASE(node_derived_comp_ops) {
 BOOST_AUTO_TEST_CASE(tree_op_equality) {
     tree<int, ordered> t1;
     tree<int, ordered> t2;
+    typedef tree<int, ordered>::node_type node_type;
 
     BOOST_CHECK_EQUAL(t1 == t2, true);
 
@@ -890,6 +924,7 @@ BOOST_AUTO_TEST_CASE(tree_op_equality) {
 BOOST_AUTO_TEST_CASE(tree_op_lessthan) {
     tree<int, ordered> t1;
     tree<int, ordered> t2;
+    typedef tree<int, ordered>::node_type node_type;
     BOOST_CHECK_EQUAL(t1 < t2, false);
 
     t2.insert(2);
@@ -910,6 +945,7 @@ BOOST_AUTO_TEST_CASE(tree_op_lessthan) {
 BOOST_AUTO_TEST_CASE(tree_derived_comp_ops) {
     tree<int, ordered> t1;
     tree<int, ordered> t2;
+    typedef tree<int, ordered>::node_type node_type;
 
     t1.insert(2);
     t2.insert(2);
@@ -936,6 +972,7 @@ BOOST_AUTO_TEST_CASE(tree_derived_comp_ops) {
 
 BOOST_AUTO_TEST_CASE(tree_op_equal_lhs_n_rhs_e) {
     tree<int, ordered> t1;
+    typedef tree<int, ordered>::node_type node_type;
     t1.insert(2);
     t1.root().insert(3);
 
@@ -951,6 +988,7 @@ BOOST_AUTO_TEST_CASE(tree_op_equal_lhs_n_rhs_e) {
 
 BOOST_AUTO_TEST_CASE(tree_op_equal_lhs_e_rhs_n) {
     tree<int, ordered> t1;
+    typedef tree<int, ordered>::node_type node_type;
 
     tree<int, ordered> t2;
     t2.insert(2);
@@ -968,6 +1006,7 @@ BOOST_AUTO_TEST_CASE(tree_op_equal_lhs_e_rhs_n) {
 
 BOOST_AUTO_TEST_CASE(tree_op_equal_lhs_n_rhs_n) {
     tree<int, ordered> t1;
+    typedef tree<int, ordered>::node_type node_type;
     t1.insert(31);
     t1.root().insert(41);
 
@@ -989,6 +1028,7 @@ BOOST_AUTO_TEST_CASE(tree_op_equal_lhs_n_rhs_n) {
 BOOST_AUTO_TEST_CASE(tree_swap) {
     tree<int, ordered> t1;
     tree<int, ordered> t2;
+    typedef tree<int, ordered>::node_type node_type;
 
     t1.insert(2);
     t2.insert(3);
