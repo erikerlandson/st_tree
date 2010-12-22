@@ -721,12 +721,12 @@ struct node_base {
     }
 
     static void _thread(shared_ptr<node_type>& n) {
-        n->_this = n;
         n->_size = 1;
-        for (cs_iterator j(n->_children.begin());  j !=  n->_children.end();  ++j) {
-            (*j)->_parent = n;
-            _thread(*j);
-            n->_size += (*j)->_size;
+        for (iterator j(n->begin());  j != n->end();  ++j) {
+            j->_parent = n;
+            shared_ptr<node_type> c = j->_this.lock();
+            _thread(c);
+            n->_size += j->_size;
         }
     }
 };
@@ -872,8 +872,10 @@ struct node_raw: public node_base<Tree, node_raw<Tree, Data>, vector<shared_ptr<
 
     shared_ptr<node_type> _copy_data() const {
         shared_ptr<node_type> n(new node_type);
+        n->_this = n;
         n->_data = this->_data;
         n->_depth = this->_depth;
+        n->_this = n;
         for (cs_const_iterator j(this->_children.begin()); j != this->_children.end(); ++j)
             n->_children.push_back((*j)->_copy_data());
         return n;
@@ -909,24 +911,32 @@ struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare>, m
     node_ordered& operator=(const node_ordered& rhs) {
         if (this == &rhs) return *this;
 
-#if 0
         // this would introduce cycles
         if (rhs.is_ancestor(*this)) throw exception();
 
-        // important if rhs is child of "this", to prevent it from getting deallocated by clear()
-        shared_ptr<node_type> r(rhs._this.lock());
+        shared_ptr<node_type> t(this->_this.lock());
+        shared_ptr<node_type> p;
+        if (!this->is_root()) {
+            p = this->_parent.lock();
+            cs_iterator tt = node_type::_cs_iterator(*this);
+            p->_children.erase(tt);
+        }
 
-        // in the case of vector storage, I can just leave current node where it is
         this->clear();
         this->_data = rhs._data;
         // do the copying work for children only
+        shared_ptr<node_type> r(rhs._this.lock());
         for (cs_const_iterator j(r->_children.begin());  j != r->_children.end();  ++j) {
             shared_ptr<node_type> n((*j)->_copy_data());
-            this->_children.push_back(n);
+            this->_children.insert(n);
             base_type::_thread(n);
             this->_graft(n);
         }
-#endif
+
+        if (!this->is_root()) {
+            p->_children.insert(t);
+        }
+
         return *this;
     }
 
@@ -1022,20 +1032,24 @@ struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare>, m
     protected:
     static cs_iterator _cs_iterator(node_type& n) {
         if (n.is_root()) throw exception();
-        cs_iterator j(n.parent()._children.find(n._this.lock()));
-        cs_iterator jend(n.parent()._children.end());
-        if (j == jend) throw exception();
-        return j;
+        pair<cs_iterator, cs_iterator> r(n.parent()._children.equal_range(n._this.lock()));
+        if (r.first == r.second) throw exception();
+        for (cs_iterator j(r.first);  j != r.second;  ++j)
+            if (*j == n._this.lock()) return j;
+        throw exception();
+        // to satisfy compiler:
+        return r.first;
     }
 
     shared_ptr<node_type> _copy_data() const {
         shared_ptr<node_type> n(new node_type);
-#if 0
+        n->_this = n;
         n->_data = this->_data;
         n->_depth = this->_depth;
-        for (cs_const_iterator j(this->_children.begin()); j != this->_children.end(); ++j)
-            n->_children.push_back((*j)->_copy_data());
-#endif
+        for (cs_const_iterator j(this->_children.begin());  j != this->_children.end();  ++j) {
+            shared_ptr<node_type> c((*j)->_copy_data());
+            n->_children.insert(c);
+        }
         return n;
     }
 };

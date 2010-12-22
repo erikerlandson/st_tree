@@ -425,7 +425,6 @@ BOOST_AUTO_TEST_CASE(clear_node) {
     CHECK_TREE(t1, subtree_size(), "1");
 }
 
-#if 0
 
 BOOST_AUTO_TEST_CASE(node_assign_op) {
     tree<int, ordered> t1;
@@ -453,6 +452,8 @@ BOOST_AUTO_TEST_CASE(node_assign_op) {
     CHECK_TREE(t2, ply(), "0 1 1");
     CHECK_TREE(t2, subtree_size(), "3 1 1");
 }
+
+#if 0
 
 
 BOOST_AUTO_TEST_CASE(node_op_equal_root) {
