@@ -453,8 +453,6 @@ BOOST_AUTO_TEST_CASE(node_assign_op) {
     CHECK_TREE(t2, subtree_size(), "3 1 1");
 }
 
-#if 0
-
 
 BOOST_AUTO_TEST_CASE(node_op_equal_root) {
     tree<int, ordered> t1;
@@ -481,29 +479,43 @@ BOOST_AUTO_TEST_CASE(node_op_equal_root) {
 }
 
 
+
+#if 0
+
 BOOST_AUTO_TEST_CASE(node_op_equal_subtree) {
     tree<int, ordered> t1;
     typedef tree<int, ordered>::node_type node_type;
 
+    BOOST_TEST_CHECKPOINT("here 1");
     t1.insert(2);
-    t1.root().insert(3);
-    t1.root().insert(5);
-    t1.root()[0].insert(7);
-    t1.root()[0].insert(11);
-    t1.root()[1].insert(13);
-    t1.root()[1].insert(17);
+    node_type& n3 = *t1.root().insert(3);
+    node_type& n5 = *t1.root().insert(5);
+    n3.insert(7);
+    node_type& n11 = *n3.insert(11);
+    n5.insert(13);
+    n5.insert(17);
 
-    BOOST_CHECK_THROW(t1.root()[0] = t1.root(), ootree::exception);
+    BOOST_TEST_CHECKPOINT("here 2");
+    BOOST_CHECK_THROW(n3 = t1.root(), ootree::exception);
 
-    t1.root() = t1.root()[0];
+    BOOST_TEST_CHECKPOINT("here 3");
+    t1.root() = n3;
     CHECK_TREE(t1, data(), "3 7 11");
     BOOST_CHECK_EQUAL(t1.size(), 3);
     BOOST_CHECK_EQUAL(t1.depth(), 2);
 
-    t1.root()[1].insert(13);
-    t1.root()[1].insert(17);
-    t1.root()[1] = t1.root()[1][1];
+    BOOST_TEST_CHECKPOINT("here 4");
+    typeof(t1.root().begin()) j11(t1.root().begin());
+    ++j11;
+    BOOST_TEST_CHECKPOINT("here 5");
+    j11->insert(13);
+    BOOST_TEST_CHECKPOINT("here 6");
+    node_type& n17 = *(j11->insert(17));
+    BOOST_TEST_CHECKPOINT("here 7");
+    *j11 = n17;
+    BOOST_TEST_CHECKPOINT("here 8");
     CHECK_TREE(t1, data(), "3 7 17");
+    BOOST_TEST_CHECKPOINT("here 9");
 }
 
 
