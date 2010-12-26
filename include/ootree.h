@@ -914,7 +914,11 @@ struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare>, m
         // this would introduce cycles
         if (rhs.is_ancestor(*this)) throw exception();
 
+        // important to save these prior to clearing 'this'
+        // note, rhs may be child of 'this', and get erased too, otherwise
         shared_ptr<node_type> t(this->_this.lock());
+        shared_ptr<node_type> r(rhs._this.lock());
+
         shared_ptr<node_type> p;
         if (!this->is_root()) {
             p = this->_parent.lock();
@@ -925,7 +929,6 @@ struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare>, m
         this->clear();
         this->_data = rhs._data;
         // do the copying work for children only
-        shared_ptr<node_type> r(rhs._this.lock());
         for (cs_const_iterator j(r->_children.begin());  j != r->_children.end();  ++j) {
             shared_ptr<node_type> n((*j)->_copy_data());
             this->_children.insert(n);
