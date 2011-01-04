@@ -37,6 +37,7 @@ namespace ootree {
 using std::tr1::shared_ptr;
 using std::tr1::weak_ptr;
 using std::tr1::dynamic_pointer_cast;
+using std::tr1::const_pointer_cast;
 using std::vector;
 using std::deque;
 using std::set;
@@ -943,9 +944,8 @@ struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare>, m
         return *this;
     }
 
-#if 0
+
     void swap(node_type& b) {
-#if 0
         node_type& a = *this;
 
         if (&a == &b) return;
@@ -953,30 +953,29 @@ struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare>, m
         // this would introduce cycles 
         if (a.is_ancestor(b) || b.is_ancestor(a)) throw exception();
 
-        tree_type* ta = &a.tree();
-        tree_type* tb = &b.tree();
         bool ira = a.is_root();
         bool irb = b.is_root();
 
-        shared_ptr<node_type>& qa = (ira) ? ta->_root : *(node_type::_cs_iterator(a));
-        shared_ptr<node_type>& qb = (irb) ? tb->_root : *(node_type::_cs_iterator(b));
-        shared_ptr<node_type> ra = qa;
-        shared_ptr<node_type> rb = qb;
+        tree_type* ta = (ira) ? &a.tree() : NULL;
+        tree_type* tb = (irb) ? &b.tree() : NULL;
 
-        shared_ptr<node_type> pa; if (!a.is_root()) pa = a._parent.lock();
-        shared_ptr<node_type> pb; if (!b.is_root()) pb = b._parent.lock();
+        cs_iterator ja, jb;
 
-        if (ira) ta->_prune(ra);   else pa->_prune(ra);
-        if (irb) tb->_prune(rb);   else pb->_prune(rb);
+        shared_ptr<node_type> ra = (ira) ? ta->_root : const_pointer_cast<node_type>(*(ja = node_type::_cs_iterator(a)));
+        shared_ptr<node_type> rb = (irb) ? tb->_root : const_pointer_cast<node_type>(*(jb = node_type::_cs_iterator(b)));
 
-        qa = rb;
-        qb = ra;
+        shared_ptr<node_type> pa; if (!ira) pa = a._parent.lock();
+        shared_ptr<node_type> pb; if (!irb) pb = b._parent.lock();
 
-        if (ira) ta->_graft(rb);   else pa->_graft(rb);
-        if (irb) tb->_graft(ra);   else pb->_graft(ra);
+        if (ira) ta->_prune(ra);   else { pa->_children.erase(ja);  pa->_prune(ra); }
+        if (irb) tb->_prune(rb);   else { pb->_children.erase(jb);  pb->_prune(rb); }
+
+        if (ira) { ta->_root = rb;  ta->_graft(rb); }   else { pa->_children.insert(rb);  pa->_graft(rb); }
+        if (irb) { tb->_root = ra;  tb->_graft(ra); }   else { pb->_children.insert(ra);  pb->_graft(ra); }
     }
-#endif
 
+
+#if 0
     void graft(node_type& b) {
 #if 0
         node_type& a = *this;
@@ -1239,6 +1238,11 @@ void swap(ootree::tree<Data, CSCat>& a, ootree::tree<Data, CSCat>& b) {
 
 template <typename Tree, typename Data>
 void swap(ootree::node_raw<Tree, Data>&a, ootree::node_raw<Tree, Data>& b) {
+    a.swap(b);
+}
+
+template <typename Tree, typename Data, typename Compare>
+void swap(ootree::node_ordered<Tree, Data, Compare>&a, ootree::node_ordered<Tree, Data, Compare>& b) {
     a.swap(b);
 }
 
