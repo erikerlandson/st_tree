@@ -1092,4 +1092,22 @@ BOOST_AUTO_TEST_CASE(tree_swap) {
 }
 
 
+BOOST_AUTO_TEST_CASE(ordering_behavior) {
+    tree<int, ordered> t1;
+    typedef tree<int, ordered>::node_type node_type;
+
+    t1.insert(2);
+    node_type& n5 = *t1.root().insert(5);
+    t1.root().insert(3);
+    t1.root().insert(7);
+    n5.insert(17);
+    n5.insert(13);
+    n5.insert(11);
+
+    CHECK_TREE(t1, data(), "2 3 5 7 11 13 17");
+    CHECK_TREE(t1, ply(), "0 1 1 1 2 2 2");
+    CHECK_TREE(t1, depth(), "3 1 2 1 1 1 1");
+    CHECK_TREE(t1, subtree_size(), "7 1 4 1 1 1 1")
+}
+
 BOOST_AUTO_TEST_SUITE_END()
