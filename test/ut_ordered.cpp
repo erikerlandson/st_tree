@@ -1015,7 +1015,6 @@ BOOST_AUTO_TEST_CASE(tree_derived_comp_ops) {
 }
 
 
-#if 0
 BOOST_AUTO_TEST_CASE(tree_op_equal_lhs_n_rhs_e) {
     tree<int, ordered> t1;
     typedef tree<int, ordered>::node_type node_type;
@@ -1091,6 +1090,6 @@ BOOST_AUTO_TEST_CASE(tree_swap) {
     CHECK_TREE(t1, data(), "2");
     CHECK_TREE(t2, data(), "3");
 }
-#endif
+
 
 BOOST_AUTO_TEST_SUITE_END()
