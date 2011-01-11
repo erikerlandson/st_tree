@@ -751,7 +751,6 @@ BOOST_AUTO_TEST_CASE(graft) {
 }
 
 
-#if 0
 BOOST_AUTO_TEST_CASE(insert_node) {
     tree<int, ordered> t1;
     tree<int, ordered> t2;
@@ -780,8 +779,8 @@ BOOST_AUTO_TEST_CASE(insert_node) {
 
     t1.insert(2);
     t1.root().insert(3);
-    t1.root().insert(5);
-    t2.insert(t1.root()[1]);
+    node_type& n5a = *t1.root().insert(5);
+    t2.insert(n5a);
     CHECK_TREE(t1, data(), "2 3 5");
     CHECK_TREE(t1, depth(), "2 1 1");
     CHECK_TREE(t1, ply(), "0 1 1");
@@ -839,9 +838,9 @@ BOOST_AUTO_TEST_CASE(insert_node) {
 
     t1.insert(2);
     t1.root().insert(3);
-    t1.root().insert(5);
+    node_type& n5b = *t1.root().insert(5);
     t2.insert(1);
-    t2.root().insert(t1.root()[1]);
+    t2.root().insert(n5b);
     CHECK_TREE(t1, data(), "2 3 5");
     CHECK_TREE(t1, depth(), "2 1 1");
     CHECK_TREE(t1, ply(), "0 1 1");
@@ -852,7 +851,7 @@ BOOST_AUTO_TEST_CASE(insert_node) {
     CHECK_TREE(t2, subtree_size(), "2 1");
 }
 
-
+#if 0
 BOOST_AUTO_TEST_CASE(node_op_equality) {
     tree<int, ordered> t1;
     typedef tree<int, ordered>::node_type node_type;

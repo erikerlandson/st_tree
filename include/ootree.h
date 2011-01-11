@@ -1011,21 +1011,17 @@ struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare>, m
         return iterator(r);
     }
 
-#if 0
     void insert(const node_type& b) {
-#if 0
         shared_ptr<node_type> n(b._copy_data());
         base_type::_thread(n);
-        this->_children.push_back(n);
+        this->_children.insert(n);
         this->_graft(n);
-#endif
     }
     void insert(const tree_type& b) {
         if (b.empty()) return;
         insert(b.root());
     }
 
-#endif
 
     protected:
     static cs_iterator _cs_iterator(node_type& n) {
