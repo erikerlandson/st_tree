@@ -975,9 +975,7 @@ struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare>, m
     }
 
 
-#if 0
     void graft(node_type& b) {
-#if 0
         node_type& a = *this;
 
         // this would introduce cycles 
@@ -989,16 +987,14 @@ struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare>, m
         b.erase();
 
         // graft b to current location
-        a._children.push_back(rb);
+        a._children.insert(rb);
         a._graft(rb);
-#endif
     }
 
     void graft(tree_type& b) {
         if (b.empty()) return;
         graft(b.root());
     }
-#endif
 
     // data needs to be immutable for this class, since it's the sort key, so
     // only const access allowed
