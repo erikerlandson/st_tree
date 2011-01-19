@@ -26,6 +26,7 @@ limitations under the License.
 #include <vector>
 #include <deque>
 #include <set>
+#include <map>
 #include <functional>
 #include <algorithm>
 #include <iterator>
@@ -42,6 +43,7 @@ using std::vector;
 using std::deque;
 using std::set;
 using std::multiset;
+using std::map;
 using std::less;
 using std::pair;
 using std::cerr;
@@ -547,10 +549,12 @@ struct ptr_less_data {
     Compare _comp;
 };
 
+
 struct dereferenceable_lessthan {
     template <typename D>
     bool operator()(const D& a, const D& b) const { return *a < *b; }
 };
+
 
 template <typename Tree, typename Node, typename ChildContainer>
 struct node_base {
@@ -1049,6 +1053,173 @@ struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare>, m
 };
 
 
+template <typename Tree, typename Data, typename Key, typename Compare>
+struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare>, map<Key, shared_ptr<node_keyed<Tree, Data, Key, Compare> >, Compare> > {
+    typedef node_keyed<Tree, Data, Key, Compare> this_type;
+    typedef this_type node_type;
+    typedef Tree tree_type;
+    typedef map<Key, shared_ptr<node_type>, Compare> cs_type;
+    typedef node_base<Tree, node_type, cs_type> base_type;
+    typedef typename Tree::size_type size_type;
+    typedef Data data_type;
+    typedef Key key_type;
+
+    typedef typename base_type::iterator iterator;
+    typedef typename base_type::const_iterator const_iterator;
+
+    friend class tree_type::tree_type;
+    friend class node_base<Tree, node_type, cs_type>;
+
+    protected:
+    typedef typename base_type::cs_iterator cs_iterator;
+    typedef typename base_type::cs_const_iterator cs_const_iterator;
+
+    public:
+    node_keyed() : base_type() {}
+    virtual ~node_keyed() {}
+
+#if 0
+    node_ordered(const node_ordered& src) { *this = src; }
+    node_ordered& operator=(const node_ordered& rhs) {
+        if (this == &rhs) return *this;
+
+        // this would introduce cycles
+        if (rhs.is_ancestor(*this)) throw exception();
+
+        // important to save these prior to clearing 'this'
+        // note, rhs may be child of 'this', and get erased too, otherwise
+        shared_ptr<node_type> t(this->_this.lock());
+        shared_ptr<node_type> r(rhs._this.lock());
+
+        shared_ptr<node_type> p;
+        if (!this->is_root()) {
+            p = this->_parent.lock();
+            cs_iterator tt = node_type::_cs_iterator(*this);
+            p->_children.erase(tt);
+        }
+
+        this->clear();
+        this->_data = rhs._data;
+        // do the copying work for children only
+        for (cs_const_iterator j(r->_children.begin());  j != r->_children.end();  ++j) {
+            shared_ptr<node_type> n((*j)->_copy_data());
+            this->_children.insert(n);
+            base_type::_thread(n);
+            this->_graft(n);
+        }
+
+        if (!this->is_root()) {
+            p->_children.insert(t);
+        }
+
+        return *this;
+    }
+
+
+    void swap(node_type& b) {
+        node_type& a = *this;
+
+        if (&a == &b) return;
+
+        // this would introduce cycles 
+        if (a.is_ancestor(b) || b.is_ancestor(a)) throw exception();
+
+        bool ira = a.is_root();
+        bool irb = b.is_root();
+
+        tree_type* ta = (ira) ? &a.tree() : NULL;
+        tree_type* tb = (irb) ? &b.tree() : NULL;
+
+        cs_iterator ja, jb;
+
+        shared_ptr<node_type> ra = (ira) ? ta->_root : const_pointer_cast<node_type>(*(ja = node_type::_cs_iterator(a)));
+        shared_ptr<node_type> rb = (irb) ? tb->_root : const_pointer_cast<node_type>(*(jb = node_type::_cs_iterator(b)));
+
+        shared_ptr<node_type> pa; if (!ira) pa = a._parent.lock();
+        shared_ptr<node_type> pb; if (!irb) pb = b._parent.lock();
+
+        if (ira) ta->_prune(ra);   else { pa->_children.erase(ja);  pa->_prune(ra); }
+        if (irb) tb->_prune(rb);   else { pb->_children.erase(jb);  pb->_prune(rb); }
+
+        if (ira) { ta->_root = rb;  ta->_graft(rb); }   else { pa->_children.insert(rb);  pa->_graft(rb); }
+        if (irb) { tb->_root = ra;  tb->_graft(ra); }   else { pb->_children.insert(ra);  pb->_graft(ra); }
+    }
+
+
+    void graft(node_type& b) {
+        node_type& a = *this;
+
+        // this would introduce cycles 
+        if (&a == &b) throw exception();
+        if (b.is_ancestor(a)) throw exception();
+
+        // remove b from its current location
+        shared_ptr<node_type> rb = b._this.lock();
+        b.erase();
+
+        // graft b to current location
+        a._children.insert(rb);
+        a._graft(rb);
+    }
+
+    void graft(tree_type& b) {
+        if (b.empty()) return;
+        graft(b.root());
+    }
+
+    data_type& data() { return this->_data; }
+    const data_type& data() const { return this->_data; }
+
+    iterator insert(const data_type& data) {
+        shared_ptr<node_type> n(new node_type);
+        n->_data = data;
+        n->_this = n;
+        n->_size = 1;
+        n->_depth.insert(1);
+        cs_iterator r = this->_children.insert(n);
+        this->_graft(n);
+        return iterator(r);
+    }
+
+    void insert(const node_type& b) {
+        shared_ptr<node_type> n(b._copy_data());
+        base_type::_thread(n);
+        this->_children.insert(n);
+        this->_graft(n);
+    }
+    void insert(const tree_type& b) {
+        if (b.empty()) return;
+        insert(b.root());
+    }
+
+
+    protected:
+    static cs_iterator _cs_iterator(node_type& n) {
+        if (n.is_root()) throw exception();
+        pair<cs_iterator, cs_iterator> r(n.parent()._children.equal_range(n._this.lock()));
+        if (r.first == r.second) throw exception();
+        for (cs_iterator j(r.first);  j != r.second;  ++j)
+            if (*j == n._this.lock()) return j;
+        throw exception();
+        // to satisfy compiler:
+        return r.first;
+    }
+
+    shared_ptr<node_type> _copy_data() const {
+        shared_ptr<node_type> n(new node_type);
+        n->_this = n;
+        n->_data = this->_data;
+        n->_depth = this->_depth;
+        for (cs_const_iterator j(this->_children.begin());  j != this->_children.end();  ++j) {
+            shared_ptr<node_type> c((*j)->_copy_data());
+            n->_children.insert(c);
+        }
+        return n;
+    }
+#endif
+};
+
+
 struct node_type_dispatch_failed {};
 
 template <typename Tree, typename CSCat>
@@ -1069,6 +1240,13 @@ struct node_type_dispatch<Tree, cscat<raw, arg_unused, arg_unused> > {
 template <typename Tree, typename Compare>
 struct node_type_dispatch<Tree, cscat<ordered, Compare, arg_unused> > {
     typedef node_ordered<Tree, typename Tree::data_type, Compare> node_type;
+    typedef typename node_type::base_type base_type;
+};
+
+
+template <typename Tree, typename Key, typename Compare>
+struct node_type_dispatch<Tree, cscat<keyed, Key, Compare> > {
+    typedef node_keyed<Tree, typename Tree::data_type, Key, Compare> node_type;
     typedef typename node_type::base_type base_type;
 };
 

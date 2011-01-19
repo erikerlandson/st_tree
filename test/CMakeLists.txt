@@ -10,6 +10,7 @@ if (Boost_FOUND)
                    ut_vmap_iter.cpp
                    ut_raw.cpp
                    ut_ordered.cpp
+                   ut_keyed.cpp
                   )
     include_directories(${Boost_INCLUDE_DIR})
     target_link_libraries(ootree_unit_test ${Boost_LIBRARIES})
