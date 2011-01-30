@@ -153,6 +153,19 @@ struct dref_vmap {
 template <typename X>
 struct dref_second_vmap {
     // X is a type that is de-referenceable: supports the unary "*" dereference operator 
+    typedef typeof(*(X().second)) R;
+
+    // Set these both to return non-const reference (see dref_vmap comment above)
+    R& operator()(X& x) const { return *(x.second); }
+    R& operator()(const X& x) const { return const_cast<R&>(*(x.second)); }
+
+    bool operator==(const dref_second_vmap& rhs) const { return true; }
+    bool operator!=(const dref_second_vmap& rhs) const { return false; }
+};
+
+template <typename X>
+struct second_dref_vmap {
+    // X is a type that is de-referenceable: supports the unary "*" dereference operator 
     typedef typeof(*(X())) drX;
     typedef typeof(drX().second) R;
 
@@ -160,8 +173,8 @@ struct dref_second_vmap {
     R& operator()(X& x) const { return x->second; }
     R& operator()(const X& x) const { return x->second; }
 
-    bool operator==(const dref_second_vmap& rhs) const { return true; }
-    bool operator!=(const dref_second_vmap& rhs) const { return false; }
+    bool operator==(const second_dref_vmap& rhs) const { return true; }
+    bool operator!=(const second_dref_vmap& rhs) const { return false; }
 };
 
 
@@ -567,6 +580,20 @@ struct dereferenceable_lessthan {
 };
 
 
+template <typename Tree, typename Data, typename Key, typename Compare> struct node_keyed;
+
+
+template <typename Node, typename Value>
+struct vmap_dispatch {
+    typedef dref_vmap<Value> vmap;
+};
+
+template <typename Tree, typename Data, typename Key, typename Compare, typename Value>
+struct vmap_dispatch<node_keyed<Tree, Data, Key, Compare>, Value> {
+    typedef dref_second_vmap<Value> vmap;
+};
+
+
 template <typename Tree, typename Node, typename ChildContainer>
 struct node_base {
     typedef node_base<Tree, Node, ChildContainer> this_type;
@@ -635,8 +662,8 @@ struct node_base {
     typedef typename cs_type::const_iterator cs_const_iterator;
     
     public:
-    typedef valmap_iterator_adaptor<cs_iterator, dref_vmap<typename cs_iterator::value_type> > iterator;
-    typedef valmap_iterator_adaptor<cs_const_iterator, dref_vmap<typename cs_const_iterator::value_type> > const_iterator;
+    typedef valmap_iterator_adaptor<cs_iterator, typename vmap_dispatch<node_type, typename cs_iterator::value_type>::vmap> iterator;
+    typedef valmap_iterator_adaptor<cs_const_iterator, typename vmap_dispatch<node_type, typename cs_const_iterator::value_type>::vmap> const_iterator;
 
     iterator begin() { return iterator(_children.begin()); }
     iterator end() { return iterator(_children.end()); }
@@ -1074,6 +1101,7 @@ struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare>, 
     typedef typename Tree::size_type size_type;
     typedef Data data_type;
     typedef Key key_type;
+    typedef pair<const key_type, data_type> value_type;
 
     typedef typename base_type::iterator iterator;
     typedef typename base_type::const_iterator const_iterator;
@@ -1084,10 +1112,32 @@ struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare>, 
     protected:
     typedef typename base_type::cs_iterator cs_iterator;
     typedef typename base_type::cs_const_iterator cs_const_iterator;
+    typedef typename cs_type::value_type cs_value_type;
+    key_type _key;
 
     public:
-    node_keyed() : base_type() {}
+    node_keyed() : base_type(), _key() {}
     virtual ~node_keyed() {}
+
+    data_type& data() { return this->_data; }
+    const data_type& data() const { return this->_data; }
+
+    // keys are const access only
+    const key_type& key() const { return this->_key; }
+
+    node_type& operator[](const key_type& key) { return *(insert(value_type(key, data_type())).first); }
+
+    pair<iterator, bool> insert(const value_type& val) {
+        shared_ptr<node_type> n(new node_type);
+        n->_key = val.first;
+        n->_data = val.second;
+        n->_this = n;
+        n->_size = 1;
+        n->_depth.insert(1);
+        pair<cs_iterator, bool> r = this->_children.insert(cs_value_type(&(n->_key), n));
+        this->_graft(n);
+        return pair<iterator, bool>(iterator(r.first), r.second);
+    }
 
 #if 0
     node_ordered(const node_ordered& src) { *this = src; }
@@ -1176,20 +1226,6 @@ struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare>, 
     void graft(tree_type& b) {
         if (b.empty()) return;
         graft(b.root());
-    }
-
-    data_type& data() { return this->_data; }
-    const data_type& data() const { return this->_data; }
-
-    iterator insert(const data_type& data) {
-        shared_ptr<node_type> n(new node_type);
-        n->_data = data;
-        n->_this = n;
-        n->_size = 1;
-        n->_depth.insert(1);
-        cs_iterator r = this->_children.insert(n);
-        this->_graft(n);
-        return iterator(r);
     }
 
     void insert(const node_type& b) {
