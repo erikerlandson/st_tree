@@ -539,6 +539,17 @@ struct cscat_dispatch<Data, cscat<keyed, Key, KeyComp> > {
 
 
 template <typename Compare>
+struct ptr_less {
+    ptr_less() : _comp() {}
+    virtual ~ptr_less() {}
+
+    template <typename Pointer>
+    bool operator()(const Pointer& a, const Pointer& b) const { return _comp(*a, *b); }
+
+    Compare _comp;
+};
+
+template <typename Compare>
 struct ptr_less_data {
     ptr_less_data() : _comp() {}
     virtual ~ptr_less_data() {}
@@ -1054,11 +1065,11 @@ struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare>, m
 
 
 template <typename Tree, typename Data, typename Key, typename Compare>
-struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare>, map<Key, shared_ptr<node_keyed<Tree, Data, Key, Compare> >, Compare> > {
+struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare>, map<const Key*, shared_ptr<node_keyed<Tree, Data, Key, Compare> >, ptr_less<Compare> > > {
     typedef node_keyed<Tree, Data, Key, Compare> this_type;
     typedef this_type node_type;
     typedef Tree tree_type;
-    typedef map<Key, shared_ptr<node_type>, Compare> cs_type;
+    typedef map<const Key*, shared_ptr<node_type>, ptr_less<Compare> > cs_type;
     typedef node_base<Tree, node_type, cs_type> base_type;
     typedef typename Tree::size_type size_type;
     typedef Data data_type;
