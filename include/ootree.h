@@ -1125,6 +1125,8 @@ struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare>, 
     // keys are const access only
     const key_type& key() const { return this->_key; }
 
+    iterator find(const key_type& key) { return iterator(this->_children.find(&key)); }
+
     node_type& operator[](const key_type& key) {
         iterator f(this->find(key));
         if (this->end() == f) f = this->insert(value_type(key, data_type())).first;
@@ -1143,7 +1145,7 @@ struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare>, 
         return pair<iterator, bool>(iterator(r.first), r.second);
     }
 
-    iterator find(const key_type& key) { return iterator(this->_children.find(&key)); }
+    pair<iterator, bool> insert(const key_type& key, const data_type& data) { return insert(value_type(key, data)); }
 
 #if 0
     node_ordered(const node_ordered& src) { *this = src; }
