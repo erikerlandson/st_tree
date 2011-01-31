@@ -250,7 +250,7 @@ struct valmap_iterator_adaptor {
 template <typename Node>
 struct b1st_iterator {
     typedef Node node_type;
-    typedef typename node_type::iterator::base_iterator iterator;
+    typedef typename node_type::iterator iterator;
 
     typedef std::forward_iterator_tag iterator_category;
     typedef node_type value_type;
@@ -283,7 +283,7 @@ struct b1st_iterator {
 
         if (f->empty()) return *this;
         for (iterator j(f->begin());  j != iterator(f->end());  ++j)
-            _queue.push_back(*j);
+            _queue.push_back(j->_this.lock());
 
         return *this;
     }
@@ -306,7 +306,7 @@ struct b1st_iterator {
 template <typename Node>
 struct d1st_post_iterator {
     typedef Node node_type;
-    typedef typename node_type::iterator::base_iterator iterator;
+    typedef typename node_type::iterator iterator;
 
     typedef std::forward_iterator_tag iterator_category;
     typedef node_type value_type;
@@ -349,7 +349,7 @@ struct d1st_post_iterator {
                 break;
             }
             iterator b(_stack.back().first->begin());
-            _stack.push_back(frame(*b, iterator((*b)->begin()), false));
+            _stack.push_back(frame(b->_this.lock(), iterator((b)->begin()), false));
         }
     }
 
@@ -377,14 +377,14 @@ struct d1st_post_iterator {
         }
 
         // we found a next child at current ply: push down its first children to the bottom
-        _stack.push_back(frame(*(_stack.back().second), iterator((*_stack.back().second)->begin()), false));
+        _stack.push_back(frame((_stack.back().second)->_this.lock(), iterator((_stack.back().second)->begin()), false));
         while (true) {
             if (_stack.back().first->empty()) {
                 _stack.back().visited = true;
                 break;
             }
             iterator b(_stack.back().first->begin());
-            _stack.push_back(frame(*b, iterator((*b)->begin()), false));                
+            _stack.push_back(frame(b->_this.lock(), iterator((b)->begin()), false));                
         }
 
         return *this;
@@ -408,7 +408,7 @@ struct d1st_post_iterator {
 template <typename Node>
 struct d1st_pre_iterator {
     typedef Node node_type;
-    typedef typename node_type::iterator::base_iterator iterator;
+    typedef typename node_type::iterator iterator;
 
     typedef std::forward_iterator_tag iterator_category;
     typedef node_type value_type;
@@ -459,7 +459,7 @@ struct d1st_pre_iterator {
         if (!_stack.back().visited) {
             _stack.back().visited = true;
             if (!_stack.back().first->empty()) {
-                _stack.push_back(frame(*(_stack.back().second), iterator((*(_stack.back().second))->begin()), false));
+                _stack.push_back(frame((_stack.back().second)->_this.lock(), iterator(((_stack.back().second))->begin()), false));
                 return *this;
             }
         }
@@ -477,7 +477,7 @@ struct d1st_pre_iterator {
         }
 
         // push the next child
-        _stack.push_back(frame(*(_stack.back().second), iterator((*(_stack.back().second))->begin()), false));
+        _stack.push_back(frame((_stack.back().second)->_this.lock(), iterator(((_stack.back().second))->begin()), false));
 
         return *this;
     }
@@ -718,6 +718,10 @@ struct node_base {
     bool operator>=(const node_base& rhs) const { return !(*this < rhs); }
 
     friend class tree_type::tree_type;
+    friend class b1st_iterator<node_type>;
+    friend class d1st_post_iterator<node_type>;
+    friend class d1st_pre_iterator<node_type>;
+
     protected:
     tree_type* _tree;
     size_type _size;

@@ -67,6 +67,8 @@ BOOST_AUTO_TEST_CASE(clear) {
     BOOST_CHECK_EQUAL(t1.empty(), false);
     BOOST_CHECK_EQUAL(t1.root().size(), 2);
 
+    CHECK_TREE(t1, data(), "7 8 9");
+
     t1.clear();
     BOOST_CHECK_EQUAL(t1.size(), 0);
     BOOST_CHECK_EQUAL(t1.depth(), 0);
