@@ -1250,20 +1250,17 @@ struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare>, 
         if (b.empty()) return;
         insert(b.root());
     }
-
+#endif
 
     protected:
     static cs_iterator _cs_iterator(node_type& n) {
         if (n.is_root()) throw exception();
-        pair<cs_iterator, cs_iterator> r(n.parent()._children.equal_range(n._this.lock()));
-        if (r.first == r.second) throw exception();
-        for (cs_iterator j(r.first);  j != r.second;  ++j)
-            if (*j == n._this.lock()) return j;
-        throw exception();
-        // to satisfy compiler:
-        return r.first;
+        cs_iterator j(n.parent()._children.find(&n._key));
+        if (j == n.parent()._children.end()) throw exception();
+        return j;
     }
 
+#if 0
     shared_ptr<node_type> _copy_data() const {
         shared_ptr<node_type> n(new node_type);
         n->_this = n;
