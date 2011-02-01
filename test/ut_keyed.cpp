@@ -76,4 +76,28 @@ BOOST_AUTO_TEST_CASE(clear) {
     BOOST_CHECK_THROW(t1.root(), ootree::exception);
 }
 
+
+BOOST_AUTO_TEST_CASE(reinsert) {
+    tree<int, cscat<keyed, std::string> > t1;
+    typedef tree<int, cscat<keyed, std::string> >::node_type::value_type value_type;
+ 
+    t1.insert(7);
+    t1.root().insert("0", 8);
+    t1.root().insert("1", 9);
+    BOOST_CHECK_EQUAL(t1.size(), 3);
+    BOOST_CHECK_EQUAL(t1.depth(), 2);
+    BOOST_CHECK_EQUAL(t1.empty(), false);
+    BOOST_CHECK_EQUAL(t1.root().size(), 2);
+    CHECK_TREE(t1, data(), "7 8 9");
+
+    t1.insert(3);
+    BOOST_CHECK_EQUAL(t1.size(), 1);
+    BOOST_CHECK_EQUAL(t1.depth(), 1);
+    BOOST_CHECK_EQUAL(t1.empty(), false);
+    BOOST_CHECK_EQUAL(t1.root().size(), 0);
+    BOOST_CHECK_EQUAL(t1.root().data(), 3);
+    CHECK_TREE(t1, data(), "3");
+}
+
+
 BOOST_AUTO_TEST_SUITE_END()
