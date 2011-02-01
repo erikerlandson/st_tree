@@ -142,4 +142,94 @@ BOOST_AUTO_TEST_CASE(erase_noarg) {
 }
 
 
+BOOST_AUTO_TEST_CASE(bf_iterator_empty) {
+    tree<int, cscat<keyed, std::string> > t1;
+    typedef tree<int, cscat<keyed, std::string> >::node_type::value_type value_type;
+
+    BOOST_CHECK_EQUAL(t1.bf_begin() == t1.bf_end(), true);
+    BOOST_CHECK_EQUAL(t1.bf_begin() != t1.bf_end(), false);
+}
+
+
+BOOST_AUTO_TEST_CASE(bf_iterator) {
+    tree<int, cscat<keyed, std::string> > t1;
+    typedef tree<int, cscat<keyed, std::string> >::node_type::value_type value_type;
+
+    CHECK_TREE(t1, data(), "");
+
+    t1.insert(2);
+    CHECK_TREE(t1, data(), "2");
+
+    t1.root().insert("0", 3);
+    t1.root().insert("1", 5);
+    CHECK_TREE(t1, data(), "2 3 5");
+
+    t1.root()["0"].insert("0",7);
+    t1.root()["1"].insert("0",13);
+    t1.root()["0"].insert("1",11);
+    t1.root()["1"].insert("1",17);
+    CHECK_TREE(t1, data(), "2 3 5 7 11 13 17");
+}
+
+
+BOOST_AUTO_TEST_CASE(df_post_iterator_empty) {
+    tree<int, cscat<keyed, std::string> > t1;
+    typedef tree<int, cscat<keyed, std::string> >::node_type::value_type value_type;
+
+    BOOST_CHECK_EQUAL(t1.df_post_begin() == t1.df_post_end(), true);
+    BOOST_CHECK_EQUAL(t1.df_post_begin() != t1.df_post_end(), false);
+}
+
+
+BOOST_AUTO_TEST_CASE(df_post_iterator) {
+    tree<int, cscat<keyed, std::string> > t1;
+    typedef tree<int, cscat<keyed, std::string> >::node_type::value_type value_type;
+
+    CHECK_TREE_DF_POST(t1, data(), "");
+
+    t1.insert(2);
+    CHECK_TREE_DF_POST(t1, data(), "2");
+
+    t1.root().insert("0",3);
+    t1.root().insert("1",5);
+    CHECK_TREE_DF_POST(t1, data(), "3 5 2");
+
+    t1.root()["0"].insert("0",7);
+    t1.root()["1"].insert("0",13);
+    t1.root()["0"].insert("1",11);
+    t1.root()["1"].insert("1",17);
+    CHECK_TREE_DF_POST(t1, data(), "7 11 3 13 17 5 2");
+}
+
+
+BOOST_AUTO_TEST_CASE(df_pre_iterator_empty) {
+    tree<int, cscat<keyed, std::string> > t1;
+    typedef tree<int, cscat<keyed, std::string> >::node_type::value_type value_type;
+
+    BOOST_CHECK_EQUAL(t1.df_pre_begin() == t1.df_pre_end(), true);
+    BOOST_CHECK_EQUAL(t1.df_pre_begin() != t1.df_pre_end(), false);
+}
+
+
+BOOST_AUTO_TEST_CASE(df_pre_iterator) {
+    tree<int, cscat<keyed, std::string> > t1;
+    typedef tree<int, cscat<keyed, std::string> >::node_type::value_type value_type;
+
+    CHECK_TREE_DF_PRE(t1, data(), "");
+
+    t1.insert(2);
+    CHECK_TREE_DF_PRE(t1, data(), "2");
+
+    t1.root().insert("0",3);
+    t1.root().insert("1",5);
+    CHECK_TREE_DF_PRE(t1, data(), "2 3 5");
+
+    t1.root()["0"].insert("0",7);
+    t1.root()["1"].insert("0",13);
+    t1.root()["0"].insert("1",11);
+    t1.root()["1"].insert("1",17);
+    CHECK_TREE_DF_PRE(t1, data(), "2 3 7 11 5 13 17");
+}
+
+
 BOOST_AUTO_TEST_SUITE_END()
