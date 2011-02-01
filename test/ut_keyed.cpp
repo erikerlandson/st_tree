@@ -100,4 +100,21 @@ BOOST_AUTO_TEST_CASE(reinsert) {
 }
 
 
+BOOST_AUTO_TEST_CASE(erase) {
+    tree<int, cscat<keyed, std::string> > t1;
+    typedef tree<int, cscat<keyed, std::string> >::node_type::value_type value_type;
+ 
+    t1.insert(7);
+    t1.root().insert("0", 8);
+    CHECK_TREE(t1, data(), "7 8");
+
+    t1.root().erase(t1.root().begin());
+    BOOST_CHECK_EQUAL(t1.size(), 1);
+    BOOST_CHECK_EQUAL(t1.depth(), 1);
+    BOOST_CHECK_EQUAL(t1.empty(), false);
+    BOOST_CHECK_EQUAL(t1.root().size(), 0);
+    BOOST_CHECK_EQUAL(t1.root().data(), 7);
+}
+
+
 BOOST_AUTO_TEST_SUITE_END()

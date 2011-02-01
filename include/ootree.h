@@ -672,9 +672,9 @@ struct node_base {
     bool empty() const { return _children.empty(); }
 
     void erase(const iterator& j) {
-        cs_iterator csj(j);
-        shared_ptr<node_type> n((*csj)->_this.lock());
+        shared_ptr<node_type> n((j)->_this.lock());
         _prune(n);
+        cs_iterator csj(j);
         _children.erase(csj);
     }
 
