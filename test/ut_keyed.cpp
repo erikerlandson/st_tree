@@ -232,4 +232,119 @@ BOOST_AUTO_TEST_CASE(df_pre_iterator) {
 }
 
 
+BOOST_AUTO_TEST_CASE(node_ply) {
+    tree<int, cscat<keyed, std::string> > t1;
+    typedef tree<int, cscat<keyed, std::string> >::node_type::value_type value_type;
+
+    t1.insert(2);
+    CHECK_TREE(t1, data(), "2");
+    CHECK_TREE(t1, ply(), "0");
+
+    t1.root().insert("0",3);
+    t1.root().insert("1",5);
+    CHECK_TREE(t1, data(), "2 3 5");
+    CHECK_TREE(t1, ply(), "0 1 1");
+
+    t1.root()["0"].insert("0",7);
+    t1.root()["0"].insert("1",11);
+    t1.root()["1"].insert("0",13);
+    t1.root()["1"].insert("1",17);
+    CHECK_TREE(t1, data(), "2 3 5 7 11 13 17");
+    CHECK_TREE(t1, ply(), "0 1 1 2 2 2 2");
+
+    t1.root().insert("2",77);
+    CHECK_TREE(t1, data(), "2 3 5 77 7 11 13 17");
+    CHECK_TREE(t1, ply(), "0 1 1 1 2 2 2 2");
+
+    t1.root().erase(t1.root().begin());
+    CHECK_TREE(t1, data(), "2 5 77 13 17");
+    CHECK_TREE(t1, ply(), "0 1 1 2 2");
+
+    t1.root().erase(t1.root().begin());
+    CHECK_TREE(t1, data(), "2 77");
+    CHECK_TREE(t1, ply(), "0 1");
+
+    t1.root().erase(t1.root().begin());
+    CHECK_TREE(t1, data(), "2");
+    CHECK_TREE(t1, ply(), "0");
+}
+
+BOOST_AUTO_TEST_CASE(node_depth) {
+    tree<int, cscat<keyed, std::string> > t1;
+    typedef tree<int, cscat<keyed, std::string> >::node_type::value_type value_type;
+
+    t1.insert(2);
+    CHECK_TREE(t1, data(), "2");
+    CHECK_TREE(t1, depth(), "1");
+    CHECK_TREE(t1, ply(), "0");
+
+    t1.root().insert("0",3);
+    t1.root().insert("1",5);
+    CHECK_TREE(t1, data(), "2 3 5");
+    CHECK_TREE(t1, depth(), "2 1 1");
+    CHECK_TREE(t1, ply(), "0 1 1");
+
+    t1.root()["0"].insert("0",7);
+    t1.root()["0"].insert("1",11);
+    t1.root()["1"].insert("0",13);
+    t1.root()["1"].insert("1",17);
+    CHECK_TREE(t1, data(), "2 3 5 7 11 13 17");
+    CHECK_TREE(t1, depth(), "3 2 2 1 1 1 1");
+    CHECK_TREE(t1, ply(), "0 1 1 2 2 2 2");
+
+    t1.root().insert("2",77);
+    CHECK_TREE(t1, data(), "2 3 5 77 7 11 13 17");
+    CHECK_TREE(t1, depth(), "3 2 2 1 1 1 1 1");
+    CHECK_TREE(t1, ply(), "0 1 1 1 2 2 2 2");
+
+    t1.root().erase(t1.root().begin());
+    CHECK_TREE(t1, data(), "2 5 77 13 17");
+    CHECK_TREE(t1, depth(), "3 2 1 1 1");
+
+    t1.root().erase(t1.root().begin());
+    CHECK_TREE(t1, data(), "2 77");
+    CHECK_TREE(t1, depth(), "2 1");
+
+    t1.root().erase(t1.root().begin());
+    CHECK_TREE(t1, data(), "2");
+    CHECK_TREE(t1, depth(), "1");
+}
+
+BOOST_AUTO_TEST_CASE(node_subtree_size) {
+    tree<int, cscat<keyed, std::string> > t1;
+    typedef tree<int, cscat<keyed, std::string> >::node_type::value_type value_type;
+
+    t1.insert(2);
+    CHECK_TREE(t1, data(), "2");
+    CHECK_TREE(t1, subtree_size(), "1");
+
+    t1.root().insert("0",3);
+    t1.root().insert("1",5);
+    CHECK_TREE(t1, data(), "2 3 5");
+    CHECK_TREE(t1, subtree_size(), "3 1 1");
+
+    t1.root()["0"].insert("0",7);
+    t1.root()["0"].insert("1",11);
+    t1.root()["1"].insert("0",13);
+    t1.root()["1"].insert("1",17);
+    CHECK_TREE(t1, data(), "2 3 5 7 11 13 17");
+    CHECK_TREE(t1, subtree_size(), "7 3 3 1 1 1 1");
+
+    t1.root().insert("2",77);
+    CHECK_TREE(t1, data(), "2 3 5 77 7 11 13 17");
+    CHECK_TREE(t1, subtree_size(), "8 3 3 1 1 1 1 1");
+
+    t1.root().erase(t1.root().begin());
+    CHECK_TREE(t1, data(), "2 5 77 13 17");
+    CHECK_TREE(t1, subtree_size(), "5 3 1 1 1");
+
+    t1.root().erase(t1.root().begin());
+    CHECK_TREE(t1, data(), "2 77");
+    CHECK_TREE(t1, subtree_size(), "2 1");
+
+    t1.root().erase(t1.root().begin());
+    CHECK_TREE(t1, data(), "2");
+    CHECK_TREE(t1, subtree_size(), "1");
+}
+
 BOOST_AUTO_TEST_SUITE_END()
