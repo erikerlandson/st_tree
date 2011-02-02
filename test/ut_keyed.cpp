@@ -347,4 +347,17 @@ BOOST_AUTO_TEST_CASE(node_subtree_size) {
     CHECK_TREE(t1, subtree_size(), "1");
 }
 
+BOOST_AUTO_TEST_CASE(node_parent) {
+    tree<int, cscat<keyed, std::string> > t1;
+    typedef tree<int, cscat<keyed, std::string> >::node_type::value_type value_type;
+
+    t1.insert(2);
+    BOOST_CHECK_THROW(t1.root().parent(), ootree::exception);
+    t1.root().insert("0",3);
+    BOOST_CHECK_EQUAL(t1.root()["0"].parent().data(), 2);
+    const tree<int, cscat<keyed, std::string> >& t2 = t1;
+    BOOST_CHECK_EQUAL(t2.root()["0"].parent().data(), 2);    
+}
+
+
 BOOST_AUTO_TEST_SUITE_END()

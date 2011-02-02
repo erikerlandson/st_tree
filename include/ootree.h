@@ -667,6 +667,8 @@ struct node_base {
 
     iterator begin() { return iterator(_children.begin()); }
     iterator end() { return iterator(_children.end()); }
+    const_iterator begin() const { return const_iterator(_children.begin()); }
+    const_iterator end() const { return const_iterator(_children.end()); }
 
     size_type size() const { return _children.size(); }
     bool empty() const { return _children.empty(); }
@@ -1130,10 +1132,16 @@ struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare>, 
     const key_type& key() const { return this->_key; }
 
     iterator find(const key_type& key) { return iterator(this->_children.find(&key)); }
+    const_iterator find(const key_type& key) const { return const_iterator(this->_children.find(&key)); }
 
     node_type& operator[](const key_type& key) {
         iterator f(this->find(key));
         if (this->end() == f) f = this->insert(value_type(key, data_type())).first;
+        return *f;
+    }
+    const node_type& operator[](const key_type& key) const {
+        const_iterator f(this->find(key));
+        if (this->end() == f) throw exception();
         return *f;
     }
 
