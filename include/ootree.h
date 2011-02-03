@@ -703,8 +703,8 @@ struct node_base {
         if (this == &rhs) return true;
         if (_children.size() != rhs._children.size()) return false;
         if (_data != rhs._data) return false;
-        for (cs_const_iterator jL(_children.begin()), jR(rhs._children.begin());  jL != _children.end();  ++jL,++jR)
-            if (**jL != **jR) return false;
+        for (const_iterator jL(begin()), jR(rhs.begin());  jL != end();  ++jL,++jR)
+            if (*jL != *jR) return false;
         return true;
     }
     bool operator!=(const node_base& rhs) const { return !(*this == rhs); }

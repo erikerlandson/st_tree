@@ -360,4 +360,21 @@ BOOST_AUTO_TEST_CASE(node_parent) {
 }
 
 
+BOOST_AUTO_TEST_CASE(node_tree) {
+    tree<int, cscat<keyed, std::string> > t1;
+    typedef tree<int, cscat<keyed, std::string> >::node_type::value_type value_type;
+
+    t1.insert(2);
+    t1.root().insert("0",3);
+    t1.root().insert("1",5);
+    tree<int, cscat<keyed, std::string> >& t2 = t1.root().tree();
+    BOOST_CHECK_EQUAL(t1 == t2, true);
+    t2 = t1.root()["0"].tree();
+    BOOST_CHECK_EQUAL(t1 == t2, true);
+    const tree<int, cscat<keyed, std::string> >& t3 = t1;
+    const tree<int, cscat<keyed, std::string> >& t4 = t3.root().tree();
+    BOOST_CHECK_EQUAL(t1 == t4, true);
+}
+
+
 BOOST_AUTO_TEST_SUITE_END()
