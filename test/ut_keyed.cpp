@@ -377,4 +377,52 @@ BOOST_AUTO_TEST_CASE(node_tree) {
 }
 
 
+BOOST_AUTO_TEST_CASE(erase_node) {
+    tree<int, cscat<keyed, std::string> > t1;
+    typedef tree<int, cscat<keyed, std::string> >::node_type::value_type value_type;
+
+    t1.insert(2);
+    t1.root().insert("0",3);
+    t1.root().insert("1",5);
+    t1.root()["0"].insert("0",7);
+    t1.root()["1"].insert("0",13);
+    t1.root()["0"].insert("1",11);
+    t1.root()["1"].insert("1",17);
+    BOOST_CHECK_EQUAL(t1.size(), 7);
+    BOOST_CHECK_EQUAL(t1.depth(), 3);
+
+    t1.root().erase(t1.root().begin());
+    BOOST_CHECK_EQUAL(t1.size(), 4);
+    BOOST_CHECK_EQUAL(t1.depth(), 3);
+
+    CHECK_TREE(t1, data(), "2 5 13 17");
+    CHECK_TREE(t1, ply(), "0 1 2 2");
+    CHECK_TREE(t1, subtree_size(), "4 3 1 1");
+}
+
+
+BOOST_AUTO_TEST_CASE(clear_node) {
+    tree<int, cscat<keyed, std::string> > t1;
+    typedef tree<int, cscat<keyed, std::string> >::node_type::value_type value_type;
+
+    t1.insert(2);
+    t1.root().insert("0",3);
+    t1.root().insert("1",5);
+    t1.root()["0"].insert("0",7);
+    t1.root()["1"].insert("0",13);
+    t1.root()["0"].insert("1",11);
+    t1.root()["1"].insert("1",17);
+    BOOST_CHECK_EQUAL(t1.size(), 7);
+    BOOST_CHECK_EQUAL(t1.depth(), 3);
+
+    t1.root().clear();
+    BOOST_CHECK_EQUAL(t1.size(), 1);
+    BOOST_CHECK_EQUAL(t1.depth(), 1);
+
+    CHECK_TREE(t1, data(), "2");
+    CHECK_TREE(t1, ply(), "0");
+    CHECK_TREE(t1, subtree_size(), "1");
+}
+
+
 BOOST_AUTO_TEST_SUITE_END()

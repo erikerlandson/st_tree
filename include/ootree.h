@@ -681,13 +681,11 @@ struct node_base {
     }
 
     void erase(const iterator& F, const iterator& L) {
-        cs_iterator csF(F);
-        cs_iterator csL(L);
-        for (cs_iterator j(csF);  j != csL;  ++j) {
-            shared_ptr<node_type> n((*j)->_this.lock());
+        for (iterator j(F);  j != L;  ++j) {
+            shared_ptr<node_type> n((j)->_this.lock());
             _prune(n);
         }
-        _children.erase(csF, csL);
+        _children.erase(F, L);
     }
 
     void erase() {
