@@ -1157,9 +1157,8 @@ struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare>, 
 
     pair<iterator, bool> insert(const key_type& key, const data_type& data) { return insert(value_type(key, data)); }
 
-#if 0
-    node_ordered(const node_ordered& src) { *this = src; }
-    node_ordered& operator=(const node_ordered& rhs) {
+    node_keyed(const node_keyed& src) { *this = src; }
+    node_keyed& operator=(const node_keyed& rhs) {
         if (this == &rhs) return *this;
 
         // this would introduce cycles
@@ -1167,33 +1166,23 @@ struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare>, 
 
         // important to save these prior to clearing 'this'
         // note, rhs may be child of 'this', and get erased too, otherwise
-        shared_ptr<node_type> t(this->_this.lock());
         shared_ptr<node_type> r(rhs._this.lock());
 
-        shared_ptr<node_type> p;
-        if (!this->is_root()) {
-            p = this->_parent.lock();
-            cs_iterator tt = node_type::_cs_iterator(*this);
-            p->_children.erase(tt);
-        }
-
+        // I'm going to define semantics of assignment as analogous to raw:
+        // the key of the LHS node does not change
         this->clear();
         this->_data = rhs._data;
         // do the copying work for children only
         for (cs_const_iterator j(r->_children.begin());  j != r->_children.end();  ++j) {
-            shared_ptr<node_type> n((*j)->_copy_data());
-            this->_children.insert(n);
+            shared_ptr<node_type> n((j->second)->_copy_data());
+            this->_children.insert(cs_value_type(&(n->_key), n));
             base_type::_thread(n);
             this->_graft(n);
         }
-
-        if (!this->is_root()) {
-            p->_children.insert(t);
-        }
-
         return *this;
     }
 
+#if 0
 
     void swap(node_type& b) {
         node_type& a = *this;
@@ -1266,19 +1255,18 @@ struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare>, 
         return j;
     }
 
-#if 0
     shared_ptr<node_type> _copy_data() const {
         shared_ptr<node_type> n(new node_type);
         n->_this = n;
         n->_data = this->_data;
+        n->_key = this->_key;
         n->_depth = this->_depth;
         for (cs_const_iterator j(this->_children.begin());  j != this->_children.end();  ++j) {
-            shared_ptr<node_type> c((*j)->_copy_data());
-            n->_children.insert(c);
+            shared_ptr<node_type> c((j->second)->_copy_data());
+            n->_children.insert(cs_value_type(&(c->_key), c));
         }
         return n;
     }
-#endif
 };
 
 

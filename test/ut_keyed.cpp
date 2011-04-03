@@ -425,4 +425,90 @@ BOOST_AUTO_TEST_CASE(clear_node) {
 }
 
 
+BOOST_AUTO_TEST_CASE(node_op_equal) {
+    tree<int, cscat<keyed, std::string> > t1;
+    typedef tree<int, cscat<keyed, std::string> >::node_type::value_type value_type;
+
+    t1.insert(2);
+    t1.root().insert("0",3);
+
+    CHECK_TREE(t1, data(), "2 3");
+    CHECK_TREE(t1, ply(), "0 1");
+    CHECK_TREE(t1, key(), " 0");
+
+    tree<int, cscat<keyed, std::string> > t2;
+    t2.insert(5);
+    t2.root().insert("0",7);
+    t2.root().insert("1",11);
+
+    t1.root()["0"] = t2.root();
+    BOOST_CHECK_EQUAL(t1.size(), 4);
+    BOOST_CHECK_EQUAL(t1.depth(), 3);
+
+    CHECK_TREE(t1, data(), "2 5 7 11");
+    CHECK_TREE(t1, ply(), "0 1 2 2");
+    CHECK_TREE(t1, subtree_size(), "4 3 1 1");
+    CHECK_TREE(t1, key(), " 0 0 1");
+
+    CHECK_TREE(t2, data(), "5 7 11");
+    CHECK_TREE(t2, ply(), "0 1 1");
+    CHECK_TREE(t2, subtree_size(), "3 1 1");
+}
+
+
+BOOST_AUTO_TEST_CASE(node_op_equal_root) {
+    tree<int, cscat<keyed, std::string> > t1;
+    typedef tree<int, cscat<keyed, std::string> >::node_type::value_type value_type;
+
+    t1.insert(2);
+    t1.root().insert("0",3);
+
+    tree<int, cscat<keyed, std::string> > t2;
+    t2.insert(5);
+    t2.root().insert("0",7);
+    t2.root().insert("1",11);
+
+    t1.root() = t2.root();
+    BOOST_CHECK_EQUAL(t1.size(), 3);
+    BOOST_CHECK_EQUAL(t1.depth(), 2);
+
+    CHECK_TREE(t1, data(), "5 7 11");
+    CHECK_TREE(t1, ply(), "0 1 1");
+    CHECK_TREE(t1, subtree_size(), "3 1 1");
+    CHECK_TREE(t1, key(), " 0 1");
+
+    CHECK_TREE(t2, data(), "5 7 11");
+    CHECK_TREE(t2, ply(), "0 1 1");
+    CHECK_TREE(t1, subtree_size(), "3 1 1");
+}
+
+
+BOOST_AUTO_TEST_CASE(node_op_equal_subtree) {
+    tree<int, cscat<keyed, std::string> > t1;
+    typedef tree<int, cscat<keyed, std::string> >::node_type::value_type value_type;
+
+    t1.insert(2);
+    t1.root().insert("0",3);
+    t1.root().insert("1",5);
+    t1.root()["0"].insert("0",7);
+    t1.root()["0"].insert("1",11);
+    t1.root()["1"].insert("0",13);
+    t1.root()["1"].insert("1",17);
+
+    BOOST_CHECK_THROW(t1.root()["0"] = t1.root(), ootree::exception);
+
+    t1.root() = t1.root()["0"];
+    CHECK_TREE(t1, data(), "3 7 11");
+    CHECK_TREE(t1, key(), " 0 1");
+    BOOST_CHECK_EQUAL(t1.size(), 3);
+    BOOST_CHECK_EQUAL(t1.depth(), 2);
+
+    t1.root()["1"].insert("0",13);
+    t1.root()["1"].insert("1",17);
+    t1.root()["1"] = t1.root()["1"]["1"];
+    CHECK_TREE(t1, data(), "3 7 17");
+    CHECK_TREE(t1, key(), " 0 1");
+}
+
+
 BOOST_AUTO_TEST_SUITE_END()
