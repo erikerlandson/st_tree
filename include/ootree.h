@@ -1215,10 +1215,7 @@ struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare>, 
         if (irb) { tb->_root = ra;  tb->_graft(ra); }   else { pb->_children.insert(cs_value_type(&(ra->_key), ra));  pb->_graft(ra); }
     }
 
-
-#if 0
-
-    void graft(node_type& b) {
+    void graft(const key_type& key, node_type& b) {
         node_type& a = *this;
 
         // this would introduce cycles 
@@ -1230,14 +1227,17 @@ struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare>, 
         b.erase();
 
         // graft b to current location
-        a._children.insert(rb);
+        rb->_key = key;
+        a._children.insert(cs_value_type(&(rb->_key), rb));
         a._graft(rb);
     }
 
-    void graft(tree_type& b) {
+    void graft(const key_type& key, tree_type& b) {
         if (b.empty()) return;
-        graft(b.root());
+        graft(key, b.root());
     }
+
+#if 0
 
     void insert(const node_type& b) {
         shared_ptr<node_type> n(b._copy_data());
