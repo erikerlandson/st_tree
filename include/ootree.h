@@ -1182,7 +1182,6 @@ struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare>, 
         return *this;
     }
 
-#if 0
 
     void swap(node_type& b) {
         node_type& a = *this;
@@ -1200,8 +1199,8 @@ struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare>, 
 
         cs_iterator ja, jb;
 
-        shared_ptr<node_type> ra = (ira) ? ta->_root : const_pointer_cast<node_type>(*(ja = node_type::_cs_iterator(a)));
-        shared_ptr<node_type> rb = (irb) ? tb->_root : const_pointer_cast<node_type>(*(jb = node_type::_cs_iterator(b)));
+        shared_ptr<node_type> ra = (ira) ? ta->_root : const_pointer_cast<node_type>((ja = _cs_iterator(a))->second);
+        shared_ptr<node_type> rb = (irb) ? tb->_root : const_pointer_cast<node_type>((jb = _cs_iterator(b))->second);
 
         shared_ptr<node_type> pa; if (!ira) pa = a._parent.lock();
         shared_ptr<node_type> pb; if (!irb) pb = b._parent.lock();
@@ -1209,10 +1208,15 @@ struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare>, 
         if (ira) ta->_prune(ra);   else { pa->_children.erase(ja);  pa->_prune(ra); }
         if (irb) tb->_prune(rb);   else { pb->_children.erase(jb);  pb->_prune(rb); }
 
-        if (ira) { ta->_root = rb;  ta->_graft(rb); }   else { pa->_children.insert(rb);  pa->_graft(rb); }
-        if (irb) { tb->_root = ra;  tb->_graft(ra); }   else { pb->_children.insert(ra);  pb->_graft(ra); }
+        // keeping analogous to "raw" semantic where keys don't change
+        std::swap(ra->_key, rb->_key);
+
+        if (ira) { ta->_root = rb;  ta->_graft(rb); }   else { pa->_children.insert(cs_value_type(&(rb->_key), rb));  pa->_graft(rb); }
+        if (irb) { tb->_root = ra;  tb->_graft(ra); }   else { pb->_children.insert(cs_value_type(&(ra->_key), ra));  pb->_graft(ra); }
     }
 
+
+#if 0
 
     void graft(node_type& b) {
         node_type& a = *this;
@@ -1466,6 +1470,11 @@ void swap(ootree::node_ordered<Tree, Data, Compare>&a, ootree::node_ordered<Tree
     a.swap(b);
 }
 
-};  // namespace ootree
+template <typename Tree, typename Data, typename Key, typename Compare>
+void swap(ootree::node_keyed<Tree, Data, Key, Compare>&a, ootree::node_keyed<Tree, Data, Key, Compare>& b) {
+    a.swap(b);
+}
+
+};  // namespace std
 
 #endif  // __ootree_h__

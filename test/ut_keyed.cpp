@@ -510,5 +510,112 @@ BOOST_AUTO_TEST_CASE(node_op_equal_subtree) {
     CHECK_TREE(t1, key(), " 0 1");
 }
 
+BOOST_AUTO_TEST_CASE(node_swap) {
+    tree<int, cscat<keyed, std::string> > t1;
+    tree<int, cscat<keyed, std::string> > t2;
+    typedef tree<int, cscat<keyed, std::string> >::node_type::value_type value_type;
+    
+    t1.insert(2);
+    t1.root().insert("0",3);
+    t1.root().insert("1",5);
+    t1.root()["0"].insert("0",7);
+    t1.root()["0"].insert("1",11);
+
+    t2.insert(102);
+    t2.root().insert("0",103);
+    t2.root().insert("1",105);
+    t2.root()["0"].insert("0",107);
+    t2.root()["0"].insert("1",111);
+
+    // swap a leaf
+    swap(t1.root()["0"]["0"], t2.root()["0"]["0"]);
+    BOOST_CHECK_EQUAL(t1.size(), 5);
+    BOOST_CHECK_EQUAL(t1.depth(), 3);
+    CHECK_TREE(t1, data(), "2 3 5 107 11");
+    CHECK_TREE(t1, ply(), "0 1 1 2 2");
+    CHECK_TREE(t1, depth(), "3 2 1 1 1");
+    CHECK_TREE(t1, subtree_size(), "5 3 1 1 1");
+
+    BOOST_CHECK_EQUAL(t2.size(), 5);
+    BOOST_CHECK_EQUAL(t2.depth(), 3);
+    CHECK_TREE(t2, data(), "102 103 105 7 111");
+    CHECK_TREE(t2, ply(), "0 1 1 2 2");
+    CHECK_TREE(t2, depth(), "3 2 1 1 1");
+    CHECK_TREE(t2, subtree_size(), "5 3 1 1 1");
+
+    // put it back
+    swap(t1.root()["0"]["0"], t2.root()["0"]["0"]);
+
+    // swap an internal
+    swap(t1.root()["0"], t2.root()["0"]);
+    BOOST_CHECK_EQUAL(t1.size(), 5);
+    BOOST_CHECK_EQUAL(t1.depth(), 3);
+    CHECK_TREE(t1, data(), "2 103 5 107 111");
+    CHECK_TREE(t1, ply(), "0 1 1 2 2");
+    CHECK_TREE(t1, depth(), "3 2 1 1 1");
+    CHECK_TREE(t1, subtree_size(), "5 3 1 1 1");
+    BOOST_CHECK_EQUAL(t2.size(), 5);
+    BOOST_CHECK_EQUAL(t2.depth(), 3);
+    CHECK_TREE(t2, data(), "102 3 105 7 11");
+    CHECK_TREE(t2, ply(), "0 1 1 2 2");
+    CHECK_TREE(t2, depth(), "3 2 1 1 1");
+    CHECK_TREE(t2, subtree_size(), "5 3 1 1 1");
+
+    // put it back
+    swap(t1.root()["0"], t2.root()["0"]);
+
+    // swap the root
+    swap(t1.root(), t2.root());
+    BOOST_CHECK_EQUAL(t1.size(), 5);
+    BOOST_CHECK_EQUAL(t1.depth(), 3);
+    CHECK_TREE(t1, data(), "102 103 105 107 111");
+    CHECK_TREE(t1, ply(), "0 1 1 2 2");
+    CHECK_TREE(t1, depth(), "3 2 1 1 1");
+    CHECK_TREE(t1, subtree_size(), "5 3 1 1 1");
+    BOOST_CHECK_EQUAL(t2.size(), 5);
+    BOOST_CHECK_EQUAL(t2.depth(), 3);
+    CHECK_TREE(t2, data(), "2 3 5 7 11");
+    CHECK_TREE(t2, ply(), "0 1 1 2 2");
+    CHECK_TREE(t2, depth(), "3 2 1 1 1");
+    CHECK_TREE(t2, subtree_size(), "5 3 1 1 1");
+
+    // put it back
+    swap(t1.root(), t2.root());
+
+    // swap different plies
+    swap(t1.root(), t2.root()["0"]);
+    BOOST_CHECK_EQUAL(t1.size(), 3);
+    BOOST_CHECK_EQUAL(t1.depth(), 2);
+    CHECK_TREE(t1, data(), "103 107 111");
+    CHECK_TREE(t1, ply(), "0 1 1");
+    CHECK_TREE(t1, depth(), "2 1 1");
+    CHECK_TREE(t1, subtree_size(), "3 1 1");
+    BOOST_CHECK_EQUAL(t2.size(), 7);
+    BOOST_CHECK_EQUAL(t2.depth(), 4);
+    CHECK_TREE(t2, data(), "102 2 105 3 5 7 11");
+    CHECK_TREE(t2, ply(), "0 1 1 2 2 3 3");
+    CHECK_TREE(t2, depth(), "4 3 1 2 1 1 1");
+    CHECK_TREE(t2, subtree_size(), "7 5 1 3 1 1 1");
+
+    // put them back
+    swap(t1.root(), t2.root()["0"]);
+
+    // on same tree
+    swap(t1.root()["0"], t1.root()["1"]);
+    BOOST_CHECK_EQUAL(t1.size(), 5);
+    BOOST_CHECK_EQUAL(t1.depth(), 3);
+    CHECK_TREE(t1, data(), "2 5 3 7 11");
+    CHECK_TREE(t1, ply(), "0 1 1 2 2");
+    CHECK_TREE(t1, depth(), "3 1 2 1 1");
+    CHECK_TREE(t1, subtree_size(), "5 1 3 1 1");
+
+    // put them back
+    swap(t1.root()["0"], t1.root()["1"]);
+
+    // no-no
+    BOOST_CHECK_THROW(swap(t1.root(), t1.root()["0"]), ootree::exception);
+    BOOST_CHECK_THROW(swap(t1.root()["1"], t1.root()), ootree::exception);
+}
+
 
 BOOST_AUTO_TEST_SUITE_END()
