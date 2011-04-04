@@ -574,11 +574,22 @@ struct ptr_less_data {
 };
 
 
+template <typename Container>
 struct dereferenceable_lessthan {
     template <typename D>
     bool operator()(const D& a, const D& b) const { return *a < *b; }
 };
 
+template <typename Key, typename Data, typename Compare, typename Alloc>
+struct dereferenceable_lessthan<map<Key, Data, Compare, Alloc> > {
+    template <typename D>
+    bool operator()(const D& a, const D& b) const {
+        if (_lt((a.first), (b.first))) return true;
+        if (_lt((b.first), (a.first))) return false;
+        return *(a.second) < *(b.second);
+    }
+    Compare _lt;
+};
 
 template <typename Tree, typename Data, typename Key, typename Compare> struct node_keyed;
 
@@ -710,7 +721,7 @@ struct node_base {
     bool operator<(const node_base& rhs) const {
         if (this == &rhs) return false;
         if (_data != rhs._data) return (_data < rhs._data);
-        dereferenceable_lessthan lt;
+        dereferenceable_lessthan<cs_type> lt;
         return std::lexicographical_compare(_children.begin(), _children.end(), rhs._children.begin(), rhs._children.end(), lt);
     }
     bool operator>(const node_base& rhs) const { return rhs < *this; }
