@@ -974,4 +974,81 @@ BOOST_AUTO_TEST_CASE(tree_derived_comp_ops) {
 }
 
 
+BOOST_AUTO_TEST_CASE(tree_op_equal_lhs_n_rhs_e) {
+    tree<int, cscat<keyed, std::string> > t1;
+    tree<int, cscat<keyed, std::string> > t2;
+    typedef tree<int, cscat<keyed, std::string> >::node_type::value_type value_type;
+    
+    t1.insert(2);
+    t1.root().insert("0",3);
+
+    t1 = t2;
+
+    BOOST_CHECK_EQUAL(t1.empty(), true);
+    BOOST_CHECK_EQUAL(t2.empty(), true);
+
+    CHECK_TREE(t1, data(), "");
+}
+
+BOOST_AUTO_TEST_CASE(tree_op_equal_lhs_e_rhs_n) {
+    tree<int, cscat<keyed, std::string> > t1;
+    tree<int, cscat<keyed, std::string> > t2;
+    typedef tree<int, cscat<keyed, std::string> >::node_type::value_type value_type;
+    
+    t2.insert(2);
+    t2.root().insert("0",3);
+
+    t1 = t2;
+
+    BOOST_CHECK_EQUAL(t1.empty(), false);
+    BOOST_CHECK_EQUAL(t2.empty(), false);
+
+    CHECK_TREE(t1, data(), "2 3");
+    CHECK_TREE(t1, ply(), "0 1");
+    CHECK_TREE(t1, subtree_size(), "2 1");
+}
+
+BOOST_AUTO_TEST_CASE(tree_op_equal_lhs_n_rhs_n) {
+    tree<int, cscat<keyed, std::string> > t1;
+    tree<int, cscat<keyed, std::string> > t2;
+    typedef tree<int, cscat<keyed, std::string> >::node_type::value_type value_type;
+    
+    t1.insert(31);
+    t1.root().insert("0",41);
+
+    t2.insert(2);
+    t2.root().insert("0",3);
+
+    t1 = t2;
+
+    BOOST_CHECK_EQUAL(t1.empty(), false);
+    BOOST_CHECK_EQUAL(t2.empty(), false);
+
+    CHECK_TREE(t1, data(), "2 3");
+    CHECK_TREE(t1, ply(), "0 1");
+    CHECK_TREE(t1, subtree_size(), "2 1");
+}
+
+
+BOOST_AUTO_TEST_CASE(tree_swap) {
+    tree<int, cscat<keyed, std::string> > t1;
+    tree<int, cscat<keyed, std::string> > t2;
+    typedef tree<int, cscat<keyed, std::string> >::node_type::value_type value_type;
+    
+    t1.insert(2);
+    t2.insert(3);
+
+    // method version
+    t1.swap(t2);
+
+    CHECK_TREE(t1, data(), "3");
+    CHECK_TREE(t2, data(), "2");
+
+    // function version
+    swap(t1, t2);
+
+    CHECK_TREE(t1, data(), "2");
+    CHECK_TREE(t2, data(), "3");
+}
+
 BOOST_AUTO_TEST_SUITE_END()
