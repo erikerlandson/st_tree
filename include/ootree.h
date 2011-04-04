@@ -1237,19 +1237,20 @@ struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare>, 
         graft(key, b.root());
     }
 
-#if 0
 
-    void insert(const node_type& b) {
+    void insert(const key_type& key, const node_type& b) {
         shared_ptr<node_type> n(b._copy_data());
+        n->_key = key;
         base_type::_thread(n);
-        this->_children.insert(n);
+        this->_children.insert(cs_value_type(&(n->_key),n));
         this->_graft(n);
     }
-    void insert(const tree_type& b) {
+
+    void insert(const key_type& key, const tree_type& b) {
         if (b.empty()) return;
-        insert(b.root());
+        insert(key, b.root());
     }
-#endif
+
 
     protected:
     static cs_iterator _cs_iterator(node_type& n) {
