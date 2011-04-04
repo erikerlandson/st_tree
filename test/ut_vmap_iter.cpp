@@ -35,13 +35,13 @@ BOOST_AUTO_TEST_CASE(dref_map_shared_ptr_const) {
 
 BOOST_AUTO_TEST_CASE(dref_second_map_shared_ptr) {
     shared_ptr<pair<int,int> > t1(new pair<int, int>(3,4));
-    dref_second_vmap<typeof(t1)> vmap;
+    second_dref_vmap<typeof(t1)> vmap;
     BOOST_CHECK_EQUAL(vmap(t1), t1->second);
 }
 
 BOOST_AUTO_TEST_CASE(dref_second_map_shared_ptr_const) {
     shared_ptr<pair<int,int> const> t1(new pair<int, int>(3,4));
-    dref_second_vmap<typeof(t1)> vmap;
+    second_dref_vmap<typeof(t1)> vmap;
     BOOST_CHECK_EQUAL(vmap(t1), t1->second);
 }
 
@@ -140,7 +140,7 @@ BOOST_AUTO_TEST_CASE(using_dref_map_int_pair_shared_pointer) {
 BOOST_AUTO_TEST_CASE(using_dref_second_map_int_pair_shared_pointer) {
     vector<shared_ptr<pair<int,int> > > v;
     typedef typeof(v.begin()) iterator;
-    typedef valmap_iterator_adaptor<iterator, dref_second_vmap<iterator::value_type > > vm_iterator;
+    typedef valmap_iterator_adaptor<iterator, second_dref_vmap<iterator::value_type > > vm_iterator;
 
     v.push_back(shared_ptr<pair<int,int> >(new pair<int,int>(1,4)));
     v.push_back(shared_ptr<pair<int,int> >(new pair<int,int>(2,5)));

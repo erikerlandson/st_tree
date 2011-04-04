@@ -26,6 +26,7 @@ limitations under the License.
 #include <vector>
 #include <deque>
 #include <set>
+#include <map>
 #include <functional>
 #include <algorithm>
 #include <iterator>
@@ -42,6 +43,7 @@ using std::vector;
 using std::deque;
 using std::set;
 using std::multiset;
+using std::map;
 using std::less;
 using std::pair;
 using std::cerr;
@@ -151,6 +153,19 @@ struct dref_vmap {
 template <typename X>
 struct dref_second_vmap {
     // X is a type that is de-referenceable: supports the unary "*" dereference operator 
+    typedef typeof(*(X().second)) R;
+
+    // Set these both to return non-const reference (see dref_vmap comment above)
+    R& operator()(X& x) const { return *(x.second); }
+    R& operator()(const X& x) const { return const_cast<R&>(*(x.second)); }
+
+    bool operator==(const dref_second_vmap& rhs) const { return true; }
+    bool operator!=(const dref_second_vmap& rhs) const { return false; }
+};
+
+template <typename X>
+struct second_dref_vmap {
+    // X is a type that is de-referenceable: supports the unary "*" dereference operator 
     typedef typeof(*(X())) drX;
     typedef typeof(drX().second) R;
 
@@ -158,8 +173,8 @@ struct dref_second_vmap {
     R& operator()(X& x) const { return x->second; }
     R& operator()(const X& x) const { return x->second; }
 
-    bool operator==(const dref_second_vmap& rhs) const { return true; }
-    bool operator!=(const dref_second_vmap& rhs) const { return false; }
+    bool operator==(const second_dref_vmap& rhs) const { return true; }
+    bool operator!=(const second_dref_vmap& rhs) const { return false; }
 };
 
 
@@ -235,7 +250,7 @@ struct valmap_iterator_adaptor {
 template <typename Node>
 struct b1st_iterator {
     typedef Node node_type;
-    typedef typename node_type::iterator::base_iterator iterator;
+    typedef typename node_type::iterator iterator;
 
     typedef std::forward_iterator_tag iterator_category;
     typedef node_type value_type;
@@ -268,7 +283,7 @@ struct b1st_iterator {
 
         if (f->empty()) return *this;
         for (iterator j(f->begin());  j != iterator(f->end());  ++j)
-            _queue.push_back(*j);
+            _queue.push_back(j->_this.lock());
 
         return *this;
     }
@@ -291,7 +306,7 @@ struct b1st_iterator {
 template <typename Node>
 struct d1st_post_iterator {
     typedef Node node_type;
-    typedef typename node_type::iterator::base_iterator iterator;
+    typedef typename node_type::iterator iterator;
 
     typedef std::forward_iterator_tag iterator_category;
     typedef node_type value_type;
@@ -334,7 +349,7 @@ struct d1st_post_iterator {
                 break;
             }
             iterator b(_stack.back().first->begin());
-            _stack.push_back(frame(*b, iterator((*b)->begin()), false));
+            _stack.push_back(frame(b->_this.lock(), iterator((b)->begin()), false));
         }
     }
 
@@ -362,14 +377,14 @@ struct d1st_post_iterator {
         }
 
         // we found a next child at current ply: push down its first children to the bottom
-        _stack.push_back(frame(*(_stack.back().second), iterator((*_stack.back().second)->begin()), false));
+        _stack.push_back(frame((_stack.back().second)->_this.lock(), iterator((_stack.back().second)->begin()), false));
         while (true) {
             if (_stack.back().first->empty()) {
                 _stack.back().visited = true;
                 break;
             }
             iterator b(_stack.back().first->begin());
-            _stack.push_back(frame(*b, iterator((*b)->begin()), false));                
+            _stack.push_back(frame(b->_this.lock(), iterator((b)->begin()), false));                
         }
 
         return *this;
@@ -393,7 +408,7 @@ struct d1st_post_iterator {
 template <typename Node>
 struct d1st_pre_iterator {
     typedef Node node_type;
-    typedef typename node_type::iterator::base_iterator iterator;
+    typedef typename node_type::iterator iterator;
 
     typedef std::forward_iterator_tag iterator_category;
     typedef node_type value_type;
@@ -444,7 +459,7 @@ struct d1st_pre_iterator {
         if (!_stack.back().visited) {
             _stack.back().visited = true;
             if (!_stack.back().first->empty()) {
-                _stack.push_back(frame(*(_stack.back().second), iterator((*(_stack.back().second))->begin()), false));
+                _stack.push_back(frame((_stack.back().second)->_this.lock(), iterator(((_stack.back().second))->begin()), false));
                 return *this;
             }
         }
@@ -462,7 +477,7 @@ struct d1st_pre_iterator {
         }
 
         // push the next child
-        _stack.push_back(frame(*(_stack.back().second), iterator((*(_stack.back().second))->begin()), false));
+        _stack.push_back(frame((_stack.back().second)->_this.lock(), iterator(((_stack.back().second))->begin()), false));
 
         return *this;
     }
@@ -537,6 +552,17 @@ struct cscat_dispatch<Data, cscat<keyed, Key, KeyComp> > {
 
 
 template <typename Compare>
+struct ptr_less {
+    ptr_less() : _comp() {}
+    virtual ~ptr_less() {}
+
+    template <typename Pointer>
+    bool operator()(const Pointer& a, const Pointer& b) const { return _comp(*a, *b); }
+
+    Compare _comp;
+};
+
+template <typename Compare>
 struct ptr_less_data {
     ptr_less_data() : _comp() {}
     virtual ~ptr_less_data() {}
@@ -547,10 +573,37 @@ struct ptr_less_data {
     Compare _comp;
 };
 
+
+template <typename Container>
 struct dereferenceable_lessthan {
     template <typename D>
     bool operator()(const D& a, const D& b) const { return *a < *b; }
 };
+
+template <typename Key, typename Data, typename Compare, typename Alloc>
+struct dereferenceable_lessthan<map<Key, Data, Compare, Alloc> > {
+    template <typename D>
+    bool operator()(const D& a, const D& b) const {
+        if (_lt((a.first), (b.first))) return true;
+        if (_lt((b.first), (a.first))) return false;
+        return *(a.second) < *(b.second);
+    }
+    Compare _lt;
+};
+
+template <typename Tree, typename Data, typename Key, typename Compare> struct node_keyed;
+
+
+template <typename Node, typename Value>
+struct vmap_dispatch {
+    typedef dref_vmap<Value> vmap;
+};
+
+template <typename Tree, typename Data, typename Key, typename Compare, typename Value>
+struct vmap_dispatch<node_keyed<Tree, Data, Key, Compare>, Value> {
+    typedef dref_second_vmap<Value> vmap;
+};
+
 
 template <typename Tree, typename Node, typename ChildContainer>
 struct node_base {
@@ -620,30 +673,30 @@ struct node_base {
     typedef typename cs_type::const_iterator cs_const_iterator;
     
     public:
-    typedef valmap_iterator_adaptor<cs_iterator, dref_vmap<typename cs_iterator::value_type> > iterator;
-    typedef valmap_iterator_adaptor<cs_const_iterator, dref_vmap<typename cs_const_iterator::value_type> > const_iterator;
+    typedef valmap_iterator_adaptor<cs_iterator, typename vmap_dispatch<node_type, typename cs_iterator::value_type>::vmap> iterator;
+    typedef valmap_iterator_adaptor<cs_const_iterator, typename vmap_dispatch<node_type, typename cs_const_iterator::value_type>::vmap> const_iterator;
 
     iterator begin() { return iterator(_children.begin()); }
     iterator end() { return iterator(_children.end()); }
+    const_iterator begin() const { return const_iterator(_children.begin()); }
+    const_iterator end() const { return const_iterator(_children.end()); }
 
     size_type size() const { return _children.size(); }
     bool empty() const { return _children.empty(); }
 
     void erase(const iterator& j) {
-        cs_iterator csj(j);
-        shared_ptr<node_type> n((*csj)->_this.lock());
+        shared_ptr<node_type> n((j)->_this.lock());
         _prune(n);
+        cs_iterator csj(j);
         _children.erase(csj);
     }
 
     void erase(const iterator& F, const iterator& L) {
-        cs_iterator csF(F);
-        cs_iterator csL(L);
-        for (cs_iterator j(csF);  j != csL;  ++j) {
-            shared_ptr<node_type> n((*j)->_this.lock());
+        for (iterator j(F);  j != L;  ++j) {
+            shared_ptr<node_type> n((j)->_this.lock());
             _prune(n);
         }
-        _children.erase(csF, csL);
+        _children.erase(F, L);
     }
 
     void erase() {
@@ -659,8 +712,8 @@ struct node_base {
         if (this == &rhs) return true;
         if (_children.size() != rhs._children.size()) return false;
         if (_data != rhs._data) return false;
-        for (cs_const_iterator jL(_children.begin()), jR(rhs._children.begin());  jL != _children.end();  ++jL,++jR)
-            if (**jL != **jR) return false;
+        for (const_iterator jL(begin()), jR(rhs.begin());  jL != end();  ++jL,++jR)
+            if (*jL != *jR) return false;
         return true;
     }
     bool operator!=(const node_base& rhs) const { return !(*this == rhs); }
@@ -668,7 +721,7 @@ struct node_base {
     bool operator<(const node_base& rhs) const {
         if (this == &rhs) return false;
         if (_data != rhs._data) return (_data < rhs._data);
-        dereferenceable_lessthan lt;
+        dereferenceable_lessthan<cs_type> lt;
         return std::lexicographical_compare(_children.begin(), _children.end(), rhs._children.begin(), rhs._children.end(), lt);
     }
     bool operator>(const node_base& rhs) const { return rhs < *this; }
@@ -676,6 +729,10 @@ struct node_base {
     bool operator>=(const node_base& rhs) const { return !(*this < rhs); }
 
     friend class tree_type::tree_type;
+    friend class b1st_iterator<node_type>;
+    friend class d1st_post_iterator<node_type>;
+    friend class d1st_pre_iterator<node_type>;
+
     protected:
     tree_type* _tree;
     size_type _size;
@@ -1049,6 +1106,186 @@ struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare>, m
 };
 
 
+template <typename Tree, typename Data, typename Key, typename Compare>
+struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare>, map<const Key*, shared_ptr<node_keyed<Tree, Data, Key, Compare> >, ptr_less<Compare> > > {
+    typedef node_keyed<Tree, Data, Key, Compare> this_type;
+    typedef this_type node_type;
+    typedef Tree tree_type;
+    typedef map<const Key*, shared_ptr<node_type>, ptr_less<Compare> > cs_type;
+    typedef node_base<Tree, node_type, cs_type> base_type;
+    typedef typename Tree::size_type size_type;
+    typedef Data data_type;
+    typedef Key key_type;
+    typedef pair<const key_type, data_type> value_type;
+
+    typedef typename base_type::iterator iterator;
+    typedef typename base_type::const_iterator const_iterator;
+
+    friend class tree_type::tree_type;
+    friend class node_base<Tree, node_type, cs_type>;
+
+    protected:
+    typedef typename base_type::cs_iterator cs_iterator;
+    typedef typename base_type::cs_const_iterator cs_const_iterator;
+    typedef typename cs_type::value_type cs_value_type;
+    key_type _key;
+
+    public:
+    node_keyed() : base_type(), _key() {}
+    virtual ~node_keyed() {}
+
+    data_type& data() { return this->_data; }
+    const data_type& data() const { return this->_data; }
+
+    // keys are const access only
+    const key_type& key() const { return this->_key; }
+
+    iterator find(const key_type& key) { return iterator(this->_children.find(&key)); }
+    const_iterator find(const key_type& key) const { return const_iterator(this->_children.find(&key)); }
+
+    node_type& operator[](const key_type& key) {
+        iterator f(this->find(key));
+        if (this->end() == f) f = this->insert(value_type(key, data_type())).first;
+        return *f;
+    }
+    const node_type& operator[](const key_type& key) const {
+        const_iterator f(this->find(key));
+        if (this->end() == f) throw exception();
+        return *f;
+    }
+
+    pair<iterator, bool> insert(const value_type& val) {
+        shared_ptr<node_type> n(new node_type);
+        n->_key = val.first;
+        n->_data = val.second;
+        n->_this = n;
+        n->_size = 1;
+        n->_depth.insert(1);
+        pair<cs_iterator, bool> r = this->_children.insert(cs_value_type(&(n->_key), n));
+        this->_graft(n);
+        return pair<iterator, bool>(iterator(r.first), r.second);
+    }
+
+    pair<iterator, bool> insert(const key_type& key, const data_type& data) { return insert(value_type(key, data)); }
+
+    node_keyed(const node_keyed& src) { *this = src; }
+    node_keyed& operator=(const node_keyed& rhs) {
+        if (this == &rhs) return *this;
+
+        // this would introduce cycles
+        if (rhs.is_ancestor(*this)) throw exception();
+
+        // important to save these prior to clearing 'this'
+        // note, rhs may be child of 'this', and get erased too, otherwise
+        shared_ptr<node_type> r(rhs._this.lock());
+
+        // I'm going to define semantics of assignment as analogous to raw:
+        // the key of the LHS node does not change
+        this->clear();
+        this->_data = rhs._data;
+        // do the copying work for children only
+        for (cs_const_iterator j(r->_children.begin());  j != r->_children.end();  ++j) {
+            shared_ptr<node_type> n((j->second)->_copy_data());
+            this->_children.insert(cs_value_type(&(n->_key), n));
+            base_type::_thread(n);
+            this->_graft(n);
+        }
+        return *this;
+    }
+
+
+    void swap(node_type& b) {
+        node_type& a = *this;
+
+        if (&a == &b) return;
+
+        // this would introduce cycles 
+        if (a.is_ancestor(b) || b.is_ancestor(a)) throw exception();
+
+        bool ira = a.is_root();
+        bool irb = b.is_root();
+
+        tree_type* ta = (ira) ? &a.tree() : NULL;
+        tree_type* tb = (irb) ? &b.tree() : NULL;
+
+        cs_iterator ja, jb;
+
+        shared_ptr<node_type> ra = (ira) ? ta->_root : const_pointer_cast<node_type>((ja = _cs_iterator(a))->second);
+        shared_ptr<node_type> rb = (irb) ? tb->_root : const_pointer_cast<node_type>((jb = _cs_iterator(b))->second);
+
+        shared_ptr<node_type> pa; if (!ira) pa = a._parent.lock();
+        shared_ptr<node_type> pb; if (!irb) pb = b._parent.lock();
+
+        if (ira) ta->_prune(ra);   else { pa->_children.erase(ja);  pa->_prune(ra); }
+        if (irb) tb->_prune(rb);   else { pb->_children.erase(jb);  pb->_prune(rb); }
+
+        // keeping analogous to "raw" semantic where keys don't change
+        std::swap(ra->_key, rb->_key);
+
+        if (ira) { ta->_root = rb;  ta->_graft(rb); }   else { pa->_children.insert(cs_value_type(&(rb->_key), rb));  pa->_graft(rb); }
+        if (irb) { tb->_root = ra;  tb->_graft(ra); }   else { pb->_children.insert(cs_value_type(&(ra->_key), ra));  pb->_graft(ra); }
+    }
+
+    void graft(const key_type& key, node_type& b) {
+        node_type& a = *this;
+
+        // this would introduce cycles 
+        if (&a == &b) throw exception();
+        if (b.is_ancestor(a)) throw exception();
+
+        // remove b from its current location
+        shared_ptr<node_type> rb = b._this.lock();
+        b.erase();
+
+        // graft b to current location
+        rb->_key = key;
+        a._children.insert(cs_value_type(&(rb->_key), rb));
+        a._graft(rb);
+    }
+
+    void graft(const key_type& key, tree_type& b) {
+        if (b.empty()) return;
+        graft(key, b.root());
+    }
+
+
+    void insert(const key_type& key, const node_type& b) {
+        shared_ptr<node_type> n(b._copy_data());
+        n->_key = key;
+        base_type::_thread(n);
+        this->_children.insert(cs_value_type(&(n->_key),n));
+        this->_graft(n);
+    }
+
+    void insert(const key_type& key, const tree_type& b) {
+        if (b.empty()) return;
+        insert(key, b.root());
+    }
+
+
+    protected:
+    static cs_iterator _cs_iterator(node_type& n) {
+        if (n.is_root()) throw exception();
+        cs_iterator j(n.parent()._children.find(&n._key));
+        if (j == n.parent()._children.end()) throw exception();
+        return j;
+    }
+
+    shared_ptr<node_type> _copy_data() const {
+        shared_ptr<node_type> n(new node_type);
+        n->_this = n;
+        n->_data = this->_data;
+        n->_key = this->_key;
+        n->_depth = this->_depth;
+        for (cs_const_iterator j(this->_children.begin());  j != this->_children.end();  ++j) {
+            shared_ptr<node_type> c((j->second)->_copy_data());
+            n->_children.insert(cs_value_type(&(c->_key), c));
+        }
+        return n;
+    }
+};
+
+
 struct node_type_dispatch_failed {};
 
 template <typename Tree, typename CSCat>
@@ -1069,6 +1306,13 @@ struct node_type_dispatch<Tree, cscat<raw, arg_unused, arg_unused> > {
 template <typename Tree, typename Compare>
 struct node_type_dispatch<Tree, cscat<ordered, Compare, arg_unused> > {
     typedef node_ordered<Tree, typename Tree::data_type, Compare> node_type;
+    typedef typename node_type::base_type base_type;
+};
+
+
+template <typename Tree, typename Key, typename Compare>
+struct node_type_dispatch<Tree, cscat<keyed, Key, Compare> > {
+    typedef node_keyed<Tree, typename Tree::data_type, Key, Compare> node_type;
     typedef typename node_type::base_type base_type;
 };
 
@@ -1238,6 +1482,11 @@ void swap(ootree::node_ordered<Tree, Data, Compare>&a, ootree::node_ordered<Tree
     a.swap(b);
 }
 
-};  // namespace ootree
+template <typename Tree, typename Data, typename Key, typename Compare>
+void swap(ootree::node_keyed<Tree, Data, Key, Compare>&a, ootree::node_keyed<Tree, Data, Key, Compare>& b) {
+    a.swap(b);
+}
+
+};  // namespace std
 
 #endif  // __ootree_h__
