@@ -54,9 +54,9 @@ struct arg_default {};
 struct arg_unused {};
 
 // Node storage classes:
-// use this if you want unordered (vector) child node storage
+// use this if you want raw (vector) child node storage
 template <typename Unused = arg_unused>
-struct unordered {};
+struct raw {};
 // provides ordered child node storage
 template <typename Compare = arg_default>
 struct ordered {};
@@ -1258,7 +1258,7 @@ struct node_type_dispatch {
 
 
  template <typename Tree, typename Unused>
-struct node_type_dispatch<Tree, unordered<Unused> > {
+struct node_type_dispatch<Tree, raw<Unused> > {
     typedef node_raw<Tree, typename Tree::data_type> node_type;
     // why do I need this?  because of friend declarations, that's why.
     typedef typename node_type::base_type base_type;
@@ -1285,7 +1285,7 @@ struct node_type_dispatch<Tree, keyed<Key, Compare> > {
 };
 
 
-template <typename Data, typename CSCat=unordered<> >
+template <typename Data, typename CSCat=raw<> >
 struct tree {
     typedef tree<Data, CSCat> this_type;
     typedef this_type tree_type;
