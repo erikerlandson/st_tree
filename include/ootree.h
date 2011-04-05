@@ -613,6 +613,18 @@ struct node_base {
     typedef ChildContainer cs_type;
     typedef typename tree_type::size_type size_type;
     typedef typename tree_type::data_type data_type;
+    typedef b1st_iterator<node_type> bf_iterator;
+    typedef d1st_post_iterator<node_type> df_post_iterator;
+    typedef d1st_pre_iterator<node_type> df_pre_iterator;
+
+    bf_iterator bf_begin() { return bf_iterator(_this.lock()); }
+    bf_iterator bf_end() { return bf_iterator(); }
+
+    df_post_iterator df_post_begin() { return df_post_iterator(_this.lock()); }
+    df_post_iterator df_post_end() { return df_post_iterator(); }
+
+    df_pre_iterator df_pre_begin() { return df_pre_iterator(_this.lock()); }
+    df_pre_iterator df_pre_end() { return df_pre_iterator(); }
 
     node_base() : _tree(NULL), _size(1), _parent(), _this(), _data(), _children() {}
     virtual ~node_base() {}

@@ -169,6 +169,7 @@ BOOST_AUTO_TEST_CASE(bf_iterator) {
     t1.root()["0"].insert("1",11);
     t1.root()["1"].insert("1",17);
     CHECK_TREE(t1, data(), "2 3 5 7 11 13 17");
+    CHECK_TREE(t1.root(), data(), "2 3 5 7 11 13 17");
 }
 
 
@@ -199,6 +200,7 @@ BOOST_AUTO_TEST_CASE(df_post_iterator) {
     t1.root()["0"].insert("1",11);
     t1.root()["1"].insert("1",17);
     CHECK_TREE_DF_POST(t1, data(), "7 11 3 13 17 5 2");
+    CHECK_TREE_DF_POST(t1.root(), data(), "7 11 3 13 17 5 2");
 }
 
 
@@ -229,6 +231,7 @@ BOOST_AUTO_TEST_CASE(df_pre_iterator) {
     t1.root()["0"].insert("1",11);
     t1.root()["1"].insert("1",17);
     CHECK_TREE_DF_PRE(t1, data(), "2 3 7 11 5 13 17");
+    CHECK_TREE_DF_PRE(t1.root(), data(), "2 3 7 11 5 13 17");
 }
 
 
