@@ -8,7 +8,7 @@ BOOST_AUTO_TEST_SUITE(ut_keyed)
 
 
 BOOST_AUTO_TEST_CASE(default_ctor) {
-    tree<int, cscat<keyed, std::string> > t1;
+    tree<int, keyed<std::string> > t1;
     BOOST_CHECK(t1.empty());
     BOOST_CHECK_EQUAL(t1.size(), 0);
     BOOST_CHECK_EQUAL(t1.depth(), 0);
@@ -16,7 +16,7 @@ BOOST_AUTO_TEST_CASE(default_ctor) {
 }
 
 BOOST_AUTO_TEST_CASE(insert_root) {
-    tree<int, cscat<keyed, std::string> > t1;
+    tree<int, keyed<std::string> > t1;
     t1.insert(7);
     BOOST_CHECK_EQUAL(t1.empty(), false);
     BOOST_CHECK_EQUAL(t1.size(), 1);
@@ -28,8 +28,8 @@ BOOST_AUTO_TEST_CASE(insert_root) {
 
 
 BOOST_AUTO_TEST_CASE(insert_subnodes) {
-    tree<int, cscat<keyed, std::string> > t1;
-    typedef tree<int, cscat<keyed, std::string> >::node_type::value_type value_type;
+    tree<int, keyed<std::string> > t1;
+    typedef tree<int, keyed<std::string> >::node_type::value_type value_type;
 
     t1.insert(7);
     BOOST_CHECK_EQUAL(t1.empty(), false);
@@ -56,8 +56,8 @@ BOOST_AUTO_TEST_CASE(insert_subnodes) {
 
 
 BOOST_AUTO_TEST_CASE(clear) {
-    tree<int, cscat<keyed, std::string> > t1;
-    typedef tree<int, cscat<keyed, std::string> >::node_type::value_type value_type;
+    tree<int, keyed<std::string> > t1;
+    typedef tree<int, keyed<std::string> >::node_type::value_type value_type;
 
     t1.insert(7);
     t1.root().insert("0", 8);
@@ -78,8 +78,8 @@ BOOST_AUTO_TEST_CASE(clear) {
 
 
 BOOST_AUTO_TEST_CASE(reinsert) {
-    tree<int, cscat<keyed, std::string> > t1;
-    typedef tree<int, cscat<keyed, std::string> >::node_type::value_type value_type;
+    tree<int, keyed<std::string> > t1;
+    typedef tree<int, keyed<std::string> >::node_type::value_type value_type;
  
     t1.insert(7);
     t1.root().insert("0", 8);
@@ -101,8 +101,8 @@ BOOST_AUTO_TEST_CASE(reinsert) {
 
 
 BOOST_AUTO_TEST_CASE(erase) {
-    tree<int, cscat<keyed, std::string> > t1;
-    typedef tree<int, cscat<keyed, std::string> >::node_type::value_type value_type;
+    tree<int, keyed<std::string> > t1;
+    typedef tree<int, keyed<std::string> >::node_type::value_type value_type;
  
     t1.insert(7);
     t1.root().insert("0", 8);
@@ -118,8 +118,8 @@ BOOST_AUTO_TEST_CASE(erase) {
 
 
 BOOST_AUTO_TEST_CASE(erase_noarg) {
-    tree<int, cscat<keyed, std::string> > t1;
-    typedef tree<int, cscat<keyed, std::string> >::node_type::value_type value_type;
+    tree<int, keyed<std::string> > t1;
+    typedef tree<int, keyed<std::string> >::node_type::value_type value_type;
  
     t1.insert(2);
     t1.root().insert("0", 3);
@@ -143,8 +143,8 @@ BOOST_AUTO_TEST_CASE(erase_noarg) {
 
 
 BOOST_AUTO_TEST_CASE(bf_iterator_empty) {
-    tree<int, cscat<keyed, std::string> > t1;
-    typedef tree<int, cscat<keyed, std::string> >::node_type::value_type value_type;
+    tree<int, keyed<std::string> > t1;
+    typedef tree<int, keyed<std::string> >::node_type::value_type value_type;
 
     BOOST_CHECK_EQUAL(t1.bf_begin() == t1.bf_end(), true);
     BOOST_CHECK_EQUAL(t1.bf_begin() != t1.bf_end(), false);
@@ -152,8 +152,8 @@ BOOST_AUTO_TEST_CASE(bf_iterator_empty) {
 
 
 BOOST_AUTO_TEST_CASE(bf_iterator) {
-    tree<int, cscat<keyed, std::string> > t1;
-    typedef tree<int, cscat<keyed, std::string> >::node_type::value_type value_type;
+    tree<int, keyed<std::string> > t1;
+    typedef tree<int, keyed<std::string> >::node_type::value_type value_type;
 
     CHECK_TREE(t1, data(), "");
 
@@ -174,8 +174,8 @@ BOOST_AUTO_TEST_CASE(bf_iterator) {
 
 
 BOOST_AUTO_TEST_CASE(df_post_iterator_empty) {
-    tree<int, cscat<keyed, std::string> > t1;
-    typedef tree<int, cscat<keyed, std::string> >::node_type::value_type value_type;
+    tree<int, keyed<std::string> > t1;
+    typedef tree<int, keyed<std::string> >::node_type::value_type value_type;
 
     BOOST_CHECK_EQUAL(t1.df_post_begin() == t1.df_post_end(), true);
     BOOST_CHECK_EQUAL(t1.df_post_begin() != t1.df_post_end(), false);
@@ -183,8 +183,8 @@ BOOST_AUTO_TEST_CASE(df_post_iterator_empty) {
 
 
 BOOST_AUTO_TEST_CASE(df_post_iterator) {
-    tree<int, cscat<keyed, std::string> > t1;
-    typedef tree<int, cscat<keyed, std::string> >::node_type::value_type value_type;
+    tree<int, keyed<std::string> > t1;
+    typedef tree<int, keyed<std::string> >::node_type::value_type value_type;
 
     CHECK_TREE_DF_POST(t1, data(), "");
 
@@ -205,8 +205,8 @@ BOOST_AUTO_TEST_CASE(df_post_iterator) {
 
 
 BOOST_AUTO_TEST_CASE(df_pre_iterator_empty) {
-    tree<int, cscat<keyed, std::string> > t1;
-    typedef tree<int, cscat<keyed, std::string> >::node_type::value_type value_type;
+    tree<int, keyed<std::string> > t1;
+    typedef tree<int, keyed<std::string> >::node_type::value_type value_type;
 
     BOOST_CHECK_EQUAL(t1.df_pre_begin() == t1.df_pre_end(), true);
     BOOST_CHECK_EQUAL(t1.df_pre_begin() != t1.df_pre_end(), false);
@@ -214,8 +214,8 @@ BOOST_AUTO_TEST_CASE(df_pre_iterator_empty) {
 
 
 BOOST_AUTO_TEST_CASE(df_pre_iterator) {
-    tree<int, cscat<keyed, std::string> > t1;
-    typedef tree<int, cscat<keyed, std::string> >::node_type::value_type value_type;
+    tree<int, keyed<std::string> > t1;
+    typedef tree<int, keyed<std::string> >::node_type::value_type value_type;
 
     CHECK_TREE_DF_PRE(t1, data(), "");
 
@@ -236,8 +236,8 @@ BOOST_AUTO_TEST_CASE(df_pre_iterator) {
 
 
 BOOST_AUTO_TEST_CASE(node_ply) {
-    tree<int, cscat<keyed, std::string> > t1;
-    typedef tree<int, cscat<keyed, std::string> >::node_type::value_type value_type;
+    tree<int, keyed<std::string> > t1;
+    typedef tree<int, keyed<std::string> >::node_type::value_type value_type;
 
     t1.insert(2);
     CHECK_TREE(t1, data(), "2");
@@ -273,8 +273,8 @@ BOOST_AUTO_TEST_CASE(node_ply) {
 }
 
 BOOST_AUTO_TEST_CASE(node_depth) {
-    tree<int, cscat<keyed, std::string> > t1;
-    typedef tree<int, cscat<keyed, std::string> >::node_type::value_type value_type;
+    tree<int, keyed<std::string> > t1;
+    typedef tree<int, keyed<std::string> >::node_type::value_type value_type;
 
     t1.insert(2);
     CHECK_TREE(t1, data(), "2");
@@ -314,8 +314,8 @@ BOOST_AUTO_TEST_CASE(node_depth) {
 }
 
 BOOST_AUTO_TEST_CASE(node_subtree_size) {
-    tree<int, cscat<keyed, std::string> > t1;
-    typedef tree<int, cscat<keyed, std::string> >::node_type::value_type value_type;
+    tree<int, keyed<std::string> > t1;
+    typedef tree<int, keyed<std::string> >::node_type::value_type value_type;
 
     t1.insert(2);
     CHECK_TREE(t1, data(), "2");
@@ -351,38 +351,38 @@ BOOST_AUTO_TEST_CASE(node_subtree_size) {
 }
 
 BOOST_AUTO_TEST_CASE(node_parent) {
-    tree<int, cscat<keyed, std::string> > t1;
-    typedef tree<int, cscat<keyed, std::string> >::node_type::value_type value_type;
+    tree<int, keyed<std::string> > t1;
+    typedef tree<int, keyed<std::string> >::node_type::value_type value_type;
 
     t1.insert(2);
     BOOST_CHECK_THROW(t1.root().parent(), ootree::exception);
     t1.root().insert("0",3);
     BOOST_CHECK_EQUAL(t1.root()["0"].parent().data(), 2);
-    const tree<int, cscat<keyed, std::string> >& t2 = t1;
+    const tree<int, keyed<std::string> >& t2 = t1;
     BOOST_CHECK_EQUAL(t2.root()["0"].parent().data(), 2);    
 }
 
 
 BOOST_AUTO_TEST_CASE(node_tree) {
-    tree<int, cscat<keyed, std::string> > t1;
-    typedef tree<int, cscat<keyed, std::string> >::node_type::value_type value_type;
+    tree<int, keyed<std::string> > t1;
+    typedef tree<int, keyed<std::string> >::node_type::value_type value_type;
 
     t1.insert(2);
     t1.root().insert("0",3);
     t1.root().insert("1",5);
-    tree<int, cscat<keyed, std::string> >& t2 = t1.root().tree();
+    tree<int, keyed<std::string> >& t2 = t1.root().tree();
     BOOST_CHECK_EQUAL(t1 == t2, true);
     t2 = t1.root()["0"].tree();
     BOOST_CHECK_EQUAL(t1 == t2, true);
-    const tree<int, cscat<keyed, std::string> >& t3 = t1;
-    const tree<int, cscat<keyed, std::string> >& t4 = t3.root().tree();
+    const tree<int, keyed<std::string> >& t3 = t1;
+    const tree<int, keyed<std::string> >& t4 = t3.root().tree();
     BOOST_CHECK_EQUAL(t1 == t4, true);
 }
 
 
 BOOST_AUTO_TEST_CASE(erase_node) {
-    tree<int, cscat<keyed, std::string> > t1;
-    typedef tree<int, cscat<keyed, std::string> >::node_type::value_type value_type;
+    tree<int, keyed<std::string> > t1;
+    typedef tree<int, keyed<std::string> >::node_type::value_type value_type;
 
     t1.insert(2);
     t1.root().insert("0",3);
@@ -405,8 +405,8 @@ BOOST_AUTO_TEST_CASE(erase_node) {
 
 
 BOOST_AUTO_TEST_CASE(clear_node) {
-    tree<int, cscat<keyed, std::string> > t1;
-    typedef tree<int, cscat<keyed, std::string> >::node_type::value_type value_type;
+    tree<int, keyed<std::string> > t1;
+    typedef tree<int, keyed<std::string> >::node_type::value_type value_type;
 
     t1.insert(2);
     t1.root().insert("0",3);
@@ -429,8 +429,8 @@ BOOST_AUTO_TEST_CASE(clear_node) {
 
 
 BOOST_AUTO_TEST_CASE(node_op_equal) {
-    tree<int, cscat<keyed, std::string> > t1;
-    typedef tree<int, cscat<keyed, std::string> >::node_type::value_type value_type;
+    tree<int, keyed<std::string> > t1;
+    typedef tree<int, keyed<std::string> >::node_type::value_type value_type;
 
     t1.insert(2);
     t1.root().insert("0",3);
@@ -439,7 +439,7 @@ BOOST_AUTO_TEST_CASE(node_op_equal) {
     CHECK_TREE(t1, ply(), "0 1");
     CHECK_TREE(t1, key(), " 0");
 
-    tree<int, cscat<keyed, std::string> > t2;
+    tree<int, keyed<std::string> > t2;
     t2.insert(5);
     t2.root().insert("0",7);
     t2.root().insert("1",11);
@@ -460,13 +460,13 @@ BOOST_AUTO_TEST_CASE(node_op_equal) {
 
 
 BOOST_AUTO_TEST_CASE(node_op_equal_root) {
-    tree<int, cscat<keyed, std::string> > t1;
-    typedef tree<int, cscat<keyed, std::string> >::node_type::value_type value_type;
+    tree<int, keyed<std::string> > t1;
+    typedef tree<int, keyed<std::string> >::node_type::value_type value_type;
 
     t1.insert(2);
     t1.root().insert("0",3);
 
-    tree<int, cscat<keyed, std::string> > t2;
+    tree<int, keyed<std::string> > t2;
     t2.insert(5);
     t2.root().insert("0",7);
     t2.root().insert("1",11);
@@ -487,8 +487,8 @@ BOOST_AUTO_TEST_CASE(node_op_equal_root) {
 
 
 BOOST_AUTO_TEST_CASE(node_op_equal_subtree) {
-    tree<int, cscat<keyed, std::string> > t1;
-    typedef tree<int, cscat<keyed, std::string> >::node_type::value_type value_type;
+    tree<int, keyed<std::string> > t1;
+    typedef tree<int, keyed<std::string> >::node_type::value_type value_type;
 
     t1.insert(2);
     t1.root().insert("0",3);
@@ -514,9 +514,9 @@ BOOST_AUTO_TEST_CASE(node_op_equal_subtree) {
 }
 
 BOOST_AUTO_TEST_CASE(node_swap) {
-    tree<int, cscat<keyed, std::string> > t1;
-    tree<int, cscat<keyed, std::string> > t2;
-    typedef tree<int, cscat<keyed, std::string> >::node_type::value_type value_type;
+    tree<int, keyed<std::string> > t1;
+    tree<int, keyed<std::string> > t2;
+    typedef tree<int, keyed<std::string> >::node_type::value_type value_type;
     
     t1.insert(2);
     t1.root().insert("0",3);
@@ -621,9 +621,9 @@ BOOST_AUTO_TEST_CASE(node_swap) {
 }
 
 BOOST_AUTO_TEST_CASE(graft) {
-    tree<int, cscat<keyed, std::string> > t1;
-    tree<int, cscat<keyed, std::string> > t2;
-    typedef tree<int, cscat<keyed, std::string> >::node_type::value_type value_type;
+    tree<int, keyed<std::string> > t1;
+    tree<int, keyed<std::string> > t2;
+    typedef tree<int, keyed<std::string> >::node_type::value_type value_type;
     
     // start with the node/tree overloadings
     // graft node -> tree
@@ -721,9 +721,9 @@ BOOST_AUTO_TEST_CASE(graft) {
 
 
 BOOST_AUTO_TEST_CASE(insert_node) {
-    tree<int, cscat<keyed, std::string> > t1;
-    tree<int, cscat<keyed, std::string> > t2;
-    typedef tree<int, cscat<keyed, std::string> >::node_type::value_type value_type;
+    tree<int, keyed<std::string> > t1;
+    tree<int, keyed<std::string> > t2;
+    typedef tree<int, keyed<std::string> >::node_type::value_type value_type;
     
     // start with the node/tree overloadings
     // insert node -> tree
@@ -822,9 +822,9 @@ BOOST_AUTO_TEST_CASE(insert_node) {
 
 
 BOOST_AUTO_TEST_CASE(node_op_equality) {
-    tree<int, cscat<keyed, std::string> > t1;
-    tree<int, cscat<keyed, std::string> > t2;
-    typedef tree<int, cscat<keyed, std::string> >::node_type::value_type value_type;
+    tree<int, keyed<std::string> > t1;
+    tree<int, keyed<std::string> > t2;
+    typedef tree<int, keyed<std::string> >::node_type::value_type value_type;
     
     t1.insert(2);
     t1.root().insert("0",3);
@@ -856,9 +856,9 @@ BOOST_AUTO_TEST_CASE(node_op_equality) {
 
 
 BOOST_AUTO_TEST_CASE(node_op_lessthan) {
-    tree<int, cscat<keyed, std::string> > t1;
-    tree<int, cscat<keyed, std::string> > t2;
-    typedef tree<int, cscat<keyed, std::string> >::node_type::value_type value_type;
+    tree<int, keyed<std::string> > t1;
+    tree<int, keyed<std::string> > t2;
+    typedef tree<int, keyed<std::string> >::node_type::value_type value_type;
     
     t1.insert(2);
     t2.insert(2);
@@ -882,9 +882,9 @@ BOOST_AUTO_TEST_CASE(node_op_lessthan) {
 
 
 BOOST_AUTO_TEST_CASE(node_derived_comp_ops) {
-    tree<int, cscat<keyed, std::string> > t1;
-    tree<int, cscat<keyed, std::string> > t2;
-    typedef tree<int, cscat<keyed, std::string> >::node_type::value_type value_type;
+    tree<int, keyed<std::string> > t1;
+    tree<int, keyed<std::string> > t2;
+    typedef tree<int, keyed<std::string> >::node_type::value_type value_type;
     
     t1.insert(2);
     t2.insert(2);
@@ -910,9 +910,9 @@ BOOST_AUTO_TEST_CASE(node_derived_comp_ops) {
 
 
 BOOST_AUTO_TEST_CASE(tree_op_equality) {
-    tree<int, cscat<keyed, std::string> > t1;
-    tree<int, cscat<keyed, std::string> > t2;
-    typedef tree<int, cscat<keyed, std::string> >::node_type::value_type value_type;
+    tree<int, keyed<std::string> > t1;
+    tree<int, keyed<std::string> > t2;
+    typedef tree<int, keyed<std::string> >::node_type::value_type value_type;
     
     BOOST_CHECK_EQUAL(t1 == t2, true);
 
@@ -928,9 +928,9 @@ BOOST_AUTO_TEST_CASE(tree_op_equality) {
 
 
 BOOST_AUTO_TEST_CASE(tree_op_lessthan) {
-    tree<int, cscat<keyed, std::string> > t1;
-    tree<int, cscat<keyed, std::string> > t2;
-    typedef tree<int, cscat<keyed, std::string> >::node_type::value_type value_type;
+    tree<int, keyed<std::string> > t1;
+    tree<int, keyed<std::string> > t2;
+    typedef tree<int, keyed<std::string> >::node_type::value_type value_type;
     
     BOOST_CHECK_EQUAL(t1 < t2, false);
 
@@ -950,9 +950,9 @@ BOOST_AUTO_TEST_CASE(tree_op_lessthan) {
 
 
 BOOST_AUTO_TEST_CASE(tree_derived_comp_ops) {
-    tree<int, cscat<keyed, std::string> > t1;
-    tree<int, cscat<keyed, std::string> > t2;
-    typedef tree<int, cscat<keyed, std::string> >::node_type::value_type value_type;
+    tree<int, keyed<std::string> > t1;
+    tree<int, keyed<std::string> > t2;
+    typedef tree<int, keyed<std::string> >::node_type::value_type value_type;
     
     t1.insert(2);
     t2.insert(2);
@@ -978,9 +978,9 @@ BOOST_AUTO_TEST_CASE(tree_derived_comp_ops) {
 
 
 BOOST_AUTO_TEST_CASE(tree_op_equal_lhs_n_rhs_e) {
-    tree<int, cscat<keyed, std::string> > t1;
-    tree<int, cscat<keyed, std::string> > t2;
-    typedef tree<int, cscat<keyed, std::string> >::node_type::value_type value_type;
+    tree<int, keyed<std::string> > t1;
+    tree<int, keyed<std::string> > t2;
+    typedef tree<int, keyed<std::string> >::node_type::value_type value_type;
     
     t1.insert(2);
     t1.root().insert("0",3);
@@ -994,9 +994,9 @@ BOOST_AUTO_TEST_CASE(tree_op_equal_lhs_n_rhs_e) {
 }
 
 BOOST_AUTO_TEST_CASE(tree_op_equal_lhs_e_rhs_n) {
-    tree<int, cscat<keyed, std::string> > t1;
-    tree<int, cscat<keyed, std::string> > t2;
-    typedef tree<int, cscat<keyed, std::string> >::node_type::value_type value_type;
+    tree<int, keyed<std::string> > t1;
+    tree<int, keyed<std::string> > t2;
+    typedef tree<int, keyed<std::string> >::node_type::value_type value_type;
     
     t2.insert(2);
     t2.root().insert("0",3);
@@ -1012,9 +1012,9 @@ BOOST_AUTO_TEST_CASE(tree_op_equal_lhs_e_rhs_n) {
 }
 
 BOOST_AUTO_TEST_CASE(tree_op_equal_lhs_n_rhs_n) {
-    tree<int, cscat<keyed, std::string> > t1;
-    tree<int, cscat<keyed, std::string> > t2;
-    typedef tree<int, cscat<keyed, std::string> >::node_type::value_type value_type;
+    tree<int, keyed<std::string> > t1;
+    tree<int, keyed<std::string> > t2;
+    typedef tree<int, keyed<std::string> >::node_type::value_type value_type;
     
     t1.insert(31);
     t1.root().insert("0",41);
@@ -1034,9 +1034,9 @@ BOOST_AUTO_TEST_CASE(tree_op_equal_lhs_n_rhs_n) {
 
 
 BOOST_AUTO_TEST_CASE(tree_swap) {
-    tree<int, cscat<keyed, std::string> > t1;
-    tree<int, cscat<keyed, std::string> > t2;
-    typedef tree<int, cscat<keyed, std::string> >::node_type::value_type value_type;
+    tree<int, keyed<std::string> > t1;
+    tree<int, keyed<std::string> > t2;
+    typedef tree<int, keyed<std::string> >::node_type::value_type value_type;
     
     t1.insert(2);
     t2.insert(3);

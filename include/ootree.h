@@ -49,19 +49,22 @@ using std::pair;
 using std::cerr;
 
 
-// Node storage classes:
-// use this if you want raw (vector) unordered child node storage
-struct raw {};
-// provides ordered child node storage
-struct ordered {};
-// child nodes are indexed by external key
-struct keyed {};
-
-
 // some data types to flag template argument behaviors
 struct arg_default {};
 struct arg_unused {};
-struct arg_void {};
+
+// Node storage classes:
+// use this if you want unordered (vector) child node storage
+template <typename Unused = arg_unused>
+struct unordered {};
+// provides ordered child node storage
+template <typename Compare = arg_default>
+struct ordered {};
+// child nodes are indexed by external key
+template <typename Key, typename Compare = less<Key> >
+struct keyed {};
+
+
 
 
 struct exception {
@@ -494,60 +497,6 @@ struct d1st_pre_iterator {
 
     protected:
     vector<frame> _stack;
-};
-
-
-// Node storage spec
-template <typename NodeStorage, typename Arg2=arg_default, typename Arg3=arg_default> 
-struct cscat {
-    typedef NodeStorage ns_type;
-    typedef Arg2 arg2_type;
-    typedef Arg3 arg3_type;
-};
-
-
-
-struct bad_node_storage_spec {};
-
-template <typename Data, typename BadSpec> 
-struct cscat_dispatch {
-    // In this case catch-all should be compile error:
-    typedef bad_node_storage_spec cat;
-};
-
-template <typename Data>
-struct cscat_dispatch<Data, raw> {
-    typedef cscat<raw, arg_unused, arg_unused> cat;
-};
-
-template <typename Data>
-struct cscat_dispatch<Data, cscat<raw, arg_default, arg_default> > {
-    typedef cscat<raw, arg_unused, arg_unused> cat;
-};
-
-template <typename Data> 
-struct cscat_dispatch<Data, ordered> {
-    typedef cscat<ordered, less<Data>, arg_unused> cat;
-};
-
-template <typename Data> 
-struct cscat_dispatch<Data, cscat<ordered, arg_default, arg_default> > {
-    typedef cscat<ordered, less<Data>, arg_unused> cat;
-};
-
-template <typename Data, typename Comp>
-struct cscat_dispatch<Data, cscat<ordered, Comp, arg_default> > {
-    typedef cscat<ordered, Comp, arg_unused> cat;
-};
-
-template <typename Data, typename Key>
-struct cscat_dispatch<Data, cscat<keyed, Key, arg_default> > {
-    typedef cscat<keyed, Key, less<Key> > cat;
-};
-
-template <typename Data, typename Key, typename KeyComp>
-struct cscat_dispatch<Data, cscat<keyed, Key, KeyComp> > {
-    typedef cscat<keyed, Key, KeyComp > cat;
 };
 
 
@@ -1308,36 +1257,42 @@ struct node_type_dispatch {
 };
 
 
-template <typename Tree>
-struct node_type_dispatch<Tree, cscat<raw, arg_unused, arg_unused> > {
+ template <typename Tree, typename Unused>
+struct node_type_dispatch<Tree, unordered<Unused> > {
     typedef node_raw<Tree, typename Tree::data_type> node_type;
     // why do I need this?  because of friend declarations, that's why.
     typedef typename node_type::base_type base_type;
 };
 
 template <typename Tree, typename Compare>
-struct node_type_dispatch<Tree, cscat<ordered, Compare, arg_unused> > {
+struct node_type_dispatch<Tree, ordered<Compare> > {
     typedef node_ordered<Tree, typename Tree::data_type, Compare> node_type;
     typedef typename node_type::base_type base_type;
 };
 
 
+template <typename Tree>
+struct node_type_dispatch<Tree, ordered<arg_default> > {
+    typedef node_ordered<Tree, typename Tree::data_type, less<typename Tree::data_type> > node_type;
+    typedef typename node_type::base_type base_type;
+};
+
+
 template <typename Tree, typename Key, typename Compare>
-struct node_type_dispatch<Tree, cscat<keyed, Key, Compare> > {
+struct node_type_dispatch<Tree, keyed<Key, Compare> > {
     typedef node_keyed<Tree, typename Tree::data_type, Key, Compare> node_type;
     typedef typename node_type::base_type base_type;
 };
 
 
-template <typename Data, typename CSCat=raw>
+template <typename Data, typename CSCat=unordered<> >
 struct tree {
     typedef tree<Data, CSCat> this_type;
     typedef this_type tree_type;
     typedef unsigned long size_type;
     typedef Data data_type;
 
-    typedef typename cscat_dispatch<Data, CSCat>::cat cscat;
-    typedef node_type_dispatch<tree_type, cscat> nt_dispatch;
+    typedef node_type_dispatch<tree_type, CSCat> nt_dispatch;
     typedef typename nt_dispatch::node_type node_type;
     typedef typename nt_dispatch::base_type node_base_type;
 
@@ -1458,8 +1413,8 @@ struct tree {
     df_pre_iterator df_pre_end() { return df_pre_iterator(); }
 
     // compile will not let me use just node_type here
-    friend class node_type_dispatch<tree_type, cscat>::node_type;
-    friend class node_type_dispatch<tree_type, cscat>::base_type;
+    friend class node_type_dispatch<tree_type, CSCat>::node_type;
+    friend class node_type_dispatch<tree_type, CSCat>::base_type;
 
     protected:
     shared_ptr<node_type> _root;
