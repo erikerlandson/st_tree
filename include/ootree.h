@@ -250,16 +250,16 @@ struct valmap_iterator_adaptor {
 };
 
 
-template <typename Node>
+template <typename Node, typename Value>
 struct b1st_iterator {
     typedef Node node_type;
-    typedef typename node_type::iterator iterator;
+    typedef typename Node::iterator iterator;
 
     typedef std::forward_iterator_tag iterator_category;
-    typedef node_type value_type;
+    typedef Value value_type;
     typedef typename iterator::difference_type difference_type;
-    typedef value_type* pointer;
-    typedef value_type& reference;
+    typedef Value* pointer;
+    typedef Value& reference;
 
     b1st_iterator() : _queue() {}
     virtual ~b1st_iterator() {}
@@ -306,16 +306,16 @@ struct b1st_iterator {
 };
 
 
-template <typename Node>
+template <typename Node, typename Value>
 struct d1st_post_iterator {
     typedef Node node_type;
     typedef typename node_type::iterator iterator;
 
     typedef std::forward_iterator_tag iterator_category;
-    typedef node_type value_type;
+    typedef Value value_type;
     typedef typename iterator::difference_type difference_type;
-    typedef value_type* pointer;
-    typedef value_type& reference;
+    typedef Value* pointer;
+    typedef Value& reference;
 
     struct frame {
         frame(): first(), second(), visited() {}
@@ -408,16 +408,16 @@ struct d1st_post_iterator {
 };
 
 
-template <typename Node>
+template <typename Node, typename Value>
 struct d1st_pre_iterator {
     typedef Node node_type;
     typedef typename node_type::iterator iterator;
 
     typedef std::forward_iterator_tag iterator_category;
-    typedef node_type value_type;
+    typedef Value value_type;
     typedef typename iterator::difference_type difference_type;
-    typedef value_type* pointer;
-    typedef value_type& reference;
+    typedef Value* pointer;
+    typedef Value& reference;
 
     struct frame {
         frame(): first(), second(), visited() {}
@@ -562,18 +562,41 @@ struct node_base {
     typedef ChildContainer cs_type;
     typedef typename tree_type::size_type size_type;
     typedef typename tree_type::data_type data_type;
-    typedef b1st_iterator<node_type> bf_iterator;
-    typedef d1st_post_iterator<node_type> df_post_iterator;
-    typedef d1st_pre_iterator<node_type> df_pre_iterator;
+
+    protected:
+    typedef typename cs_type::iterator cs_iterator;
+    typedef typename cs_type::const_iterator cs_const_iterator;
+    
+    public:
+    typedef valmap_iterator_adaptor<cs_iterator, typename vmap_dispatch<node_type, typename cs_iterator::value_type>::vmap> iterator;
+    typedef valmap_iterator_adaptor<cs_const_iterator, typename vmap_dispatch<node_type, typename cs_const_iterator::value_type>::vmap> const_iterator;
+
+    iterator begin() { return iterator(_children.begin()); }
+    iterator end() { return iterator(_children.end()); }
+    const_iterator begin() const { return const_iterator(_children.begin()); }
+    const_iterator end() const { return const_iterator(_children.end()); }
+
+    typedef b1st_iterator<node_type, node_type> bf_iterator;
+    typedef b1st_iterator<node_type, const node_type> const_bf_iterator;
+    typedef d1st_post_iterator<node_type, node_type> df_post_iterator;
+    typedef d1st_post_iterator<node_type, const node_type> const_df_post_iterator;
+    typedef d1st_pre_iterator<node_type, node_type> df_pre_iterator;
+    typedef d1st_pre_iterator<node_type, const node_type> const_df_pre_iterator;
 
     bf_iterator bf_begin() { return bf_iterator(_this.lock()); }
     bf_iterator bf_end() { return bf_iterator(); }
+    const_bf_iterator bf_begin() const { return const_bf_iterator(_this.lock()); }
+    const_bf_iterator bf_end() const { return const_bf_iterator(); }
 
     df_post_iterator df_post_begin() { return df_post_iterator(_this.lock()); }
     df_post_iterator df_post_end() { return df_post_iterator(); }
+    const_df_post_iterator df_post_begin() const { return const_df_post_iterator(_this.lock()); }
+    const_df_post_iterator df_post_end() const { return const_df_post_iterator(); }
 
     df_pre_iterator df_pre_begin() { return df_pre_iterator(_this.lock()); }
     df_pre_iterator df_pre_end() { return df_pre_iterator(); }
+    const_df_pre_iterator df_pre_begin() const { return const_df_pre_iterator(_this.lock()); }
+    const_df_pre_iterator df_pre_end() const { return const_df_pre_iterator(); }
 
     node_base() : _tree(NULL), _size(1), _parent(), _this(), _data(), _children() {}
     virtual ~node_base() {}
@@ -629,19 +652,6 @@ struct node_base {
         return *(_parent.lock()); 
     }
 
-    protected:
-    typedef typename cs_type::iterator cs_iterator;
-    typedef typename cs_type::const_iterator cs_const_iterator;
-    
-    public:
-    typedef valmap_iterator_adaptor<cs_iterator, typename vmap_dispatch<node_type, typename cs_iterator::value_type>::vmap> iterator;
-    typedef valmap_iterator_adaptor<cs_const_iterator, typename vmap_dispatch<node_type, typename cs_const_iterator::value_type>::vmap> const_iterator;
-
-    iterator begin() { return iterator(_children.begin()); }
-    iterator end() { return iterator(_children.end()); }
-    const_iterator begin() const { return const_iterator(_children.begin()); }
-    const_iterator end() const { return const_iterator(_children.end()); }
-
     size_type size() const { return _children.size(); }
     bool empty() const { return _children.empty(); }
 
@@ -690,9 +700,12 @@ struct node_base {
     bool operator>=(const node_base& rhs) const { return !(*this < rhs); }
 
     friend class tree_type::tree_type;
-    friend class b1st_iterator<node_type>;
-    friend class d1st_post_iterator<node_type>;
-    friend class d1st_pre_iterator<node_type>;
+    friend class b1st_iterator<node_type, node_type>;
+    friend class b1st_iterator<node_type, const node_type>;
+    friend class d1st_post_iterator<node_type, node_type>;
+    friend class d1st_post_iterator<node_type, const node_type>;
+    friend class d1st_pre_iterator<node_type, node_type>;
+    friend class d1st_pre_iterator<node_type, const node_type>;
 
     protected:
     tree_type* _tree;
@@ -1296,9 +1309,14 @@ struct tree {
     typedef typename nt_dispatch::node_type node_type;
     typedef typename nt_dispatch::base_type node_base_type;
 
-    typedef b1st_iterator<node_type> bf_iterator;
-    typedef d1st_post_iterator<node_type> df_post_iterator;
-    typedef d1st_pre_iterator<node_type> df_pre_iterator;
+    typedef typename node_type::bf_iterator iterator;
+    typedef typename node_type::const_bf_iterator const_iterator;
+    typedef typename node_type::bf_iterator bf_iterator;
+    typedef typename node_type::const_bf_iterator const_bf_iterator;
+    typedef typename node_type::df_post_iterator df_post_iterator;
+    typedef typename node_type::const_df_post_iterator const_df_post_iterator;
+    typedef typename node_type::df_pre_iterator df_pre_iterator;
+    typedef typename node_type::const_df_pre_iterator const_df_pre_iterator;
 
     tree() : _root() {}
     virtual ~tree() { clear(); }
@@ -1403,14 +1421,25 @@ struct tree {
     bool operator<=(const tree& rhs) const { return !(rhs < *this); }
     bool operator>=(const tree& rhs) const { return !(*this < rhs); }
 
+    iterator begin() { return iterator(_root); }
+    iterator end() { return iterator(); }
+    const_iterator begin() const { return const_iterator(_root); }
+    const_iterator end() const { return const_iterator(); }
+
     bf_iterator bf_begin() { return bf_iterator(_root); }
     bf_iterator bf_end() { return bf_iterator(); }
+    const_bf_iterator bf_begin() const { return const_bf_iterator(_root); }
+    const_bf_iterator bf_end() const { return const_bf_iterator(); }
 
     df_post_iterator df_post_begin() { return df_post_iterator(_root); }
     df_post_iterator df_post_end() { return df_post_iterator(); }
+    const_df_post_iterator df_post_begin() const { return const_df_post_iterator(_root); }
+    const_df_post_iterator df_post_end() const { return const_df_post_iterator(); }
 
     df_pre_iterator df_pre_begin() { return df_pre_iterator(_root); }
     df_pre_iterator df_pre_end() { return df_pre_iterator(); }
+    const_df_pre_iterator df_pre_begin() const { return const_df_pre_iterator(_root); }
+    const_df_pre_iterator df_pre_end() const { return const_df_pre_iterator(); }
 
     // compile will not let me use just node_type here
     friend class node_type_dispatch<tree_type, CSCat>::node_type;
