@@ -1,9 +1,13 @@
+#include <tr1/memory>
+
 #include <boost/test/unit_test.hpp>
 
 #include "ootree.h"
 
 using namespace ootree;
 using namespace std;
+
+using std::tr1::shared_ptr;
 
 BOOST_AUTO_TEST_SUITE(ut_valmap_iterator_adaptor)
 
