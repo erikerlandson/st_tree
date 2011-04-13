@@ -591,8 +591,13 @@ struct node_base {
     const_df_pre_iterator df_pre_begin() const { return const_df_pre_iterator(_this); }
     const_df_pre_iterator df_pre_end() const { return const_df_pre_iterator(); }
 
-    node_base() : _tree(NULL), _size(1), _parent(), _this(), _data(), _children() {}
-    virtual ~node_base() {}
+    node_base() : _tree(NULL), _size(1), _parent(NULL), _this(NULL), _data(), _children() {}
+    virtual ~node_base() {
+        vector<node_type*> d;
+        for (iterator j(begin());  j != end();  ++j) d.push_back(j->_this);
+        _children.clear();
+        for (typename vector<node_type*>::iterator e(d.begin());  e != d.end();  ++e) delete *e;
+    }
 
     size_type ply() const {
         size_type p = 0;
@@ -651,16 +656,19 @@ struct node_base {
     void erase(const iterator& j) {
         node_type* n((j)->_this);
         _prune(n);
-        cs_iterator csj(j);
-        _children.erase(csj);
+        _children.erase(j);
+        delete n;
     }
 
     void erase(const iterator& F, const iterator& L) {
+        vector<node_type*> d;
         for (iterator j(F);  j != L;  ++j) {
             node_type* n((j)->_this);
             _prune(n);
+            d.push_back(n);
         }
         _children.erase(F, L);
+        for (typename vector<node_type*>::iterator e(d.begin());  e != d.end();  ++e) delete *e;
     }
 
     void erase() {
@@ -754,6 +762,15 @@ struct node_base {
             n->_size += j->_size;
         }
     }
+
+    static void _excise(node_type* n) {
+        if (n->is_root()) {
+            n->tree()._prune(n);
+        } else {
+            n->parent()._children.erase(node_type::_cs_iterator(*(n->_this)));
+            n->parent()._prune(n);
+        }
+    }
 };
 
 
@@ -783,8 +800,9 @@ struct node_raw: public node_base<Tree, node_raw<Tree, Data>, vector<node_raw<Tr
         // this would introduce cycles
         if (rhs.is_ancestor(*this)) throw exception();
 
+        node_type* r = rhs._this;
         // important if rhs is child of "this", to prevent it from getting deallocated by clear()
-        node_type* r(rhs._this);
+        if (is_ancestor(rhs)) _excise(r);
 
         // in the case of vector storage, I can just leave current node where it is
         this->clear();
@@ -793,7 +811,7 @@ struct node_raw: public node_base<Tree, node_raw<Tree, Data>, vector<node_raw<Tr
         for (cs_const_iterator j(r->_children.begin());  j != r->_children.end();  ++j) {
             node_type* n((*j)->_copy_data());
             this->_children.push_back(n);
-            base_type::_thread(n);
+            _thread(n);
             this->_graft(n);
         }
         return *this;
@@ -832,19 +850,17 @@ struct node_raw: public node_base<Tree, node_raw<Tree, Data>, vector<node_raw<Tr
 
 
     void graft(node_type& b) {
-        node_type& a = *this;
-
         // this would introduce cycles 
-        if (&a == &b) throw exception();
-        if (b.is_ancestor(a)) throw exception();
+        if (this == &b) throw exception();
+        if (b.is_ancestor(*this)) throw exception();
 
         // remove b from its current location
         node_type* rb = b._this;
-        b.erase();
+        _excise(rb);
 
         // graft b to current location
-        a._children.push_back(rb);
-        a._graft(rb);
+        this->_children.push_back(rb);
+        this->_graft(rb);
     }
 
     void graft(tree_type& b) {
@@ -1311,7 +1327,7 @@ struct tree {
     typedef typename node_type::df_pre_iterator df_pre_iterator;
     typedef typename node_type::const_df_pre_iterator const_df_pre_iterator;
 
-    tree() : _root() {}
+    tree() : _root(NULL) {}
     virtual ~tree() { clear(); }
 
 
@@ -1366,6 +1382,7 @@ struct tree {
 
     void clear() {
         if (empty()) return;
+        delete _root;
         _root = NULL;
     }
 
@@ -1376,7 +1393,7 @@ struct tree {
 
     void graft(node_type& b) {
         node_type* rb = b._this;
-        b.erase();
+        node_type::_excise(rb);
         _root = rb;
         _graft(rb);
     }
@@ -1442,6 +1459,8 @@ struct tree {
     node_type* _root;
 
     void _prune(node_type* n) {
+        if (n != _root) throw exception();
+        _root = NULL;
     }
 
     void _graft(node_type* n) {
