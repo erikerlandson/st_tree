@@ -853,18 +853,18 @@ struct node_raw: public node_base<Tree, node_raw<Tree, Data>, vector<node_raw<Tr
     }
 
 
-    void graft(node_type& b) {
+    void graft(node_type& src) {
         // this would introduce cycles 
-        if (this == &b) throw exception();
-        if (b.is_ancestor(*this)) throw exception();
+        if (this == &src) throw exception();
+        if (src.is_ancestor(*this)) throw exception();
 
-        // remove b from its current location
-        node_type* rb = b._this;
-        _excise(rb);
+        // remove src from its current location
+        node_type* s = src._this;
+        _excise(s);
 
-        // graft b to current location
-        this->_children.push_back(rb);
-        this->_graft(rb);
+        // graft src to current location
+        this->_children.push_back(s);
+        this->_graft(s);
     }
 
     void graft(tree_type& b) {
@@ -962,6 +962,8 @@ struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare>, m
         // note, rhs may be child of 'this', and get erased too, otherwise
         node_type* t(this->_this);
         node_type* r(rhs._this);
+        bool ancestor = is_ancestor(rhs);
+        if (ancestor) _excise(r);
 
         node_type* p;
         if (!this->is_root()) {
@@ -979,6 +981,7 @@ struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare>, m
             base_type::_thread(n);
             this->_graft(n);
         }
+        if (ancestor) delete r;
 
         if (!this->is_root()) {
             p->_children.insert(t);
@@ -1018,20 +1021,18 @@ struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare>, m
     }
 
 
-    void graft(node_type& b) {
-        node_type& a = *this;
-
+    void graft(node_type& src) {
         // this would introduce cycles 
-        if (&a == &b) throw exception();
-        if (b.is_ancestor(a)) throw exception();
+        if (this == &src) throw exception();
+        if (src.is_ancestor(*this)) throw exception();
 
-        // remove b from its current location
-        node_type* rb = b._this;
-        b.erase();
+        // remove src from its current location
+        node_type* s = src._this;
+        _excise(s);
 
-        // graft b to current location
-        a._children.insert(rb);
-        a._graft(rb);
+        // graft src to current location
+        this->_children.insert(s);
+        this->_graft(s);
     }
 
     void graft(tree_type& b) {
