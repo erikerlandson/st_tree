@@ -260,9 +260,9 @@ struct b1st_iterator {
     b1st_iterator(const b1st_iterator& rhs) : _queue(rhs._queue) {}
     b1st_iterator& operator=(const b1st_iterator& rhs) { _queue = rhs._queue; }
 
-    b1st_iterator(node_type* root) {
+    b1st_iterator(value_type* root) {
         if (root == NULL) return;
-        _queue.push_back(root);
+        _queue.push_back(const_cast<node_type*>(root));
     }
 
     reference operator*() const { return *(_queue.front()); }
@@ -279,7 +279,7 @@ struct b1st_iterator {
 
         if (f->empty()) return *this;
         for (iterator j(f->begin());  j != iterator(f->end());  ++j)
-            _queue.push_back(j->_this);
+            _queue.push_back(&*j);
 
         return *this;
     }
@@ -295,7 +295,7 @@ struct b1st_iterator {
     bool operator!=(const b1st_iterator& rhs) const { return _queue != rhs._queue; }
 
     protected:
-    deque<node_type* > _queue;
+    deque<node_type*> _queue;
 };
 
 
@@ -336,16 +336,16 @@ struct d1st_post_iterator {
     d1st_post_iterator(const d1st_post_iterator& rhs) : _stack(rhs._stack) { }
     d1st_post_iterator& operator=(const d1st_post_iterator& rhs) { _stack = rhs._stack; }
 
-    d1st_post_iterator(node_type* root) {
+    d1st_post_iterator(value_type* root) {
         if (root == NULL) return;
-        _stack.push_back(frame(root, iterator(root->begin()), false));
+        _stack.push_back(frame(const_cast<node_type*>(root), iterator(const_cast<node_type*>(root)->begin()), false));
         while (true) {
             if (_stack.back().first->empty()) {
                 _stack.back().visited = true;
                 break;
             }
             iterator b(_stack.back().first->begin());
-            _stack.push_back(frame(b->_this, iterator((b)->begin()), false));
+            _stack.push_back(frame(&*b, iterator((b)->begin()), false));
         }
     }
 
@@ -373,14 +373,14 @@ struct d1st_post_iterator {
         }
 
         // we found a next child at current ply: push down its first children to the bottom
-        _stack.push_back(frame((_stack.back().second)->_this, iterator((_stack.back().second)->begin()), false));
+        _stack.push_back(frame(&*(_stack.back().second), iterator((_stack.back().second)->begin()), false));
         while (true) {
             if (_stack.back().first->empty()) {
                 _stack.back().visited = true;
                 break;
             }
             iterator b(_stack.back().first->begin());
-            _stack.push_back(frame(b->_this, iterator((b)->begin()), false));                
+            _stack.push_back(frame(&*b, iterator((b)->begin()), false));                
         }
 
         return *this;
@@ -438,9 +438,9 @@ struct d1st_pre_iterator {
     d1st_pre_iterator(const d1st_pre_iterator& rhs) : _stack(rhs._stack) { }
     d1st_pre_iterator& operator=(const d1st_pre_iterator& rhs) { _stack = rhs._stack; }
 
-    d1st_pre_iterator(node_type* root) {
+    d1st_pre_iterator(value_type* root) {
         if (root == NULL) return;
-        _stack.push_back(frame(root, iterator(root->begin()), false));
+        _stack.push_back(frame(const_cast<node_type*>(root), iterator(const_cast<node_type*>(root)->begin()), false));
     }
 
     reference operator*() const { return *(_stack.back().first); }
@@ -455,7 +455,7 @@ struct d1st_pre_iterator {
         if (!_stack.back().visited) {
             _stack.back().visited = true;
             if (!_stack.back().first->empty()) {
-                _stack.push_back(frame((_stack.back().second)->_this, iterator(((_stack.back().second))->begin()), false));
+                _stack.push_back(frame(&*(_stack.back().second), iterator(((_stack.back().second))->begin()), false));
                 return *this;
             }
         }
@@ -473,7 +473,7 @@ struct d1st_pre_iterator {
         }
 
         // push the next child
-        _stack.push_back(frame((_stack.back().second)->_this, iterator(((_stack.back().second))->begin()), false));
+        _stack.push_back(frame(&*(_stack.back().second), iterator(((_stack.back().second))->begin()), false));
 
         return *this;
     }
@@ -576,32 +576,32 @@ struct node_base {
     typedef d1st_pre_iterator<node_type, node_type> df_pre_iterator;
     typedef d1st_pre_iterator<node_type, const node_type> const_df_pre_iterator;
 
-    bf_iterator bf_begin() { return bf_iterator(_this); }
+    bf_iterator bf_begin() { return bf_iterator(static_cast<node_type*>(this)); }
     bf_iterator bf_end() { return bf_iterator(); }
-    const_bf_iterator bf_begin() const { return const_bf_iterator(_this); }
+    const_bf_iterator bf_begin() const { return const_bf_iterator(static_cast<const node_type*>(this)); }
     const_bf_iterator bf_end() const { return const_bf_iterator(); }
 
-    df_post_iterator df_post_begin() { return df_post_iterator(_this); }
+    df_post_iterator df_post_begin() { return df_post_iterator(static_cast<node_type*>(this)); }
     df_post_iterator df_post_end() { return df_post_iterator(); }
-    const_df_post_iterator df_post_begin() const { return const_df_post_iterator(_this); }
+    const_df_post_iterator df_post_begin() const { return const_df_post_iterator(static_cast<const node_type*>(this)); }
     const_df_post_iterator df_post_end() const { return const_df_post_iterator(); }
 
-    df_pre_iterator df_pre_begin() { return df_pre_iterator(_this); }
+    df_pre_iterator df_pre_begin() { return df_pre_iterator(static_cast<node_type*>(this)); }
     df_pre_iterator df_pre_end() { return df_pre_iterator(); }
-    const_df_pre_iterator df_pre_begin() const { return const_df_pre_iterator(_this); }
+    const_df_pre_iterator df_pre_begin() const { return const_df_pre_iterator(static_cast<const node_type*>(this)); }
     const_df_pre_iterator df_pre_end() const { return const_df_pre_iterator(); }
 
-    node_base() : _tree(NULL), _size(1), _parent(NULL), _this(NULL), _data(), _children() {}
+    node_base() : _tree(NULL), _size(1), _parent(NULL), _data(), _children() {}
     virtual ~node_base() {
         vector<node_type*> d;
-        for (iterator j(begin());  j != end();  ++j) d.push_back(j->_this);
+        for (iterator j(begin());  j != end();  ++j) d.push_back(&*j);
         _children.clear();
         for (typename vector<node_type*>::iterator e(d.begin());  e != d.end();  ++e) delete *e;
     }
 
     size_type ply() const {
         size_type p = 0;
-        node_type* q(_this);
+        const node_type* q = static_cast<const node_type*>(this);
         while (!q->is_root()) {
             q = q->_parent;
             p += 1;
@@ -610,15 +610,15 @@ struct node_base {
     }
 
     tree_type& tree() {
-        node_type* q(_this);
+        node_type* q = static_cast<node_type*>(this);
         while (!q->is_root()) {
             q = q->_parent;
         }
         return *(q->_tree);
     }
 
-    const tree_type& tree() const { 
-        const node_type* q(_this);
+    const tree_type& tree() const {
+        const node_type* q = static_cast<const node_type*>(this);
         while (!q->is_root()) {
             q = q->_parent;
         }
@@ -631,8 +631,8 @@ struct node_base {
     bool is_root() const { return _tree != NULL; }
 
     bool is_ancestor(const node_type& n) const {
-        node_type* a(_this);
-        node_type* q(n._this);
+        const node_type* a = static_cast<const node_type*>(this);
+        const node_type* q = &n;
         while (true) {
             if (q->is_root()) return false;
             q = q->_parent;
@@ -654,7 +654,7 @@ struct node_base {
     bool empty() const { return _children.empty(); }
 
     void erase(const iterator& j) {
-        node_type* n((j)->_this);
+        node_type* n = &*j;
         _prune(n);
         _children.erase(j);
         delete n;
@@ -663,7 +663,7 @@ struct node_base {
     void erase(const iterator& F, const iterator& L) {
         vector<node_type*> d;
         for (iterator j(F);  j != L;  ++j) {
-            node_type* n((j)->_this);
+            node_type* n = &*j;
             _prune(n);
             d.push_back(n);
         }
@@ -713,7 +713,6 @@ struct node_base {
     size_type _size;
     max_maintainer<size_type> _depth;
     node_type* _parent;
-    node_type* _this;
     data_type _data;
     cs_type _children;
 
@@ -721,7 +720,7 @@ struct node_base {
 
     void _prune(node_type* n) {
         // percolate the new subtree size up the chain of parents
-        node_type* q = _this;
+        node_type* q = static_cast<node_type*>(this);
         size_type dd = 1;
         while (true) {
             q->_size -= n->_size;
@@ -736,7 +735,7 @@ struct node_base {
 
     void _graft(node_type* n) {
         // set new parent for this subtree as current node
-        node_type* q = _this;
+        node_type* q = static_cast<node_type*>(this);
         n->_parent = q;
         n->_tree = NULL;
  
@@ -757,7 +756,7 @@ struct node_base {
         n->_size = 1;
         for (iterator j(n->begin());  j != n->end();  ++j) {
             j->_parent = n;
-            node_type* c = j->_this;
+            node_type* c = &*j;
             _thread(c);
             n->_size += j->_size;
         }
@@ -768,7 +767,7 @@ struct node_base {
             n->tree()._root = NULL;
             n->tree()._prune(n);
         } else {
-            n->parent()._children.erase(node_type::_cs_iterator(*(n->_this)));
+            n->parent()._children.erase(node_type::_cs_iterator(*n));
             n->parent()._prune(n);
         }
     }
@@ -801,7 +800,7 @@ struct node_raw: public node_base<Tree, node_raw<Tree, Data>, vector<node_raw<Tr
         // this would introduce cycles
         if (rhs.is_ancestor(*this)) throw exception();
 
-        node_type* r = rhs._this;
+        node_type* r = const_cast<node_type*>(&rhs);
         // important if rhs is child of "this", to prevent it from getting deallocated by clear()
         bool ancestor = is_ancestor(rhs);
         if (ancestor) _excise(r);
@@ -859,7 +858,7 @@ struct node_raw: public node_base<Tree, node_raw<Tree, Data>, vector<node_raw<Tr
         if (src.is_ancestor(*this)) throw exception();
 
         // remove src from its current location
-        node_type* s = src._this;
+        node_type* s = &src;
         _excise(s);
 
         // graft src to current location
@@ -882,7 +881,6 @@ struct node_raw: public node_base<Tree, node_raw<Tree, Data>, vector<node_raw<Tr
     iterator insert(const data_type& data) {
         node_type* n(new node_type);
         n->_data = data;
-        n->_this = n;
         n->_size = 1;
         n->_depth.insert(1);
         this->_children.push_back(n);
@@ -917,7 +915,6 @@ struct node_raw: public node_base<Tree, node_raw<Tree, Data>, vector<node_raw<Tr
 
     node_type* _copy_data() const {
         node_type* n(new node_type);
-        n->_this = n;
         n->_data = this->_data;
         n->_depth = this->_depth;
         for (cs_const_iterator j(this->_children.begin()); j != this->_children.end(); ++j)
@@ -960,8 +957,8 @@ struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare>, m
 
         // important to save these prior to clearing 'this'
         // note, rhs may be child of 'this', and get erased too, otherwise
-        node_type* t(this->_this);
-        node_type* r(rhs._this);
+        node_type* t = this;
+        node_type* r = const_cast<node_type*>(&rhs);
         bool ancestor = is_ancestor(rhs);
         if (ancestor) _excise(r);
 
@@ -1027,7 +1024,7 @@ struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare>, m
         if (src.is_ancestor(*this)) throw exception();
 
         // remove src from its current location
-        node_type* s = src._this;
+        node_type* s = &src;
         _excise(s);
 
         // graft src to current location
@@ -1047,7 +1044,6 @@ struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare>, m
     iterator insert(const data_type& data) {
         node_type* n(new node_type);
         n->_data = data;
-        n->_this = n;
         n->_size = 1;
         n->_depth.insert(1);
         cs_iterator r = this->_children.insert(n);
@@ -1070,10 +1066,10 @@ struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare>, m
     protected:
     static cs_iterator _cs_iterator(node_type& n) {
         if (n.is_root()) throw exception();
-        pair<cs_iterator, cs_iterator> r(n.parent()._children.equal_range(n._this));
+        pair<cs_iterator, cs_iterator> r(n.parent()._children.equal_range(&n));
         if (r.first == r.second) throw exception();
         for (cs_iterator j(r.first);  j != r.second;  ++j)
-            if (*j == n._this) return j;
+            if (*j == &n) return j;
         throw exception();
         // to satisfy compiler:
         return r.first;
@@ -1081,7 +1077,6 @@ struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare>, m
 
     node_type* _copy_data() const {
         node_type* n(new node_type);
-        n->_this = n;
         n->_data = this->_data;
         n->_depth = this->_depth;
         for (cs_const_iterator j(this->_children.begin());  j != this->_children.end();  ++j) {
@@ -1145,7 +1140,6 @@ struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare>, 
         node_type* n(new node_type);
         n->_key = val.first;
         n->_data = val.second;
-        n->_this = n;
         n->_size = 1;
         n->_depth.insert(1);
         pair<cs_iterator, bool> r = this->_children.insert(cs_value_type(&(n->_key), n));
@@ -1164,7 +1158,7 @@ struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare>, 
 
         // important to save these prior to clearing 'this'
         // note, rhs may be child of 'this', and get erased too, otherwise
-        node_type* r(rhs._this);
+        node_type* r = const_cast<node_type*>(&rhs);
         bool ancestor = is_ancestor(rhs);
         if (ancestor) _excise(r);
 
@@ -1224,7 +1218,7 @@ struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare>, 
         if (src.is_ancestor(*this)) throw exception();
 
         // remove src from its current location
-        node_type* s = src._this;
+        node_type* s = &src;
         _excise(s);
 
         // graft src to current location
@@ -1263,7 +1257,6 @@ struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare>, 
 
     node_type* _copy_data() const {
         node_type* n(new node_type);
-        n->_this = n;
         n->_data = this->_data;
         n->_key = this->_key;
         n->_depth = this->_depth;
@@ -1286,7 +1279,7 @@ struct node_type_dispatch {
 };
 
 
- template <typename Tree, typename Unused>
+template <typename Tree, typename Unused>
 struct node_type_dispatch<Tree, raw<Unused> > {
     typedef node_raw<Tree, typename Tree::data_type> node_type;
     // why do I need this?  because of friend declarations, that's why.
@@ -1351,7 +1344,6 @@ struct tree {
         if (empty()) {
             _root = new node_type;
             _root->_tree = this;
-            _root->_this = _root;
             _root->_depth.insert(1);
         }
 
@@ -1380,7 +1372,6 @@ struct tree {
         _root = new node_type;
         _root->_data = data;
         _root->_tree = this;
-        _root->_this = _root;
         _root->_depth.insert(1);
     }
 
@@ -1398,30 +1389,30 @@ struct tree {
         std::swap(_root, src._root);
     }
 
-    void graft(node_type& b) {
-        node_type* rb = b._this;
-        node_type::_excise(rb);
+    void graft(node_type& src) {
+        node_type* s = &src;
+        node_type::_excise(s);
         clear();
-        _root = rb;
-        _graft(rb);
+        _root = s;
+        _graft(s);
     }
 
-    void graft(tree_type& b) {
-        if (b.empty()) erase();
-        else           graft(b.root());
+    void graft(tree_type& src) {
+        if (src.empty()) erase();
+        else graft(src.root());
     }
 
-    void insert(const node_type& b) {
-        node_type* n(b._copy_data());
+    void insert(const node_type& src) {
+        node_type* n = src._copy_data();
         node_type::base_type::_thread(n);
         clear();
         _root = n;
         _graft(n);
     }
 
-    void insert(tree_type& b) {
-        if (b.empty()) erase();
-        else           insert(b.root());
+    void insert(const tree_type& src) {
+        if (src.empty()) erase();
+        else insert(src.root());
     }
 
     bool operator==(const tree& rhs) const {
