@@ -867,9 +867,9 @@ struct node_raw: public node_base<Tree, node_raw<Tree, Data>, vector<node_raw<Tr
         this->_graft(s);
     }
 
-    void graft(tree_type& b) {
-        if (b.empty()) return;
-        graft(b.root());
+    void graft(tree_type& src) {
+        if (src.empty()) return;
+        graft(src.root());
     }
 
     // data can be non-const or const for this class
@@ -1035,9 +1035,9 @@ struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare>, m
         this->_graft(s);
     }
 
-    void graft(tree_type& b) {
-        if (b.empty()) return;
-        graft(b.root());
+    void graft(tree_type& src) {
+        if (src.empty()) return;
+        graft(src.root());
     }
 
     // data needs to be immutable for this class, since it's the sort key, so
@@ -1165,6 +1165,8 @@ struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare>, 
         // important to save these prior to clearing 'this'
         // note, rhs may be child of 'this', and get erased too, otherwise
         node_type* r(rhs._this);
+        bool ancestor = is_ancestor(rhs);
+        if (ancestor) _excise(r);
 
         // I'm going to define semantics of assignment as analogous to raw:
         // the key of the LHS node does not change
@@ -1177,6 +1179,8 @@ struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare>, 
             base_type::_thread(n);
             this->_graft(n);
         }
+        if (ancestor) delete r;
+
         return *this;
     }
 
@@ -1213,26 +1217,25 @@ struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare>, 
         if (irb) { tb->_root = ra;  tb->_graft(ra); }   else { pb->_children.insert(cs_value_type(&(ra->_key), ra));  pb->_graft(ra); }
     }
 
-    void graft(const key_type& key, node_type& b) {
-        node_type& a = *this;
 
+    void graft(const key_type& key, node_type& src) {
         // this would introduce cycles 
-        if (&a == &b) throw exception();
-        if (b.is_ancestor(a)) throw exception();
+        if (this == &src) throw exception();
+        if (src.is_ancestor(*this)) throw exception();
 
-        // remove b from its current location
-        node_type* rb = b._this;
-        b.erase();
+        // remove src from its current location
+        node_type* s = src._this;
+        _excise(s);
 
-        // graft b to current location
-        rb->_key = key;
-        a._children.insert(cs_value_type(&(rb->_key), rb));
-        a._graft(rb);
+        // graft src to current location
+        s->_key = key;
+        this->_children.insert(cs_value_type(&(s->_key), s));
+        this->_graft(s);
     }
 
-    void graft(const key_type& key, tree_type& b) {
-        if (b.empty()) return;
-        graft(key, b.root());
+    void graft(const key_type& key, tree_type& src) {
+        if (src.empty()) return;
+        graft(key, src.root());
     }
 
 
