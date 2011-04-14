@@ -765,6 +765,7 @@ struct node_base {
 
     static void _excise(node_type* n) {
         if (n->is_root()) {
+            n->tree()._root = NULL;
             n->tree()._prune(n);
         } else {
             n->parent()._children.erase(node_type::_cs_iterator(*(n->_this)));
@@ -802,7 +803,8 @@ struct node_raw: public node_base<Tree, node_raw<Tree, Data>, vector<node_raw<Tr
 
         node_type* r = rhs._this;
         // important if rhs is child of "this", to prevent it from getting deallocated by clear()
-        if (is_ancestor(rhs)) _excise(r);
+        bool ancestor = is_ancestor(rhs);
+        if (ancestor) _excise(r);
 
         // in the case of vector storage, I can just leave current node where it is
         this->clear();
@@ -814,6 +816,8 @@ struct node_raw: public node_base<Tree, node_raw<Tree, Data>, vector<node_raw<Tr
             _thread(n);
             this->_graft(n);
         }
+        if (ancestor) delete r;
+
         return *this;
     }
 
@@ -916,7 +920,6 @@ struct node_raw: public node_base<Tree, node_raw<Tree, Data>, vector<node_raw<Tr
         n->_this = n;
         n->_data = this->_data;
         n->_depth = this->_depth;
-        n->_this = n;
         for (cs_const_iterator j(this->_children.begin()); j != this->_children.end(); ++j)
             n->_children.push_back((*j)->_copy_data());
         return n;
@@ -1394,6 +1397,7 @@ struct tree {
     void graft(node_type& b) {
         node_type* rb = b._this;
         node_type::_excise(rb);
+        clear();
         _root = rb;
         _graft(rb);
     }
@@ -1406,6 +1410,7 @@ struct tree {
     void insert(const node_type& b) {
         node_type* n(b._copy_data());
         node_type::base_type::_thread(n);
+        clear();
         _root = n;
         _graft(n);
     }
@@ -1459,8 +1464,6 @@ struct tree {
     node_type* _root;
 
     void _prune(node_type* n) {
-        if (n != _root) throw exception();
-        _root = NULL;
     }
 
     void _graft(node_type* n) {
