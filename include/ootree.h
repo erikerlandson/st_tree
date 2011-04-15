@@ -67,7 +67,7 @@ struct exception {
 };
 
 
-template <typename Unsigned>
+template <typename Unsigned, typename Alloc>
 struct max_maintainer {
     typedef typename vector<Unsigned>::size_type size_type;
 
@@ -125,7 +125,7 @@ struct max_maintainer {
 
     protected:
     Unsigned _max;
-    vector<Unsigned> _hist;
+    vector<Unsigned, Alloc> _hist;
 };
 
 
@@ -243,7 +243,7 @@ struct valmap_iterator_adaptor {
 };
 
 
-template <typename Node, typename Value>
+template <typename Node, typename Value, typename Alloc>
 struct b1st_iterator {
     typedef Node node_type;
     typedef typename Node::iterator iterator;
@@ -295,11 +295,11 @@ struct b1st_iterator {
     bool operator!=(const b1st_iterator& rhs) const { return _queue != rhs._queue; }
 
     protected:
-    deque<node_type*> _queue;
+    deque<node_type*, Alloc> _queue;
 };
 
 
-template <typename Node, typename Value>
+template <typename Node, typename Value, typename Alloc>
 struct d1st_post_iterator {
     typedef Node node_type;
     typedef typename node_type::iterator iterator;
@@ -397,11 +397,11 @@ struct d1st_post_iterator {
     bool operator!=(const d1st_post_iterator& rhs) const { return _stack != rhs._stack; }
 
     protected:
-    vector<frame> _stack;
+    vector<frame, Alloc> _stack;
 };
 
 
-template <typename Node, typename Value>
+template <typename Node, typename Value, typename Alloc>
 struct d1st_pre_iterator {
     typedef Node node_type;
     typedef typename node_type::iterator iterator;
@@ -489,7 +489,7 @@ struct d1st_pre_iterator {
     bool operator!=(const d1st_pre_iterator& rhs) const { return _stack != rhs._stack; }
 
     protected:
-    vector<frame> _stack;
+    vector<frame, Alloc> _stack;
 };
 
 
@@ -533,7 +533,7 @@ struct dereferenceable_lessthan<map<Key, Data, Compare, Alloc> > {
     Compare _lt;
 };
 
-template <typename Tree, typename Data, typename Key, typename Compare> struct node_keyed;
+template <typename Tree, typename Data, typename Key, typename Compare, typename Alloc> struct node_keyed;
 
 
 template <typename Node, typename Value>
@@ -541,15 +541,14 @@ struct vmap_dispatch {
     typedef dref_vmap<Value> vmap;
 };
 
-template <typename Tree, typename Data, typename Key, typename Compare, typename Value>
-struct vmap_dispatch<node_keyed<Tree, Data, Key, Compare>, Value> {
+template <typename Tree, typename Data, typename Key, typename Compare, typename Alloc, typename Value>
+struct vmap_dispatch<node_keyed<Tree, Data, Key, Compare, Alloc>, Value> {
     typedef dref_second_vmap<Value> vmap;
 };
 
 
-template <typename Tree, typename Node, typename ChildContainer>
+template <typename Tree, typename Node, typename ChildContainer, typename Alloc>
 struct node_base {
-    typedef node_base<Tree, Node, ChildContainer> this_type;
     typedef Tree tree_type;
     typedef Node node_type;
     typedef ChildContainer cs_type;
@@ -569,12 +568,12 @@ struct node_base {
     const_iterator begin() const { return const_iterator(_children.begin()); }
     const_iterator end() const { return const_iterator(_children.end()); }
 
-    typedef b1st_iterator<node_type, node_type> bf_iterator;
-    typedef b1st_iterator<node_type, const node_type> const_bf_iterator;
-    typedef d1st_post_iterator<node_type, node_type> df_post_iterator;
-    typedef d1st_post_iterator<node_type, const node_type> const_df_post_iterator;
-    typedef d1st_pre_iterator<node_type, node_type> df_pre_iterator;
-    typedef d1st_pre_iterator<node_type, const node_type> const_df_pre_iterator;
+    typedef b1st_iterator<node_type, node_type, Alloc> bf_iterator;
+    typedef b1st_iterator<node_type, const node_type, Alloc> const_bf_iterator;
+    typedef d1st_post_iterator<node_type, node_type, Alloc> df_post_iterator;
+    typedef d1st_post_iterator<node_type, const node_type, Alloc> const_df_post_iterator;
+    typedef d1st_pre_iterator<node_type, node_type, Alloc> df_pre_iterator;
+    typedef d1st_pre_iterator<node_type, const node_type, Alloc> const_df_pre_iterator;
 
     bf_iterator bf_begin() { return bf_iterator(static_cast<node_type*>(this)); }
     bf_iterator bf_end() { return bf_iterator(); }
@@ -591,12 +590,16 @@ struct node_base {
     const_df_pre_iterator df_pre_begin() const { return const_df_pre_iterator(static_cast<const node_type*>(this)); }
     const_df_pre_iterator df_pre_end() const { return const_df_pre_iterator(); }
 
-    node_base() : _tree(NULL), _size(1), _parent(NULL), _data(), _children() {}
+    node_base() : _tree(NULL), _size(1), _parent(NULL), _data(), _children(), _depth() {}
     virtual ~node_base() {
+        // Saves work, and also prevents exception attempting to call tree() on default-constructed nodes
+        if (_children.empty() || _default_constructed()) return;
+        // Save off child pointers, take down the child container, and then deallocate children
         vector<node_type*> d;
-        for (iterator j(begin());  j != end();  ++j) d.push_back(&*j);
+        for (iterator j(begin());  j != end();  ++j)  d.push_back(&*j);
         _children.clear();
-        for (typename vector<node_type*>::iterator e(d.begin());  e != d.end();  ++e) delete *e;
+        tree_type& tree_ = this->tree();
+        for (typename vector<node_type*>::iterator e(d.begin());  e != d.end();  ++e)  tree_._delete_node(*e);
     }
 
     size_type ply() const {
@@ -611,24 +614,22 @@ struct node_base {
 
     tree_type& tree() {
         node_type* q = static_cast<node_type*>(this);
-        while (!q->is_root()) {
-            q = q->_parent;
-        }
+        while (!q->is_root())  q = q->_parent;
+        if (NULL == q->_tree) throw exception();
         return *(q->_tree);
     }
 
     const tree_type& tree() const {
         const node_type* q = static_cast<const node_type*>(this);
-        while (!q->is_root()) {
-            q = q->_parent;
-        }
+        while (!q->is_root())  q = q->_parent;
+        if (NULL == q->_tree) throw exception();
         return *(q->_tree);
     }
 
     size_type depth() const { return _depth.max(); }
     size_type subtree_size() const { return _size; }
 
-    bool is_root() const { return _tree != NULL; }
+    bool is_root() const { return NULL == _parent; }
 
     bool is_ancestor(const node_type& n) const {
         const node_type* a = static_cast<const node_type*>(this);
@@ -657,7 +658,7 @@ struct node_base {
         node_type* n = &*j;
         _prune(n);
         _children.erase(j);
-        delete n;
+        this->tree()._delete_node(n);
     }
 
     void erase(const iterator& F, const iterator& L) {
@@ -668,7 +669,8 @@ struct node_base {
             d.push_back(n);
         }
         _children.erase(F, L);
-        for (typename vector<node_type*>::iterator e(d.begin());  e != d.end();  ++e) delete *e;
+        tree_type& tree_ = this->tree();
+        for (typename vector<node_type*>::iterator e(d.begin());  e != d.end();  ++e) tree_._delete_node(*e);
     }
 
     void erase() {
@@ -701,20 +703,24 @@ struct node_base {
     bool operator>=(const node_base& rhs) const { return !(*this < rhs); }
 
     friend class tree_type::tree_type;
-    friend class b1st_iterator<node_type, node_type>;
-    friend class b1st_iterator<node_type, const node_type>;
-    friend class d1st_post_iterator<node_type, node_type>;
-    friend class d1st_post_iterator<node_type, const node_type>;
-    friend class d1st_pre_iterator<node_type, node_type>;
-    friend class d1st_pre_iterator<node_type, const node_type>;
+    friend class b1st_iterator<node_type, node_type, Alloc>;
+    friend class b1st_iterator<node_type, const node_type, Alloc>;
+    friend class d1st_post_iterator<node_type, node_type, Alloc>;
+    friend class d1st_post_iterator<node_type, const node_type, Alloc>;
+    friend class d1st_pre_iterator<node_type, node_type, Alloc>;
+    friend class d1st_pre_iterator<node_type, const node_type, Alloc>;
 
     protected:
     tree_type* _tree;
     size_type _size;
-    max_maintainer<size_type> _depth;
+    max_maintainer<size_type, Alloc> _depth;
     node_type* _parent;
     data_type _data;
     cs_type _children;
+
+    bool _default_constructed() const {
+        return (NULL == _parent) && (NULL == _tree);
+    }
 
     iterator _iterator() { return iterator(node_type::_cs_iterator(*static_cast<node_type*>(this))); }
 
@@ -774,13 +780,12 @@ struct node_base {
 };
 
 
-template <typename Tree, typename Data>
-struct node_raw: public node_base<Tree, node_raw<Tree, Data>, vector<node_raw<Tree, Data>*> > {
-    typedef node_raw<Tree, Data> this_type;
-    typedef this_type node_type;
+template <typename Tree, typename Data, typename Alloc>
+struct node_raw: public node_base<Tree, node_raw<Tree, Data, Alloc>, vector<node_raw<Tree, Data, Alloc>*, Alloc>, Alloc> {
+    typedef node_raw<Tree, Data, Alloc> node_type;
     typedef Tree tree_type;
-    typedef vector<node_type* > cs_type;
-    typedef node_base<Tree, node_type, cs_type> base_type;
+    typedef vector<node_type*, Alloc> cs_type;
+    typedef node_base<Tree, node_type, cs_type, Alloc> base_type;
     typedef typename Tree::size_type size_type;
     typedef Data data_type;
 
@@ -788,15 +793,20 @@ struct node_raw: public node_base<Tree, node_raw<Tree, Data>, vector<node_raw<Tr
     typedef typename base_type::const_iterator const_iterator;
 
     friend class tree_type::tree_type;
-    friend class node_base<Tree, node_type, cs_type>;
+    friend class node_base<Tree, node_type, cs_type, Alloc>;
 
     node_raw() : base_type() {}
     virtual ~node_raw() {}
 
-    node_raw(const node_raw& src) { *this = src; }
+    node_raw(const node_raw& src) : base_type() {
+        // this is to do the right then when calling allocator construct() method
+        if (src._default_constructed()) return;
+        // otherwise, we'd want "normal" assignment logic
+        *this = src; 
+    }
     node_raw& operator=(const node_raw& rhs) {
         if (this == &rhs) return *this;
-        
+
         // this would introduce cycles
         if (rhs.is_ancestor(*this)) throw exception();
 
@@ -810,12 +820,12 @@ struct node_raw: public node_base<Tree, node_raw<Tree, Data>, vector<node_raw<Tr
         this->_data = rhs._data;
         // do the copying work for children only
         for (cs_const_iterator j(r->_children.begin());  j != r->_children.end();  ++j) {
-            node_type* n((*j)->_copy_data());
+            node_type* n = (*j)->_copy_data(this->tree());
             this->_children.push_back(n);
             _thread(n);
             this->_graft(n);
         }
-        if (ancestor) delete r;
+        if (ancestor) this->tree()._delete_node(r);
 
         return *this;
     }
@@ -879,7 +889,7 @@ struct node_raw: public node_base<Tree, node_raw<Tree, Data>, vector<node_raw<Tr
     const node_type& operator[](size_type n) const { return *(this->_children[n]); }
 
     iterator insert(const data_type& data) {
-        node_type* n(new node_type);
+        node_type* n = this->tree()._new_node();
         n->_data = data;
         n->_size = 1;
         n->_depth.insert(1);
@@ -888,17 +898,18 @@ struct node_raw: public node_base<Tree, node_raw<Tree, Data>, vector<node_raw<Tr
         return iterator(this->_children.begin()+(this->_children.size()-1));
     }
 
-    iterator insert(const node_type& b) {
-        node_type* n(b._copy_data());
+    iterator insert(const node_type& src) {
+        node_type* n = src._copy_data(this->tree());
         base_type::_thread(n);
         this->_children.push_back(n);
         this->_graft(n);
         return iterator(this->_children.begin()+(this->_children.size()-1));
     }
-    iterator insert(const tree_type& b) {
-        if (b.empty()) return this->end();
-        return insert(b.root());
+    iterator insert(const tree_type& src) {
+        if (src.empty()) return this->end();
+        return insert(src.root());
     }
+
 
     protected:
     typedef typename base_type::cs_iterator cs_iterator;
@@ -913,24 +924,23 @@ struct node_raw: public node_base<Tree, node_raw<Tree, Data>, vector<node_raw<Tr
         return j;
     }
 
-    node_type* _copy_data() const {
-        node_type* n(new node_type);
+    node_type* _copy_data(tree_type& tree_) const {
+        node_type* n = tree_._new_node();
         n->_data = this->_data;
         n->_depth = this->_depth;
         for (cs_const_iterator j(this->_children.begin()); j != this->_children.end(); ++j)
-            n->_children.push_back((*j)->_copy_data());
+            n->_children.push_back((*j)->_copy_data(tree_));
         return n;
     }
 };
 
 
-template <typename Tree, typename Data, typename Compare>
-struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare>, multiset<node_ordered<Tree, Data, Compare>*, ptr_less_data<Compare> > > {
-    typedef node_ordered<Tree, Data, Compare> this_type;
-    typedef this_type node_type;
+template <typename Tree, typename Data, typename Compare, typename Alloc>
+struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare, Alloc>, multiset<node_ordered<Tree, Data, Compare, Alloc>*, ptr_less_data<Compare>, Alloc>, Alloc> {
+    typedef node_ordered<Tree, Data, Compare, Alloc> node_type;
     typedef Tree tree_type;
-    typedef multiset<node_type*, ptr_less_data<Compare> > cs_type;
-    typedef node_base<Tree, node_type, cs_type> base_type;
+    typedef multiset<node_type*, ptr_less_data<Compare>, Alloc> cs_type;
+    typedef node_base<Tree, node_type, cs_type, Alloc> base_type;
     typedef typename Tree::size_type size_type;
     typedef Data data_type;
 
@@ -938,7 +948,7 @@ struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare>, m
     typedef typename base_type::const_iterator const_iterator;
 
     friend class tree_type::tree_type;
-    friend class node_base<Tree, node_type, cs_type>;
+    friend class node_base<Tree, node_type, cs_type, Alloc>;
 
     protected:
     typedef typename base_type::cs_iterator cs_iterator;
@@ -948,7 +958,12 @@ struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare>, m
     node_ordered() : base_type() {}
     virtual ~node_ordered() {}
 
-    node_ordered(const node_ordered& src) { *this = src; }
+    node_ordered(const node_ordered& src) : base_type() {
+        // this is to do the right then when calling allocator construct() method
+        if (src._default_constructed()) return;
+        // otherwise, we'd want "normal" assignment logic
+        *this = src; 
+    }
     node_ordered& operator=(const node_ordered& rhs) {
         if (this == &rhs) return *this;
 
@@ -973,12 +988,12 @@ struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare>, m
         this->_data = rhs._data;
         // do the copying work for children only
         for (cs_const_iterator j(r->_children.begin());  j != r->_children.end();  ++j) {
-            node_type* n((*j)->_copy_data());
+            node_type* n = (*j)->_copy_data(this->tree());
             this->_children.insert(n);
             base_type::_thread(n);
             this->_graft(n);
         }
-        if (ancestor) delete r;
+        if (ancestor) this->tree()._delete_node(r);
 
         if (!this->is_root()) {
             p->_children.insert(t);
@@ -1042,7 +1057,7 @@ struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare>, m
     const data_type& data() const { return this->_data; }
 
     iterator insert(const data_type& data) {
-        node_type* n(new node_type);
+        node_type* n = this->tree()._new_node();
         n->_data = data;
         n->_size = 1;
         n->_depth.insert(1);
@@ -1051,15 +1066,15 @@ struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare>, m
         return iterator(r);
     }
 
-    void insert(const node_type& b) {
-        node_type* n(b._copy_data());
+    void insert(const node_type& src) {
+        node_type* n = src._copy_data(this->tree());
         base_type::_thread(n);
         this->_children.insert(n);
         this->_graft(n);
     }
-    void insert(const tree_type& b) {
-        if (b.empty()) return;
-        insert(b.root());
+    void insert(const tree_type& src) {
+        if (src.empty()) return;
+        insert(src.root());
     }
 
 
@@ -1075,12 +1090,12 @@ struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare>, m
         return r.first;
     }
 
-    node_type* _copy_data() const {
-        node_type* n(new node_type);
+    node_type* _copy_data(tree_type& tree_) const {
+        node_type* n = tree_._new_node();
         n->_data = this->_data;
         n->_depth = this->_depth;
         for (cs_const_iterator j(this->_children.begin());  j != this->_children.end();  ++j) {
-            node_type* c((*j)->_copy_data());
+            node_type* c((*j)->_copy_data(tree_));
             n->_children.insert(c);
         }
         return n;
@@ -1088,13 +1103,12 @@ struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare>, m
 };
 
 
-template <typename Tree, typename Data, typename Key, typename Compare>
-struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare>, map<const Key*, node_keyed<Tree, Data, Key, Compare>*, ptr_less<Compare> > > {
-    typedef node_keyed<Tree, Data, Key, Compare> this_type;
-    typedef this_type node_type;
+template <typename Tree, typename Data, typename Key, typename Compare, typename Alloc>
+struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare, Alloc>, map<const Key*, node_keyed<Tree, Data, Key, Compare, Alloc>*, ptr_less<Compare>, Alloc>, Alloc> {
+    typedef node_keyed<Tree, Data, Key, Compare, Alloc> node_type;
     typedef Tree tree_type;
-    typedef map<const Key*, node_type*, ptr_less<Compare> > cs_type;
-    typedef node_base<Tree, node_type, cs_type> base_type;
+    typedef map<const Key*, node_type*, ptr_less<Compare>, Alloc> cs_type;
+    typedef node_base<Tree, node_type, cs_type, Alloc> base_type;
     typedef typename Tree::size_type size_type;
     typedef Data data_type;
     typedef Key key_type;
@@ -1104,7 +1118,7 @@ struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare>, 
     typedef typename base_type::const_iterator const_iterator;
 
     friend class tree_type::tree_type;
-    friend class node_base<Tree, node_type, cs_type>;
+    friend class node_base<Tree, node_type, cs_type, Alloc>;
 
     protected:
     typedef typename base_type::cs_iterator cs_iterator;
@@ -1115,6 +1129,40 @@ struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare>, 
     public:
     node_keyed() : base_type(), _key() {}
     virtual ~node_keyed() {}
+
+    node_keyed(const node_keyed& src) : base_type(), _key() { 
+        // this is to do the right then when calling allocator construct() method
+        if (src._default_constructed()) return;
+        // otherwise, we'd want "normal" assignment logic
+        *this = src; 
+    }
+    node_keyed& operator=(const node_keyed& rhs) {
+        if (this == &rhs) return *this;
+
+        // this would introduce cycles
+        if (rhs.is_ancestor(*this)) throw exception();
+
+        // important to save these prior to clearing 'this'
+        // note, rhs may be child of 'this', and get erased too, otherwise
+        node_type* r = const_cast<node_type*>(&rhs);
+        bool ancestor = is_ancestor(rhs);
+        if (ancestor) _excise(r);
+
+        // I'm going to define semantics of assignment as analogous to raw:
+        // the key of the LHS node does not change
+        this->clear();
+        this->_data = rhs._data;
+        // do the copying work for children only
+        for (cs_const_iterator j(r->_children.begin());  j != r->_children.end();  ++j) {
+            node_type* n = (j->second)->_copy_data(this->tree());
+            this->_children.insert(cs_value_type(&(n->_key), n));
+            base_type::_thread(n);
+            this->_graft(n);
+        }
+        if (ancestor) this->tree()._delete_node(r);
+
+        return *this;
+    }
 
     data_type& data() { return this->_data; }
     const data_type& data() const { return this->_data; }
@@ -1137,7 +1185,7 @@ struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare>, 
     }
 
     pair<iterator, bool> insert(const value_type& val) {
-        node_type* n(new node_type);
+        node_type* n = this->tree()._new_node();
         n->_key = val.first;
         n->_data = val.second;
         n->_size = 1;
@@ -1148,35 +1196,6 @@ struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare>, 
     }
 
     pair<iterator, bool> insert(const key_type& key, const data_type& data) { return insert(value_type(key, data)); }
-
-    node_keyed(const node_keyed& src) { *this = src; }
-    node_keyed& operator=(const node_keyed& rhs) {
-        if (this == &rhs) return *this;
-
-        // this would introduce cycles
-        if (rhs.is_ancestor(*this)) throw exception();
-
-        // important to save these prior to clearing 'this'
-        // note, rhs may be child of 'this', and get erased too, otherwise
-        node_type* r = const_cast<node_type*>(&rhs);
-        bool ancestor = is_ancestor(rhs);
-        if (ancestor) _excise(r);
-
-        // I'm going to define semantics of assignment as analogous to raw:
-        // the key of the LHS node does not change
-        this->clear();
-        this->_data = rhs._data;
-        // do the copying work for children only
-        for (cs_const_iterator j(r->_children.begin());  j != r->_children.end();  ++j) {
-            node_type* n((j->second)->_copy_data());
-            this->_children.insert(cs_value_type(&(n->_key), n));
-            base_type::_thread(n);
-            this->_graft(n);
-        }
-        if (ancestor) delete r;
-
-        return *this;
-    }
 
 
     void swap(node_type& b) {
@@ -1233,17 +1252,17 @@ struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare>, 
     }
 
 
-    void insert(const key_type& key, const node_type& b) {
-        node_type* n(b._copy_data());
+    void insert(const key_type& key, const node_type& src) {
+        node_type* n = src._copy_data(this->tree());
         n->_key = key;
         base_type::_thread(n);
         this->_children.insert(cs_value_type(&(n->_key),n));
         this->_graft(n);
     }
 
-    void insert(const key_type& key, const tree_type& b) {
-        if (b.empty()) return;
-        insert(key, b.root());
+    void insert(const key_type& key, const tree_type& src) {
+        if (src.empty()) return;
+        insert(key, src.root());
     }
 
 
@@ -1255,13 +1274,13 @@ struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare>, 
         return j;
     }
 
-    node_type* _copy_data() const {
-        node_type* n(new node_type);
+    node_type* _copy_data(tree_type& tree_) const {
+        node_type* n = tree_._new_node();
         n->_data = this->_data;
         n->_key = this->_key;
         n->_depth = this->_depth;
         for (cs_const_iterator j(this->_children.begin());  j != this->_children.end();  ++j) {
-            node_type* c((j->second)->_copy_data());
+            node_type* c((j->second)->_copy_data(tree_));
             n->_children.insert(cs_value_type(&(c->_key), c));
         }
         return n;
@@ -1281,42 +1300,45 @@ struct node_type_dispatch {
 
 template <typename Tree, typename Unused>
 struct node_type_dispatch<Tree, raw<Unused> > {
-    typedef node_raw<Tree, typename Tree::data_type> node_type;
+    typedef node_raw<Tree, typename Tree::data_type, typename Tree::allocator_type> node_type;
     // why do I need this?  because of friend declarations, that's why.
     typedef typename node_type::base_type base_type;
 };
 
 template <typename Tree, typename Compare>
 struct node_type_dispatch<Tree, ordered<Compare> > {
-    typedef node_ordered<Tree, typename Tree::data_type, Compare> node_type;
+    typedef node_ordered<Tree, typename Tree::data_type, Compare, typename Tree::allocator_type> node_type;
     typedef typename node_type::base_type base_type;
 };
 
 
 template <typename Tree>
 struct node_type_dispatch<Tree, ordered<arg_default> > {
-    typedef node_ordered<Tree, typename Tree::data_type, less<typename Tree::data_type> > node_type;
+    typedef node_ordered<Tree, typename Tree::data_type, less<typename Tree::data_type>, typename Tree::allocator_type> node_type;
     typedef typename node_type::base_type base_type;
 };
 
 
 template <typename Tree, typename Key, typename Compare>
 struct node_type_dispatch<Tree, keyed<Key, Compare> > {
-    typedef node_keyed<Tree, typename Tree::data_type, Key, Compare> node_type;
+    typedef node_keyed<Tree, typename Tree::data_type, Key, Compare, typename Tree::allocator_type> node_type;
     typedef typename node_type::base_type base_type;
 };
 
 
-template <typename Data, typename CSCat=raw<> >
+template <typename Data, typename CSCat=raw<>, typename Alloc=std::allocator<Data> >
 struct tree {
-    typedef tree<Data, CSCat> this_type;
-    typedef this_type tree_type;
+    typedef tree<Data, CSCat, Alloc> tree_type;
     typedef unsigned long size_type;
     typedef Data data_type;
+    typedef Alloc allocator_type;
 
     typedef node_type_dispatch<tree_type, CSCat> nt_dispatch;
     typedef typename nt_dispatch::node_type node_type;
     typedef typename nt_dispatch::base_type node_base_type;
+
+    // check out this wild syntax!
+    typedef typename Alloc::template rebind<node_type>::other node_allocator_type;
 
     typedef typename node_type::bf_iterator iterator;
     typedef typename node_type::const_bf_iterator const_iterator;
@@ -1327,7 +1349,7 @@ struct tree {
     typedef typename node_type::df_pre_iterator df_pre_iterator;
     typedef typename node_type::const_df_pre_iterator const_df_pre_iterator;
 
-    tree() : _root(NULL) {}
+    tree() : _root(NULL), _node_allocator() {}
     virtual ~tree() { clear(); }
 
 
@@ -1336,13 +1358,15 @@ struct tree {
     tree& operator=(const tree& src) {
         if (&src == this) return *this;
 
+        _node_allocator = src._node_allocator;
+
         if (src.empty()) {
             clear();
             return *this;
         }
 
         if (empty()) {
-            _root = new node_type;
+            _root = _new_node();
             _root->_tree = this;
             _root->_depth.insert(1);
         }
@@ -1369,7 +1393,7 @@ struct tree {
 
     void insert(const data_type& data) {
         clear();
-        _root = new node_type;
+        _root = _new_node();
         _root->_data = data;
         _root->_tree = this;
         _root->_depth.insert(1);
@@ -1380,11 +1404,11 @@ struct tree {
 
     void clear() {
         if (empty()) return;
-        delete _root;
+        _delete_node(_root);
         _root = NULL;
     }
 
-    void swap(this_type& src) {
+    void swap(tree_type& src) {
         if (this == &src) return;
         std::swap(_root, src._root);
     }
@@ -1403,7 +1427,7 @@ struct tree {
     }
 
     void insert(const node_type& src) {
-        node_type* n = src._copy_data();
+        node_type* n = src._copy_data(*this);
         node_type::base_type::_thread(n);
         clear();
         _root = n;
@@ -1457,6 +1481,19 @@ struct tree {
 
     protected:
     node_type* _root;
+    node_allocator_type _node_allocator;
+    static const node_type _node_init_val;
+
+    node_type* _new_node() {
+        node_type* n = _node_allocator.allocate(1);
+        _node_allocator.construct(n, _node_init_val);
+        return n;
+    }
+
+    void _delete_node(node_type* n) {
+        _node_allocator.destroy(n);
+        _node_allocator.deallocate(n, 1);
+    }
 
     void _prune(node_type* n) {
     }
@@ -1468,28 +1505,32 @@ struct tree {
 };
 
 
+template <typename Data, typename CSCat, typename Alloc>
+const typename tree<Data, CSCat, Alloc>::node_type tree<Data, CSCat, Alloc>::_node_init_val;
+
+
 };  // namespace ootree
 
 
 namespace std {
 
-template <typename Data, typename CSCat>
-void swap(ootree::tree<Data, CSCat>& a, ootree::tree<Data, CSCat>& b) {
+template <typename Data, typename CSCat, typename Alloc>
+void swap(ootree::tree<Data, CSCat, Alloc>& a, ootree::tree<Data, CSCat, Alloc>& b) {
     a.swap(b);
 }
 
-template <typename Tree, typename Data>
-void swap(ootree::node_raw<Tree, Data>&a, ootree::node_raw<Tree, Data>& b) {
+template <typename Tree, typename Data, typename Alloc>
+void swap(ootree::node_raw<Tree, Data, Alloc>& a, ootree::node_raw<Tree, Data, Alloc>& b) {
     a.swap(b);
 }
 
-template <typename Tree, typename Data, typename Compare>
-void swap(ootree::node_ordered<Tree, Data, Compare>&a, ootree::node_ordered<Tree, Data, Compare>& b) {
+template <typename Tree, typename Data, typename Compare, typename Alloc>
+void swap(ootree::node_ordered<Tree, Data, Compare, Alloc>& a, ootree::node_ordered<Tree, Data, Compare, Alloc>& b) {
     a.swap(b);
 }
 
-template <typename Tree, typename Data, typename Key, typename Compare>
-void swap(ootree::node_keyed<Tree, Data, Key, Compare>&a, ootree::node_keyed<Tree, Data, Key, Compare>& b) {
+template <typename Tree, typename Data, typename Key, typename Compare, typename Alloc>
+void swap(ootree::node_keyed<Tree, Data, Key, Compare, Alloc>& a, ootree::node_keyed<Tree, Data, Key, Compare, Alloc>& b) {
     a.swap(b);
 }
 
