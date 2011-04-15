@@ -782,12 +782,21 @@ struct node_base {
 
 template <typename Tree, typename Data, typename Alloc>
 struct node_raw: public node_base<Tree, node_raw<Tree, Data, Alloc>, vector<node_raw<Tree, Data, Alloc>*, Alloc>, Alloc> {
-    typedef node_raw<Tree, Data, Alloc> node_type;
     typedef Tree tree_type;
+    typedef node_raw<Tree, Data, Alloc> node_type;
     typedef vector<node_type*, Alloc> cs_type;
     typedef node_base<Tree, node_type, cs_type, Alloc> base_type;
-    typedef typename Tree::size_type size_type;
     typedef Data data_type;
+
+    typedef node_type value_type;
+    typedef node_type* pointer;
+    typedef node_type const* const_pointer;
+    typedef node_type& reference;
+    typedef node_type const& const_reference;
+
+    typedef typename Tree::size_type size_type;
+    typedef typename Tree::difference_type difference_type;
+    typedef Alloc allocator_type;
 
     typedef typename base_type::iterator iterator;
     typedef typename base_type::const_iterator const_iterator;
@@ -941,8 +950,17 @@ struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare, Al
     typedef Tree tree_type;
     typedef multiset<node_type*, ptr_less_data<Compare>, Alloc> cs_type;
     typedef node_base<Tree, node_type, cs_type, Alloc> base_type;
-    typedef typename Tree::size_type size_type;
     typedef Data data_type;
+
+    typedef node_type value_type;
+    typedef node_type* pointer;
+    typedef node_type const* const_pointer;
+    typedef node_type& reference;
+    typedef node_type const& const_reference;
+
+    typedef typename Tree::size_type size_type;
+    typedef typename Tree::difference_type difference_type;
+    typedef Alloc allocator_type;
 
     typedef typename base_type::iterator iterator;
     typedef typename base_type::const_iterator const_iterator;
@@ -1109,10 +1127,19 @@ struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare, A
     typedef Tree tree_type;
     typedef map<const Key*, node_type*, ptr_less<Compare>, Alloc> cs_type;
     typedef node_base<Tree, node_type, cs_type, Alloc> base_type;
-    typedef typename Tree::size_type size_type;
     typedef Data data_type;
     typedef Key key_type;
-    typedef pair<const key_type, data_type> value_type;
+    typedef pair<const key_type, data_type> kv_pair;
+
+    typedef node_type value_type;
+    typedef node_type* pointer;
+    typedef node_type const* const_pointer;
+    typedef node_type& reference;
+    typedef node_type const& const_reference;
+
+    typedef typename Tree::size_type size_type;
+    typedef typename Tree::difference_type difference_type;
+    typedef Alloc allocator_type;
 
     typedef typename base_type::iterator iterator;
     typedef typename base_type::const_iterator const_iterator;
@@ -1175,7 +1202,7 @@ struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare, A
 
     node_type& operator[](const key_type& key) {
         iterator f(this->find(key));
-        if (this->end() == f) f = this->insert(value_type(key, data_type())).first;
+        if (this->end() == f) f = this->insert(key, data_type()).first;
         return *f;
     }
     const node_type& operator[](const key_type& key) const {
@@ -1184,10 +1211,10 @@ struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare, A
         return *f;
     }
 
-    pair<iterator, bool> insert(const value_type& val) {
+    pair<iterator, bool> insert(const key_type& key, const data_type& data) {
         node_type* n = this->tree()._new_node();
-        n->_key = val.first;
-        n->_data = val.second;
+        n->_key = key;
+        n->_data = data;
         n->_size = 1;
         n->_depth.insert(1);
         pair<cs_iterator, bool> r = this->_children.insert(cs_value_type(&(n->_key), n));
@@ -1195,7 +1222,7 @@ struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare, A
         return pair<iterator, bool>(iterator(r.first), r.second);
     }
 
-    pair<iterator, bool> insert(const key_type& key, const data_type& data) { return insert(value_type(key, data)); }
+    pair<iterator, bool> insert(const kv_pair& kv) { return insert(kv.first, kv.second); }
 
 
     void swap(node_type& b) {
@@ -1329,13 +1356,20 @@ struct node_type_dispatch<Tree, keyed<Key, Compare> > {
 template <typename Data, typename CSCat=raw<>, typename Alloc=std::allocator<Data> >
 struct tree {
     typedef tree<Data, CSCat, Alloc> tree_type;
-    typedef unsigned long size_type;
     typedef Data data_type;
     typedef Alloc allocator_type;
+    typedef unsigned long size_type;
+    typedef long difference_type;
 
     typedef node_type_dispatch<tree_type, CSCat> nt_dispatch;
     typedef typename nt_dispatch::node_type node_type;
     typedef typename nt_dispatch::base_type node_base_type;
+
+    typedef node_type value_type;
+    typedef node_type* pointer;
+    typedef node_type const* const_pointer;
+    typedef node_type& reference;
+    typedef node_type const& const_reference;
 
     // check out this wild syntax!
     typedef typename Alloc::template rebind<node_type>::other node_allocator_type;
