@@ -1021,4 +1021,42 @@ BOOST_AUTO_TEST_CASE(tree_swap) {
     CHECK_TREE(t2, data(), "3");
 }
 
+BOOST_AUTO_TEST_CASE(count) {
+    tree<int, keyed<std::string> > t1;
+    t1.insert(2);
+    t1.root().insert("5",5);
+    t1.root().insert("3",3);
+    t1.root().insert("5",5);
+    CHECK_TREE(t1, data(), "2 3 5");
+    BOOST_CHECK_EQUAL(t1.root().count("3"), (unsigned)1);
+    BOOST_CHECK_EQUAL(t1.root().count("5"), (unsigned)1);
+    BOOST_CHECK_EQUAL(t1.root().count("7"), (unsigned)0);
+}
+
+BOOST_AUTO_TEST_CASE(find) {
+    tree<int, keyed<std::string> > t1;
+    typedef tree<int, keyed<std::string> >::node_type::iterator iterator;
+    typedef tree<int, keyed<std::string> >::node_type::const_iterator const_iterator;
+    t1.insert(2);
+    t1.root().insert("5",5);
+    t1.root().insert("3",3);
+    t1.root().insert("5",5);
+    CHECK_TREE(t1, data(), "2 3 5");
+
+    iterator j1 = t1.root().find("3");
+    BOOST_CHECK(j1 != t1.root().end()  &&  j1->data() == 3);
+    j1 = t1.root().find("5");
+    BOOST_CHECK(j1 != t1.root().end()  &&  j1->data() == 5);
+    j1 = t1.root().find("7");
+    BOOST_CHECK(j1 == t1.root().end());
+
+    tree<int, keyed<std::string> > const& tc = t1;
+    const_iterator jc = tc.root().find("3");
+    BOOST_CHECK(jc != tc.root().end()  &&  jc->data() == 3);
+    jc = tc.root().find("5");
+    BOOST_CHECK(jc != tc.root().end()  &&  jc->data() == 5);
+    jc = tc.root().find("7");
+    BOOST_CHECK(jc == tc.root().end());
+}
+
 BOOST_AUTO_TEST_SUITE_END()

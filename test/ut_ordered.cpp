@@ -1113,4 +1113,42 @@ BOOST_AUTO_TEST_CASE(ordering_behavior) {
     CHECK_TREE(t1, subtree_size(), "7 1 4 1 1 1 1")
 }
 
+BOOST_AUTO_TEST_CASE(count) {
+    tree<int, ordered<> > t1;
+    t1.insert(2);
+    t1.root().insert(5);
+    t1.root().insert(3);
+    t1.root().insert(5);
+    CHECK_TREE(t1, data(), "2 3 5 5");
+    BOOST_CHECK_EQUAL(t1.root().count(3), (unsigned)1);
+    BOOST_CHECK_EQUAL(t1.root().count(5), (unsigned)2);
+    BOOST_CHECK_EQUAL(t1.root().count(7), (unsigned)0);
+}
+
+BOOST_AUTO_TEST_CASE(find) {
+    tree<int, ordered<> > t1;
+    typedef tree<int, ordered<> >::node_type::iterator iterator;
+    typedef tree<int, ordered<> >::node_type::const_iterator const_iterator;
+    t1.insert(2);
+    t1.root().insert(5);
+    t1.root().insert(3);
+    t1.root().insert(5);
+    CHECK_TREE(t1, data(), "2 3 5 5");
+
+    iterator j1 = t1.root().find(3);
+    BOOST_CHECK(j1 != t1.root().end()  &&  j1->data() == 3);
+    j1 = t1.root().find(5);
+    BOOST_CHECK(j1 != t1.root().end()  &&  j1->data() == 5);
+    j1 = t1.root().find(7);
+    BOOST_CHECK(j1 == t1.root().end());
+
+    tree<int, ordered<> > const& tc = t1;
+    const_iterator jc = tc.root().find(3);
+    BOOST_CHECK(jc != tc.root().end()  &&  jc->data() == 3);
+    jc = tc.root().find(5);
+    BOOST_CHECK(jc != tc.root().end()  &&  jc->data() == 5);
+    jc = tc.root().find(7);
+    BOOST_CHECK(jc == tc.root().end());
+}
+
 BOOST_AUTO_TEST_SUITE_END()

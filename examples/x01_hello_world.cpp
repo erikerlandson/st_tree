@@ -27,6 +27,18 @@ using namespace std;
 using namespace ootree;
 
 int main(int argc, char** argv) {
+    map<int, int> test;
+    pair<map<int,int>::iterator, bool> r;
+    r = test.insert(map<int,int>::value_type(1,2));
+    cerr << "b= " << r.second << "  v= " << test[1] << "\n";
+
+    r = test.insert(map<int,int>::value_type(1,2));
+    cerr << "b= " << r.second << "  v= " << test[1] << "\n";
+
+    r = test.insert(map<int,int>::value_type(1,3));
+    cerr << "b= " << r.second << "  v= " << test[1] << "\n";
+    return 0;
+
     // declare a tree of strings 
     tree<const char*> t;
     typedef tree<const char*>::bf_iterator bf_iterator;

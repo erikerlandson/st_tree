@@ -533,8 +533,8 @@ struct dereferenceable_lessthan<map<Key, Data, Compare, Alloc> > {
     Compare _lt;
 };
 
+// forward declaration
 template <typename Tree, typename Data, typename Key, typename Compare, typename Alloc> struct node_keyed;
-
 
 template <typename Node, typename Value>
 struct vmap_dispatch {
@@ -1074,25 +1074,44 @@ struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare, Al
     // only const access allowed
     const data_type& data() const { return this->_data; }
 
+    iterator find(const data_type& data) {
+        node_type s;
+        s._data = data;
+        return iterator(this->_children.find(&s));
+    }
+    const_iterator find(const data_type& data) const {
+        node_type s;
+        s._data = data;
+        return const_iterator(this->_children.find(&s));
+    }
+
+    size_type count(const data_type& data) const {
+        node_type s;
+        s._data = data;
+        return this->_children.count(&s);
+    }
+
     iterator insert(const data_type& data) {
         node_type* n = this->tree()._new_node();
         n->_data = data;
-        n->_size = 1;
+        iterator r(this->_children.insert(n));
+        // insertions always happen for multiset, hence no checking
         n->_depth.insert(1);
-        cs_iterator r = this->_children.insert(n);
         this->_graft(n);
-        return iterator(r);
+        return r;
     }
 
-    void insert(const node_type& src) {
+    iterator insert(const node_type& src) {
         node_type* n = src._copy_data(this->tree());
+        iterator r(this->_children.insert(n));
+        // insertions always happen for multiset, hence no checking
         base_type::_thread(n);
-        this->_children.insert(n);
         this->_graft(n);
+        return r;
     }
-    void insert(const tree_type& src) {
-        if (src.empty()) return;
-        insert(src.root());
+    iterator insert(const tree_type& src) {
+        if (src.empty()) return this->end();
+        return insert(src.root());
     }
 
 
@@ -1197,9 +1216,6 @@ struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare, A
     // keys are const access only
     const key_type& key() const { return this->_key; }
 
-    iterator find(const key_type& key) { return iterator(this->_children.find(&key)); }
-    const_iterator find(const key_type& key) const { return const_iterator(this->_children.find(&key)); }
-
     node_type& operator[](const key_type& key) {
         iterator f(this->find(key));
         if (this->end() == f) f = this->insert(key, data_type()).first;
@@ -1211,19 +1227,53 @@ struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare, A
         return *f;
     }
 
+    iterator find(const key_type& key) { return iterator(this->_children.find(&key)); }
+    const_iterator find(const key_type& key) const { return const_iterator(this->_children.find(&key)); }
+
+    size_type count(const key_type& key) const {
+        return this->_children.count(&key);
+    }
+
     pair<iterator, bool> insert(const key_type& key, const data_type& data) {
         node_type* n = this->tree()._new_node();
         n->_key = key;
-        n->_data = data;
-        n->_size = 1;
-        n->_depth.insert(1);
         pair<cs_iterator, bool> r = this->_children.insert(cs_value_type(&(n->_key), n));
+        pair<iterator, bool> rr(iterator(r.first), r.second);
+        if (!r.second) {
+            // if we did not insert, then bail now
+            this->tree()._delete_node(n);
+            return rr;
+        }
+        // do this work if we know we actually inserted 
+        n->_data = data;
+        n->_depth.insert(1);
         this->_graft(n);
-        return pair<iterator, bool>(iterator(r.first), r.second);
+        return rr;
     }
 
     pair<iterator, bool> insert(const kv_pair& kv) { return insert(kv.first, kv.second); }
 
+    pair<iterator, bool> insert(const key_type& key, const node_type& src) {
+        node_type* n = this->tree()._new_node();
+        n->_key = key;
+        pair<cs_iterator, bool> r = this->_children.insert(cs_value_type(&(n->_key), n));
+        pair<iterator, bool> rr(iterator(r.first), r.second);
+        if (!r.second) {
+            // if there was no insertion, bail now
+            this->tree()._delete_node(n);
+            return rr;
+        }
+        // if we inserted, then graft the new node in and assign from src
+        n->_depth.insert(1);
+        this->_graft(n);
+        *n = src;
+        return rr;
+    }
+
+    pair<iterator, bool> insert(const key_type& key, const tree_type& src) {
+        if (src.empty()) return pair<iterator, bool>(this->end(), false);
+        return insert(key, src.root());
+    }
 
     void swap(node_type& b) {
         node_type& a = *this;
@@ -1276,20 +1326,6 @@ struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare, A
     void graft(const key_type& key, tree_type& src) {
         if (src.empty()) return;
         graft(key, src.root());
-    }
-
-
-    void insert(const key_type& key, const node_type& src) {
-        node_type* n = src._copy_data(this->tree());
-        n->_key = key;
-        base_type::_thread(n);
-        this->_children.insert(cs_value_type(&(n->_key),n));
-        this->_graft(n);
-    }
-
-    void insert(const key_type& key, const tree_type& src) {
-        if (src.empty()) return;
-        insert(key, src.root());
     }
 
 
