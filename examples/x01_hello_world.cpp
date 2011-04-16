@@ -2,7 +2,7 @@
 ootree: An easy to use and highly configurable C++ template tree class, 
 using STL container style interfaces.
 
-Copyright (c) 2010 Erik Erlandson
+Copyright (c) 2010-2011 Erik Erlandson
 
 Author:  Erik Erlandson <erikerlandson@yahoo.com>
 
@@ -27,35 +27,26 @@ using namespace std;
 using namespace ootree;
 
 int main(int argc, char** argv) {
-    map<int, int> test;
-    pair<map<int,int>::iterator, bool> r;
-    r = test.insert(map<int,int>::value_type(1,2));
-    cerr << "b= " << r.second << "  v= " << test[1] << "\n";
-
-    r = test.insert(map<int,int>::value_type(1,2));
-    cerr << "b= " << r.second << "  v= " << test[1] << "\n";
-
-    r = test.insert(map<int,int>::value_type(1,3));
-    cerr << "b= " << r.second << "  v= " << test[1] << "\n";
-    return 0;
-
-    // declare a tree of strings 
+    // Declare a tree of strings.
+    // Default child node storage model is 'raw' (which is vector-like).
     tree<const char*> t;
-    typedef tree<const char*>::bf_iterator bf_iterator;
+    // The basic iterator traverses nodes of the tree in breadth-first order.
+    typedef tree<const char*>::iterator iterator;
 
-    // insert a string at root (ply 0)
+    // Insert a string at root (ply 0).
     t.insert("Hello");
 
-    // insert strings at ply 1
-    t.root().insert(" ");
-    t.root().insert("world");
+    // Insert strings at ply 1
+    // For raw child storage model, push_back() and insert() are equivalent
+    t.root().push_back(" ");
+    t.root().push_back("world");
 
-    // insert strings at ply 2
-    t.root()[0].insert("!");
-    t.root()[1].insert("\n");
+    // Insert strings at ply 2
+    t.root()[0].push_back("!");
+    t.root()[1].push_back("\n");
 
-    // output data in breadth first order to print a traditional message
-    for (bf_iterator j(t.bf_begin());  j != t.bf_end();  ++j)
+    // Output data in breadth first order to print a traditional message
+    for (iterator j(t.begin());  j != t.end();  ++j)
         cout << j->data();
 
     return 0;
