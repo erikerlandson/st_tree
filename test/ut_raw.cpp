@@ -1006,4 +1006,24 @@ BOOST_AUTO_TEST_CASE(tree_swap) {
     CHECK_TREE(t2, data(), "3");
 }
 
+BOOST_AUTO_TEST_CASE(push_pop_back) {
+    tree<int> t1;
+    t1.insert(2);
+    t1.root().push_back(3);
+    BOOST_CHECK_EQUAL(t1.root().back().data(), 3);
+    BOOST_CHECK_EQUAL(t1.root().front().data(), 3);
+    t1.root().push_back(5);
+    BOOST_CHECK_EQUAL(t1.root().back().data(), 5);
+    BOOST_CHECK_EQUAL(t1.root().front().data(), 3);
+    t1.root().push_back(7);
+    BOOST_CHECK_EQUAL(t1.root().back().data(), 7);
+    BOOST_CHECK_EQUAL(t1.root().front().data(), 3);
+    t1.root().pop_back();
+    BOOST_CHECK_EQUAL(t1.root().back().data(), 5);
+    BOOST_CHECK_EQUAL(t1.root().front().data(), 3);
+    t1.root().pop_back();
+    BOOST_CHECK_EQUAL(t1.root().back().data(), 3);    
+    BOOST_CHECK_EQUAL(t1.root().front().data(), 3);
+}
+
 BOOST_AUTO_TEST_SUITE_END()

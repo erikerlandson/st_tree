@@ -900,7 +900,6 @@ struct node_raw: public node_base<Tree, node_raw<Tree, Data, Alloc>, vector<node
     iterator insert(const data_type& data) {
         node_type* n = this->tree()._new_node();
         n->_data = data;
-        n->_size = 1;
         n->_depth.insert(1);
         this->_children.push_back(n);
         this->_graft(n);
@@ -919,6 +918,19 @@ struct node_raw: public node_base<Tree, node_raw<Tree, Data, Alloc>, vector<node
         return insert(src.root());
     }
 
+    void push_back(const data_type& data) { insert(data); }
+    void push_back(const node_type& src) { insert(src); }
+    void push_back(const tree_type& src) { insert(src); }
+
+    void pop_back() {
+        this->tree()._delete_node(this->_children.back());
+        this->_children.pop_back();
+    }
+
+    node_type& back() { return *(this->_children.back()); }
+    const node_type& back() const { return *(this->_children.back()); }
+    node_type& front() { return *(this->_children.front()); }
+    const node_type& front() const { return *(this->_children.front()); }
 
     protected:
     typedef typename base_type::cs_iterator cs_iterator;
