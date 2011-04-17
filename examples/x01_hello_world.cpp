@@ -28,7 +28,7 @@ using namespace ootree;
 
 int main(int argc, char** argv) {
     // Declare a tree of strings.
-    // Default child node storage model is 'raw' (which is vector-like).
+    // Default child node storage model is raw<>, which provides a vector<> - like interface.
     tree<const char*> t;
     // The basic iterator traverses nodes of the tree in breadth-first order.
     typedef tree<const char*>::iterator iterator;

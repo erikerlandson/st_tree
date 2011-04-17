@@ -29,9 +29,10 @@ using namespace ootree;
 
 int main(int argc, char** argv) {
     // Declare a tree of integers, which stores node children keyed by a string label.
-    // The keyed child storage model has a 'map-like' interface.
+    // The keyed<> child storage model has a map<> - like interface.
     tree<int, keyed<string> > t;
     typedef tree<int, keyed<string> >::iterator iterator;
+    // This is standard key-val pair for insertion.  Unlike map<>, value_type is the node type.  
     typedef tree<int, keyed<string> >::node_type::kv_pair kv_pair;
 
     // There is no key for root, since root node is always unique

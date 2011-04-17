@@ -29,7 +29,7 @@ using namespace ootree;
 
 int main(int argc, char** argv) {
     // Declare a tree of strings, which stores node children using the ordered storage model.
-    // The ordered child storage model is 'multiset-like.'
+    // The ordered child storage model ordered<> provides a multiset<> - like interface.
     tree<string, ordered<> > t;
     typedef tree<string, ordered<> >::iterator iterator;
     // Nodes have iterators, and generally model containers for child nodes
