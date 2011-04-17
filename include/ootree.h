@@ -175,7 +175,7 @@ struct second_dref_vmap {
 
 
 template <typename Iterator, typename ValMap>
-struct valmap_iterator_adaptor {
+struct valmap_iterator_adaptor_forward {
     protected:
     typedef Iterator base;
     typedef ValMap valmap;
@@ -193,12 +193,12 @@ struct valmap_iterator_adaptor {
     typedef Iterator base_iterator;
 
     // default ctor/dtor
-    valmap_iterator_adaptor(): _base(), _vmap() {}
-    virtual ~valmap_iterator_adaptor() {}
+    valmap_iterator_adaptor_forward(): _base(), _vmap() {}
+    virtual ~valmap_iterator_adaptor_forward() {}
 
     // copy/assign
-    valmap_iterator_adaptor(const valmap_iterator_adaptor& src): _base(src._base), _vmap(src._vmap) {}
-    valmap_iterator_adaptor& operator=(const valmap_iterator_adaptor& rhs) {
+    valmap_iterator_adaptor_forward(const valmap_iterator_adaptor_forward& src): _base(src._base), _vmap(src._vmap) {}
+    valmap_iterator_adaptor_forward& operator=(const valmap_iterator_adaptor_forward& rhs) {
         if (this == &rhs) return *this;
         _base = rhs._base;
         _vmap = rhs._vmap;
@@ -206,26 +206,26 @@ struct valmap_iterator_adaptor {
     }
 
     // construct from specific valmap obj
-    valmap_iterator_adaptor(const valmap& vmap): _base(), _vmap(vmap) {}
+    valmap_iterator_adaptor_forward(const valmap& vmap): _base(), _vmap(vmap) {}
 
     // casting
     operator base() const { return _base; }
-    valmap_iterator_adaptor(const base& src): _base(src), _vmap() {}
-    valmap_iterator_adaptor(const base& src, const valmap& vmap): _base(src), _vmap(vmap) {}
-    valmap_iterator_adaptor& operator=(const base& rhs) {
+    valmap_iterator_adaptor_forward(const base& src): _base(src), _vmap() {}
+    valmap_iterator_adaptor_forward(const base& src, const valmap& vmap): _base(src), _vmap(vmap) {}
+    valmap_iterator_adaptor_forward& operator=(const base& rhs) {
         _base = rhs;
         return *this;
     }
 
     // pre-increment:
-    valmap_iterator_adaptor operator++() {
+    valmap_iterator_adaptor_forward operator++() {
         ++_base;
         return *this;
     }
 
     // post-increment:
-    valmap_iterator_adaptor operator++(int) {
-        valmap_iterator_adaptor r(*this);
+    valmap_iterator_adaptor_forward operator++(int) {
+        valmap_iterator_adaptor_forward r(*this);
         ++(*this);
         return r;
     }
@@ -234,12 +234,48 @@ struct valmap_iterator_adaptor {
     reference operator*() const { return _vmap(*_base); }
     pointer operator->() const { return &(_vmap(*_base)); }
 
-    bool operator==(const valmap_iterator_adaptor& rhs) const {
+    bool operator==(const valmap_iterator_adaptor_forward& rhs) const {
         if (_base != rhs._base) return false;
         if (!(_vmap == rhs._vmap)) return false;
         return true;
     }
-    bool operator!=(const valmap_iterator_adaptor& rhs) const { return !(*this == rhs); }
+    bool operator!=(const valmap_iterator_adaptor_forward& rhs) const { return !(*this == rhs); }
+};
+
+
+template <typename Iterator, typename ValMap, typename Category>
+struct valmap_iterator_dispatch {
+    typedef valmap_iterator_adaptor_forward<Iterator, ValMap> adaptor_type;
+};
+
+template <typename Iterator, typename ValMap>
+struct valmap_iterator_adaptor : public valmap_iterator_dispatch<Iterator, ValMap, typename Iterator::iterator_category>::adaptor_type {
+    typedef typename valmap_iterator_dispatch<Iterator, ValMap, typename Iterator::iterator_category>::adaptor_type adaptor_type;
+
+    typedef typename adaptor_type::iterator_category iterator_category;
+    typedef typename adaptor_type::value_type value_type;
+    typedef typename adaptor_type::difference_type difference_type;
+    typedef typename adaptor_type::pointer pointer;
+    typedef typename adaptor_type::reference reference;
+
+    typedef Iterator base_iterator;
+
+    valmap_iterator_adaptor() : adaptor_type() {}
+    virtual ~valmap_iterator_adaptor() {}
+    
+    valmap_iterator_adaptor(const valmap_iterator_adaptor& src) : adaptor_type(src) {}
+    valmap_iterator_adaptor& operator=(const valmap_iterator_adaptor& src) {
+        if (this == &src) return *this;
+        adaptor_type::operator=(src);
+        return *this;
+    }
+
+    operator base_iterator() const { return this->_base; }
+    valmap_iterator_adaptor(const base_iterator& src) : adaptor_type(src) {}
+    valmap_iterator_adaptor& operator=(const base_iterator& src) {
+        adaptor_type::operator=(src);
+        return *this;
+    }
 };
 
 
