@@ -1026,4 +1026,48 @@ BOOST_AUTO_TEST_CASE(push_pop_back) {
     BOOST_CHECK_EQUAL(t1.root().front().data(), 3);
 }
 
+BOOST_AUTO_TEST_CASE(random_access) {
+    tree<int> t1;
+    typedef tree<int>::node_type::iterator iterator;
+
+    t1.insert(2);
+    t1.root().insert(3);
+    t1.root().insert(5);
+    t1.root().insert(7);
+
+    CHECK_TREE(t1, data(), "2 3 5 7");
+
+    iterator j = t1.root().begin();
+    BOOST_CHECK_EQUAL(j->data(), 3);
+    j++;
+    BOOST_CHECK_EQUAL(j->data(), 5);
+    j--;
+    BOOST_CHECK_EQUAL(j->data(), 3);
+
+    j += 2;
+    BOOST_CHECK_EQUAL(j->data(), 7);
+    j -= 1;
+    BOOST_CHECK_EQUAL(j->data(), 5);
+
+    BOOST_CHECK_EQUAL((j+1)->data(), 7);
+    BOOST_CHECK_EQUAL((j-1)->data(), 3);
+
+    BOOST_CHECK_EQUAL((j+1)-(j-1), 2);
+
+    BOOST_CHECK_EQUAL(j[1].data(), 7);
+    BOOST_CHECK_EQUAL(j[-1].data(), 3);
+
+    BOOST_CHECK_EQUAL(j < j, false);
+    BOOST_CHECK_EQUAL(j < j+1, true);
+
+    BOOST_CHECK_EQUAL(j <= j, true);
+    BOOST_CHECK_EQUAL(j <= j+1, true);
+
+    BOOST_CHECK_EQUAL(j > j, false);
+    BOOST_CHECK_EQUAL(j > j-1, true);
+
+    BOOST_CHECK_EQUAL(j >= j, true);
+    BOOST_CHECK_EQUAL(j >= j-1, true);
+}
+
 BOOST_AUTO_TEST_SUITE_END()

@@ -243,9 +243,135 @@ struct valmap_iterator_adaptor_forward {
 };
 
 
+template <typename Iterator, typename ValMap>
+struct valmap_iterator_adaptor_bidirectional : public valmap_iterator_adaptor_forward<Iterator, ValMap> {
+    typedef valmap_iterator_adaptor_forward<Iterator, ValMap> base_type;
+
+    typedef std::bidirectional_iterator_tag iterator_category;
+    typedef typename base_type::value_type value_type;
+    typedef typename base_type::difference_type difference_type;
+    typedef typename base_type::pointer pointer;
+    typedef typename base_type::reference reference;
+
+    typedef Iterator base_iterator;
+
+    valmap_iterator_adaptor_bidirectional() : base_type() {}
+    virtual ~valmap_iterator_adaptor_bidirectional() {}
+    
+    valmap_iterator_adaptor_bidirectional(const valmap_iterator_adaptor_bidirectional& src) : base_type(src) {}
+    valmap_iterator_adaptor_bidirectional& operator=(const valmap_iterator_adaptor_bidirectional& src) {
+        if (this == &src) return *this;
+        base_type::operator=(src);
+        return *this;
+    }
+
+    operator base_iterator() const { return this->_base; }
+    valmap_iterator_adaptor_bidirectional(const base_iterator& src) : base_type(src) {}
+    valmap_iterator_adaptor_bidirectional& operator=(const base_iterator& src) {
+        base_type::operator=(src);
+        return *this;
+    }
+
+    // pre-dec:
+    valmap_iterator_adaptor_bidirectional operator--() {
+        --(this->_base);
+        return *this;
+    }
+
+    // post-dec:
+    valmap_iterator_adaptor_bidirectional operator--(int) {
+        valmap_iterator_adaptor_bidirectional r(*this);
+        --(*this);
+        return r;
+    }
+};
+
+template <typename Iterator, typename ValMap>
+struct valmap_iterator_adaptor_random : public valmap_iterator_adaptor_bidirectional<Iterator, ValMap> {
+    typedef valmap_iterator_adaptor_bidirectional<Iterator, ValMap> base_type;
+
+    typedef std::random_access_iterator_tag iterator_category;
+    typedef typename base_type::value_type value_type;
+    typedef typename base_type::difference_type difference_type;
+    typedef typename base_type::pointer pointer;
+    typedef typename base_type::reference reference;
+
+    typedef Iterator base_iterator;
+
+    valmap_iterator_adaptor_random() : base_type() {}
+    virtual ~valmap_iterator_adaptor_random() {}
+    
+    valmap_iterator_adaptor_random(const valmap_iterator_adaptor_random& src) : base_type(src) {}
+    valmap_iterator_adaptor_random& operator=(const valmap_iterator_adaptor_random& src) {
+        if (this == &src) return *this;
+        base_type::operator=(src);
+        return *this;
+    }
+
+    operator base_iterator() const { return this->_base; }
+    valmap_iterator_adaptor_random(const base_iterator& src) : base_type(src) {}
+    valmap_iterator_adaptor_random& operator=(const base_iterator& src) {
+        base_type::operator=(src);
+        return *this;
+    }
+
+    valmap_iterator_adaptor_random& operator+=(const difference_type& n) {
+        this->_base += n;
+        return *this;
+    }
+    valmap_iterator_adaptor_random& operator-=(const difference_type& n) {
+        this->_base -= n;
+        return *this;
+    }
+
+    valmap_iterator_adaptor_random operator+(const difference_type& n) const {
+        return valmap_iterator_adaptor_random(this->_base + n);
+    }
+    valmap_iterator_adaptor_random operator-(const difference_type& n) const {
+        return valmap_iterator_adaptor_random(this->_base - n);
+    }
+
+    difference_type operator-(const valmap_iterator_adaptor_random& s) const {
+        return this->_base - s._base;
+    }
+
+    value_type& operator[](const difference_type& n) {
+        return this->_vmap(*(this->_base+n));
+    }
+    const value_type& operator[](const difference_type& n) const {
+        return this->_vmap(*(this->_base+n));
+    }
+
+    bool operator<(const valmap_iterator_adaptor_random& rhs) const {
+        return this->_base < rhs._base;
+    }
+    bool operator<=(const valmap_iterator_adaptor_random& rhs) const {
+        return this->_base <= rhs._base;
+    }
+    bool operator>(const valmap_iterator_adaptor_random& rhs) const {
+        return this->_base > rhs._base;
+    }
+    bool operator>=(const valmap_iterator_adaptor_random& rhs) const {
+        return this->_base >= rhs._base;
+    }
+};
+
+// default will be forward iterator
 template <typename Iterator, typename ValMap, typename Category>
 struct valmap_iterator_dispatch {
     typedef valmap_iterator_adaptor_forward<Iterator, ValMap> adaptor_type;
+};
+
+// bidirectional iterators
+template <typename Iterator, typename ValMap>
+struct valmap_iterator_dispatch<Iterator, ValMap, std::bidirectional_iterator_tag> {
+    typedef valmap_iterator_adaptor_bidirectional<Iterator, ValMap> adaptor_type;
+};
+
+// random access iterators
+template <typename Iterator, typename ValMap>
+struct valmap_iterator_dispatch<Iterator, ValMap, std::random_access_iterator_tag> {
+    typedef valmap_iterator_adaptor_random<Iterator, ValMap> adaptor_type;
 };
 
 template <typename Iterator, typename ValMap>
