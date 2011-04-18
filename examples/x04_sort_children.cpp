@@ -36,6 +36,12 @@ struct data_lt {
     }
 };
 
+template <typename X, typename Y>
+inline void test(X a, X b, Y c) {
+        //__glibcxx_function_requires(_Mutable_RandomAccessIteratorConcept<X>)
+    for (X j=a;  j < b;  ++j) cout << j->data() << "\n";
+}
+
 int main(int argc, char** argv) {
     // Declare a tree of strings.
     tree<string> t;
@@ -69,6 +75,8 @@ int main(int argc, char** argv) {
     // currently this is not compiling -- I suspect a compiler limit on
     // size/complexity of type expression matching, but I'm not sure yet
     //sort(t.root()[1].begin(), t.root()[1].end(), data_lt());
+    // why does this match correctly, but invocation of sort() above doesn't match?
+    test(t.root()[1].begin(), t.root()[1].end(), data_lt());
 
     // Output data in breadth first order
     // Observe that only children of t.root()[1] ("C") are sorted.
