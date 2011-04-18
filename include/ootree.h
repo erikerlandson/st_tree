@@ -335,10 +335,7 @@ struct valmap_iterator_adaptor_random : public valmap_iterator_adaptor_bidirecti
         return this->_base - s._base;
     }
 
-    value_type& operator[](const difference_type& n) {
-        return this->_vmap(*(this->_base+n));
-    }
-    const value_type& operator[](const difference_type& n) const {
+    reference operator[](const difference_type& n) {
         return this->_vmap(*(this->_base+n));
     }
 
@@ -355,6 +352,13 @@ struct valmap_iterator_adaptor_random : public valmap_iterator_adaptor_bidirecti
         return this->_base >= rhs._base;
     }
 };
+
+template <typename Iterator, typename ValMap, typename DiffType>
+valmap_iterator_adaptor_random<Iterator, ValMap> operator+(const DiffType& n, const valmap_iterator_adaptor_random<Iterator, ValMap>& j) {
+    return j + n;
+}
+
+
 
 // default will be forward iterator
 template <typename Iterator, typename ValMap, typename Category>

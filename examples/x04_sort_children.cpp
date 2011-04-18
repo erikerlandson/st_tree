@@ -42,6 +42,20 @@ inline void test(X a, X b, Y c) {
     for (X j=a;  j < b;  ++j) cout << j->data() << "\n";
 }
 
+template<typename _RandomAccessIterator>
+void
+myisort(_RandomAccessIterator __first, _RandomAccessIterator __last)
+{    
+    for (_RandomAccessIterator j=__first;  j < __last;  ++j) cout << j->data() << "\n";
+}
+
+template<typename _RandomAccessIterator, typename _Compare>
+inline void
+mysort(_RandomAccessIterator __first, _RandomAccessIterator __last, _Compare __comp)
+{
+    myisort(__first, __last);
+}
+
 int main(int argc, char** argv) {
     // Declare a tree of strings.
     tree<string> t;
@@ -77,6 +91,8 @@ int main(int argc, char** argv) {
     //sort(t.root()[1].begin(), t.root()[1].end(), data_lt());
     // why does this match correctly, but invocation of sort() above doesn't match?
     test(t.root()[1].begin(), t.root()[1].end(), data_lt());
+    mysort(t.root()[1].begin(), t.root()[1].end(), data_lt());
+        //sort(t.root()[1].begin(), t.root()[1].end(), data_lt());
 
     // Output data in breadth first order
     // Observe that only children of t.root()[1] ("C") are sorted.

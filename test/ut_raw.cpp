@@ -1052,6 +1052,9 @@ BOOST_AUTO_TEST_CASE(random_access) {
     BOOST_CHECK_EQUAL((j+1)->data(), 7);
     BOOST_CHECK_EQUAL((j-1)->data(), 3);
 
+    BOOST_CHECK_EQUAL((1+j)->data(), 7);
+    BOOST_CHECK_EQUAL((-1+j)->data(), 3);
+
     BOOST_CHECK_EQUAL((j+1)-(j-1), 2);
 
     BOOST_CHECK_EQUAL(j[1].data(), 7);
