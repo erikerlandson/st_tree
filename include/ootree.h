@@ -1751,7 +1751,7 @@ template <typename Data, typename CSCat, typename Alloc>
 const typename tree<Data, CSCat, Alloc>::node_type tree<Data, CSCat, Alloc>::_node_init_val;
 
 
-};  // namespace ootree
+}  // namespace ootree
 
 
 namespace std {
@@ -1776,6 +1776,6 @@ void swap(ootree::node_keyed<Tree, Data, Key, Compare, Alloc>& a, ootree::node_k
     a.swap(b);
 }
 
-};  // namespace std
+}  // namespace std
 
 #endif  // __ootree_h__
