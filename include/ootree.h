@@ -69,7 +69,7 @@ struct exception {
 
 template <typename Unsigned, typename Alloc>
 struct max_maintainer {
-    typedef typename vector<Unsigned>::size_type size_type;
+    typedef size_t size_type;
 
     max_maintainer(): _hist(), _max(0) {}
     virtual ~max_maintainer() {}
@@ -712,7 +712,7 @@ struct node_base {
     typedef Tree tree_type;
     typedef Node node_type;
     typedef ChildContainer cs_type;
-    typedef typename tree_type::size_type size_type;
+    typedef size_t size_type;
     typedef typename tree_type::data_type data_type;
 
     protected:
@@ -954,8 +954,8 @@ struct node_raw: public node_base<Tree, node_raw<Tree, Data, Alloc>, vector<node
     typedef node_type& reference;
     typedef node_type const& const_reference;
 
-    typedef typename Tree::size_type size_type;
-    typedef typename Tree::difference_type difference_type;
+    typedef size_t size_type;
+    typedef ptrdiff_t difference_type;
     typedef Alloc allocator_type;
 
     typedef typename base_type::iterator iterator;
@@ -1130,8 +1130,8 @@ struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare, Al
     typedef node_type& reference;
     typedef node_type const& const_reference;
 
-    typedef typename Tree::size_type size_type;
-    typedef typename Tree::difference_type difference_type;
+    typedef size_t size_type;
+    typedef ptrdiff_t difference_type;
     typedef Alloc allocator_type;
 
     typedef typename base_type::iterator iterator;
@@ -1328,8 +1328,8 @@ struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare, A
     typedef node_type& reference;
     typedef node_type const& const_reference;
 
-    typedef typename Tree::size_type size_type;
-    typedef typename Tree::difference_type difference_type;
+    typedef size_t size_type;
+    typedef ptrdiff_t difference_type;
     typedef Alloc allocator_type;
 
     typedef typename base_type::iterator iterator;
@@ -1567,8 +1567,8 @@ struct tree {
     typedef Data data_type;
     typedef CSModel cs_model_type;
     typedef Alloc allocator_type;
-    typedef unsigned long size_type;
-    typedef long difference_type;
+    typedef size_t size_type;
+    typedef ptrdiff_t difference_type;
 
     typedef node_type_dispatch<tree_type, CSModel> nt_dispatch;
     typedef typename nt_dispatch::node_type node_type;
