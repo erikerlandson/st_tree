@@ -2,8 +2,9 @@ cmake_minimum_required(VERSION 2.6)
 project(ootree)
 
 # Build against ANSI c++ standards
-# At this point, I'm assuming gcc, or gcc-compatible flags
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ansi")
+IF (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_GNUCC OR MINGW)
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ansi -pedantic")
+ENDIF()
 
 # include
 add_subdirectory(include)
