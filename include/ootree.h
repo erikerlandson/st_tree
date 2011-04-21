@@ -1525,7 +1525,7 @@ struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare, A
 
 struct node_type_dispatch_failed {};
 
-template <typename Tree, typename CSCat>
+template <typename Tree, typename CSModel>
 struct node_type_dispatch {
     // catch-all should be compile error
     typedef node_type_dispatch_failed node_type;
@@ -1561,15 +1561,16 @@ struct node_type_dispatch<Tree, keyed<Key, Compare> > {
 };
 
 
-template <typename Data, typename CSCat=raw<>, typename Alloc=std::allocator<Data> >
+template <typename Data, typename CSModel=raw<>, typename Alloc=std::allocator<Data> >
 struct tree {
-    typedef tree<Data, CSCat, Alloc> tree_type;
+    typedef tree<Data, CSModel, Alloc> tree_type;
     typedef Data data_type;
+    typedef CSModel cs_model_type;
     typedef Alloc allocator_type;
     typedef unsigned long size_type;
     typedef long difference_type;
 
-    typedef node_type_dispatch<tree_type, CSCat> nt_dispatch;
+    typedef node_type_dispatch<tree_type, CSModel> nt_dispatch;
     typedef typename nt_dispatch::node_type node_type;
     typedef typename nt_dispatch::base_type node_base_type;
 
@@ -1718,8 +1719,8 @@ struct tree {
     const_df_pre_iterator df_pre_end() const { return const_df_pre_iterator(); }
 
     // compile will not let me use just node_type here
-    friend class node_type_dispatch<tree_type, CSCat>::node_type;
-    friend class node_type_dispatch<tree_type, CSCat>::base_type;
+    friend class node_type_dispatch<tree_type, CSModel>::node_type;
+    friend class node_type_dispatch<tree_type, CSModel>::base_type;
 
     protected:
     node_type* _root;
@@ -1747,8 +1748,8 @@ struct tree {
 };
 
 
-template <typename Data, typename CSCat, typename Alloc>
-const typename tree<Data, CSCat, Alloc>::node_type tree<Data, CSCat, Alloc>::_node_init_val;
+template <typename Data, typename CSModel, typename Alloc>
+const typename tree<Data, CSModel, Alloc>::node_type tree<Data, CSModel, Alloc>::_node_init_val;
 
 
 }  // namespace ootree
@@ -1756,8 +1757,8 @@ const typename tree<Data, CSCat, Alloc>::node_type tree<Data, CSCat, Alloc>::_no
 
 namespace std {
 
-template <typename Data, typename CSCat, typename Alloc>
-void swap(ootree::tree<Data, CSCat, Alloc>& a, ootree::tree<Data, CSCat, Alloc>& b) {
+template <typename Data, typename CSModel, typename Alloc>
+void swap(ootree::tree<Data, CSModel, Alloc>& a, ootree::tree<Data, CSModel, Alloc>& b) {
     a.swap(b);
 }
 
