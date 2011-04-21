@@ -129,48 +129,42 @@ struct max_maintainer {
 };
 
 
-template <typename X>
+// This is my poor-man substitute for typeof(*dr)
+template <typename DR> struct dr_value {};
+
+template <typename V>
+struct dr_value<V*> {
+    typedef V value_type;
+};
+
+template <typename DR>
 struct dref_vmap {
-    // X is a type that is de-referenceable: supports the unary "*" dereference operator 
-    typedef typeof(*(X())) drX;
+    // DR is a type that is de-referenceable: supports the unary "*" dereference operator 
+    typedef typename dr_value<DR>::value_type value_type;
 
     // These both return a non-const reference -- this enables me to handle
     // (multi)set iterators in a useful way below: those iterators are always const,
     // however I need non-const behavior for many ops.  It is only the data field that
     // must remain const, because it is the true sorting key
-    drX& operator()(X& x) const { return *x; }
-    drX& operator()(const X& x) const { return const_cast<drX&>(*x); }
+    value_type& operator()(DR& x) const { return *x; }
+    value_type& operator()(const DR& x) const { return const_cast<value_type&>(*x); }
 
     bool operator==(const dref_vmap& rhs) const { return true; }
     bool operator!=(const dref_vmap& rhs) const { return false; }
 };
 
 
-template <typename X>
+template <typename P>
 struct dref_second_vmap {
-    // X is a type that is de-referenceable: supports the unary "*" dereference operator 
-    typedef typeof(*(X().second)) R;
+    // P is assumed to be of type pair<>, or at least define 'second' and 'second_type'
+    typedef typename dr_value<typename P::second_type>::value_type value_type;
 
     // Set these both to return non-const reference (see dref_vmap comment above)
-    R& operator()(X& x) const { return *(x.second); }
-    R& operator()(const X& x) const { return const_cast<R&>(*(x.second)); }
+    value_type& operator()(P& x) const { return *(x.second); }
+    value_type& operator()(const P& x) const { return const_cast<value_type&>(*(x.second)); }
 
     bool operator==(const dref_second_vmap& rhs) const { return true; }
     bool operator!=(const dref_second_vmap& rhs) const { return false; }
-};
-
-template <typename X>
-struct second_dref_vmap {
-    // X is a type that is de-referenceable: supports the unary "*" dereference operator 
-    typedef typeof(*(X())) drX;
-    typedef typeof(drX().second) R;
-
-    // Set these both to return non-const reference (see dref_vmap comment above)
-    R& operator()(X& x) const { return x->second; }
-    R& operator()(const X& x) const { return x->second; }
-
-    bool operator==(const second_dref_vmap& rhs) const { return true; }
-    bool operator!=(const second_dref_vmap& rhs) const { return false; }
 };
 
 
@@ -185,7 +179,7 @@ struct valmap_iterator_adaptor_forward {
 
     public:
     typedef std::forward_iterator_tag iterator_category;
-    typedef typeof(_vmap(*base())) value_type;
+    typedef typename ValMap::value_type value_type;
     typedef typename base::difference_type difference_type;
     typedef value_type* pointer;
     typedef value_type& reference;
