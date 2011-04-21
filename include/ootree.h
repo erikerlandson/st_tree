@@ -693,27 +693,28 @@ struct dereferenceable_lessthan<map<Key, Data, Compare, Alloc> > {
     Compare _lt;
 };
 
-// forward declaration
-template <typename Tree, typename Data, typename Key, typename Compare, typename Alloc> struct node_keyed;
+// forward declarations
+template <typename Tree, typename Data, typename Key, typename Compare> struct node_keyed;
 
 template <typename Node, typename Value>
 struct vmap_dispatch {
     typedef dref_vmap<Value> vmap;
 };
 
-template <typename Tree, typename Data, typename Key, typename Compare, typename Alloc, typename Value>
-struct vmap_dispatch<node_keyed<Tree, Data, Key, Compare, Alloc>, Value> {
+template <typename Tree, typename Data, typename Key, typename Compare, typename Value>
+struct vmap_dispatch<node_keyed<Tree, Data, Key, Compare>, Value> {
     typedef dref_second_vmap<Value> vmap;
 };
 
 
-template <typename Tree, typename Node, typename ChildContainer, typename Alloc>
+template <typename Tree, typename Node, typename ChildContainer>
 struct node_base {
     typedef Tree tree_type;
     typedef Node node_type;
     typedef ChildContainer cs_type;
     typedef size_t size_type;
     typedef typename tree_type::data_type data_type;
+    typedef typename Tree::allocator_type allocator_type;
 
     protected:
     typedef typename cs_type::iterator cs_iterator;
@@ -728,12 +729,12 @@ struct node_base {
     const_iterator begin() const { return const_iterator(_children.begin()); }
     const_iterator end() const { return const_iterator(_children.end()); }
 
-    typedef b1st_iterator<node_type, node_type, Alloc> bf_iterator;
-    typedef b1st_iterator<node_type, const node_type, Alloc> const_bf_iterator;
-    typedef d1st_post_iterator<node_type, node_type, Alloc> df_post_iterator;
-    typedef d1st_post_iterator<node_type, const node_type, Alloc> const_df_post_iterator;
-    typedef d1st_pre_iterator<node_type, node_type, Alloc> df_pre_iterator;
-    typedef d1st_pre_iterator<node_type, const node_type, Alloc> const_df_pre_iterator;
+    typedef b1st_iterator<node_type, node_type, allocator_type> bf_iterator;
+    typedef b1st_iterator<node_type, const node_type, allocator_type> const_bf_iterator;
+    typedef d1st_post_iterator<node_type, node_type, allocator_type> df_post_iterator;
+    typedef d1st_post_iterator<node_type, const node_type, allocator_type> const_df_post_iterator;
+    typedef d1st_pre_iterator<node_type, node_type, allocator_type> df_pre_iterator;
+    typedef d1st_pre_iterator<node_type, const node_type, allocator_type> const_df_pre_iterator;
 
     bf_iterator bf_begin() { return bf_iterator(static_cast<node_type*>(this)); }
     bf_iterator bf_end() { return bf_iterator(); }
@@ -863,17 +864,17 @@ struct node_base {
     bool operator>=(const node_base& rhs) const { return !(*this < rhs); }
 
     friend class tree_type::tree_type;
-    friend class b1st_iterator<node_type, node_type, Alloc>;
-    friend class b1st_iterator<node_type, const node_type, Alloc>;
-    friend class d1st_post_iterator<node_type, node_type, Alloc>;
-    friend class d1st_post_iterator<node_type, const node_type, Alloc>;
-    friend class d1st_pre_iterator<node_type, node_type, Alloc>;
-    friend class d1st_pre_iterator<node_type, const node_type, Alloc>;
+    friend class b1st_iterator<node_type, node_type, allocator_type>;
+    friend class b1st_iterator<node_type, const node_type, allocator_type>;
+    friend class d1st_post_iterator<node_type, node_type, allocator_type>;
+    friend class d1st_post_iterator<node_type, const node_type, allocator_type>;
+    friend class d1st_pre_iterator<node_type, node_type, allocator_type>;
+    friend class d1st_pre_iterator<node_type, const node_type, allocator_type>;
 
     protected:
     tree_type* _tree;
     size_type _size;
-    max_maintainer<size_type, Alloc> _depth;
+    max_maintainer<size_type, allocator_type> _depth;
     node_type* _parent;
     data_type _data;
     cs_type _children;
@@ -940,12 +941,13 @@ struct node_base {
 };
 
 
-template <typename Tree, typename Data, typename Alloc>
-struct node_raw: public node_base<Tree, node_raw<Tree, Data, Alloc>, vector<node_raw<Tree, Data, Alloc>*, Alloc>, Alloc> {
+template <typename Tree, typename Data>
+struct node_raw: public node_base<Tree, node_raw<Tree, Data>, vector<node_raw<Tree, Data>*, typename Tree::allocator_type> > {
     typedef Tree tree_type;
-    typedef node_raw<Tree, Data, Alloc> node_type;
-    typedef vector<node_type*, Alloc> cs_type;
-    typedef node_base<Tree, node_type, cs_type, Alloc> base_type;
+    typedef node_raw<Tree, Data> node_type;
+    typedef typename Tree::allocator_type allocator_type;
+    typedef vector<node_type*, allocator_type> cs_type;
+    typedef node_base<Tree, node_type, cs_type> base_type;
     typedef Data data_type;
 
     typedef node_type value_type;
@@ -956,13 +958,12 @@ struct node_raw: public node_base<Tree, node_raw<Tree, Data, Alloc>, vector<node
 
     typedef size_t size_type;
     typedef ptrdiff_t difference_type;
-    typedef Alloc allocator_type;
 
     typedef typename base_type::iterator iterator;
     typedef typename base_type::const_iterator const_iterator;
 
     friend class tree_type::tree_type;
-    friend class node_base<Tree, node_type, cs_type, Alloc>;
+    friend class node_base<Tree, node_type, cs_type>;
 
     node_raw() : base_type() {}
     virtual ~node_raw() {}
@@ -1116,12 +1117,13 @@ struct node_raw: public node_base<Tree, node_raw<Tree, Data, Alloc>, vector<node
 };
 
 
-template <typename Tree, typename Data, typename Compare, typename Alloc>
-struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare, Alloc>, multiset<node_ordered<Tree, Data, Compare, Alloc>*, ptr_less_data<Compare>, Alloc>, Alloc> {
-    typedef node_ordered<Tree, Data, Compare, Alloc> node_type;
+template <typename Tree, typename Data, typename Compare>
+struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare>, multiset<node_ordered<Tree, Data, Compare>*, ptr_less_data<Compare>, typename Tree::allocator_type> > {
     typedef Tree tree_type;
-    typedef multiset<node_type*, ptr_less_data<Compare>, Alloc> cs_type;
-    typedef node_base<Tree, node_type, cs_type, Alloc> base_type;
+    typedef typename Tree::allocator_type allocator_type;
+    typedef node_ordered<Tree, Data, Compare> node_type;
+    typedef multiset<node_type*, ptr_less_data<Compare>, allocator_type> cs_type;
+    typedef node_base<Tree, node_type, cs_type> base_type;
     typedef Data data_type;
 
     typedef node_type value_type;
@@ -1132,13 +1134,12 @@ struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare, Al
 
     typedef size_t size_type;
     typedef ptrdiff_t difference_type;
-    typedef Alloc allocator_type;
 
     typedef typename base_type::iterator iterator;
     typedef typename base_type::const_iterator const_iterator;
 
     friend class tree_type::tree_type;
-    friend class node_base<Tree, node_type, cs_type, Alloc>;
+    friend class node_base<Tree, node_type, cs_type>;
 
     protected:
     typedef typename base_type::cs_iterator cs_iterator;
@@ -1312,12 +1313,13 @@ struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare, Al
 };
 
 
-template <typename Tree, typename Data, typename Key, typename Compare, typename Alloc>
-struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare, Alloc>, map<const Key*, node_keyed<Tree, Data, Key, Compare, Alloc>*, ptr_less<Compare>, Alloc>, Alloc> {
-    typedef node_keyed<Tree, Data, Key, Compare, Alloc> node_type;
+template <typename Tree, typename Data, typename Key, typename Compare>
+struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare>, map<const Key*, node_keyed<Tree, Data, Key, Compare>*, ptr_less<Compare>, typename Tree::allocator_type> > {
     typedef Tree tree_type;
-    typedef map<const Key*, node_type*, ptr_less<Compare>, Alloc> cs_type;
-    typedef node_base<Tree, node_type, cs_type, Alloc> base_type;
+    typedef node_keyed<Tree, Data, Key, Compare> node_type;
+    typedef typename Tree::allocator_type allocator_type;
+    typedef map<const Key*, node_type*, ptr_less<Compare>, allocator_type> cs_type;
+    typedef node_base<Tree, node_type, cs_type> base_type;
     typedef Data data_type;
     typedef Key key_type;
     typedef pair<const key_type, data_type> kv_pair;
@@ -1330,13 +1332,12 @@ struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare, A
 
     typedef size_t size_type;
     typedef ptrdiff_t difference_type;
-    typedef Alloc allocator_type;
 
     typedef typename base_type::iterator iterator;
     typedef typename base_type::const_iterator const_iterator;
 
     friend class tree_type::tree_type;
-    friend class node_base<Tree, node_type, cs_type, Alloc>;
+    friend class node_base<Tree, node_type, cs_type>;
 
     protected:
     typedef typename base_type::cs_iterator cs_iterator;
@@ -1535,28 +1536,28 @@ struct node_type_dispatch {
 
 template <typename Tree, typename Unused>
 struct node_type_dispatch<Tree, raw<Unused> > {
-    typedef node_raw<Tree, typename Tree::data_type, typename Tree::allocator_type> node_type;
+    typedef node_raw<Tree, typename Tree::data_type> node_type;
     // why do I need this?  because of friend declarations, that's why.
     typedef typename node_type::base_type base_type;
 };
 
 template <typename Tree, typename Compare>
 struct node_type_dispatch<Tree, ordered<Compare> > {
-    typedef node_ordered<Tree, typename Tree::data_type, Compare, typename Tree::allocator_type> node_type;
+    typedef node_ordered<Tree, typename Tree::data_type, Compare> node_type;
     typedef typename node_type::base_type base_type;
 };
 
 
 template <typename Tree>
 struct node_type_dispatch<Tree, ordered<arg_default> > {
-    typedef node_ordered<Tree, typename Tree::data_type, less<typename Tree::data_type>, typename Tree::allocator_type> node_type;
+    typedef node_ordered<Tree, typename Tree::data_type, less<typename Tree::data_type> > node_type;
     typedef typename node_type::base_type base_type;
 };
 
 
 template <typename Tree, typename Key, typename Compare>
 struct node_type_dispatch<Tree, keyed<Key, Compare> > {
-    typedef node_keyed<Tree, typename Tree::data_type, Key, Compare, typename Tree::allocator_type> node_type;
+    typedef node_keyed<Tree, typename Tree::data_type, Key, Compare> node_type;
     typedef typename node_type::base_type base_type;
 };
 
@@ -1762,18 +1763,18 @@ void swap(ootree::tree<Data, CSModel, Alloc>& a, ootree::tree<Data, CSModel, All
     a.swap(b);
 }
 
-template <typename Tree, typename Data, typename Alloc>
-void swap(ootree::node_raw<Tree, Data, Alloc>& a, ootree::node_raw<Tree, Data, Alloc>& b) {
+template <typename Tree, typename Data>
+void swap(ootree::node_raw<Tree, Data>& a, ootree::node_raw<Tree, Data>& b) {
     a.swap(b);
 }
 
-template <typename Tree, typename Data, typename Compare, typename Alloc>
-void swap(ootree::node_ordered<Tree, Data, Compare, Alloc>& a, ootree::node_ordered<Tree, Data, Compare, Alloc>& b) {
+template <typename Tree, typename Data, typename Compare>
+void swap(ootree::node_ordered<Tree, Data, Compare>& a, ootree::node_ordered<Tree, Data, Compare>& b) {
     a.swap(b);
 }
 
-template <typename Tree, typename Data, typename Key, typename Compare, typename Alloc>
-void swap(ootree::node_keyed<Tree, Data, Key, Compare, Alloc>& a, ootree::node_keyed<Tree, Data, Key, Compare, Alloc>& b) {
+template <typename Tree, typename Data, typename Key, typename Compare>
+void swap(ootree::node_keyed<Tree, Data, Key, Compare>& a, ootree::node_keyed<Tree, Data, Key, Compare>& b) {
     a.swap(b);
 }
 
