@@ -502,7 +502,7 @@ BOOST_AUTO_TEST_CASE(node_op_equal_subtree) {
     BOOST_CHECK_EQUAL(t1.size(), 3);
     BOOST_CHECK_EQUAL(t1.depth(), 2);
 
-    typeof(t1.root().begin()) j11(t1.root().begin());
+    node_type::iterator j11(t1.root().begin());
     ++j11;
     j11->insert(13);
     node_type& n17 = *(j11->insert(17));
