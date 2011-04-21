@@ -693,8 +693,13 @@ struct dereferenceable_lessthan<map<Key, Data, Compare, Alloc> > {
     Compare _lt;
 };
 
+
 // forward declarations
+template <typename Data, typename CSModel=raw<>, typename Alloc=std::allocator<Data> > struct tree;
+template <typename Tree, typename Data> struct node_raw;
+template <typename Tree, typename Data, typename Compare> struct node_ordered;
 template <typename Tree, typename Data, typename Key, typename Compare> struct node_keyed;
+
 
 template <typename Node, typename Value>
 struct vmap_dispatch {
@@ -863,7 +868,8 @@ struct node_base {
     bool operator<=(const node_base& rhs) const { return !(rhs < *this); }
     bool operator>=(const node_base& rhs) const { return !(*this < rhs); }
 
-    friend class tree_type::tree_type;
+        //friend class tree_type::tree_type;
+    friend class ootree::tree<data_type, typename Tree::cs_model_type, allocator_type>;
     friend class b1st_iterator<node_type, node_type, allocator_type>;
     friend class b1st_iterator<node_type, const node_type, allocator_type>;
     friend class d1st_post_iterator<node_type, node_type, allocator_type>;
@@ -962,7 +968,8 @@ struct node_raw: public node_base<Tree, node_raw<Tree, Data>, vector<node_raw<Tr
     typedef typename base_type::iterator iterator;
     typedef typename base_type::const_iterator const_iterator;
 
-    friend class tree_type::tree_type;
+        //friend class tree_type::tree_type;
+    friend class ootree::tree<data_type, typename Tree::cs_model_type, allocator_type>;
     friend class node_base<Tree, node_type, cs_type>;
 
     node_raw() : base_type() {}
@@ -982,8 +989,8 @@ struct node_raw: public node_base<Tree, node_raw<Tree, Data>, vector<node_raw<Tr
 
         node_type* r = const_cast<node_type*>(&rhs);
         // important if rhs is child of "this", to prevent it from getting deallocated by clear()
-        bool ancestor = is_ancestor(rhs);
-        if (ancestor) _excise(r);
+        bool ancestor = this->is_ancestor(rhs);
+        if (ancestor) base_type::_excise(r);
 
         // in the case of vector storage, I can just leave current node where it is
         this->clear();
@@ -992,7 +999,7 @@ struct node_raw: public node_base<Tree, node_raw<Tree, Data>, vector<node_raw<Tr
         for (cs_const_iterator j(r->_children.begin());  j != r->_children.end();  ++j) {
             node_type* n = (*j)->_copy_data(this->tree());
             this->_children.push_back(n);
-            _thread(n);
+            base_type::_thread(n);
             this->_graft(n);
         }
         if (ancestor) this->tree()._delete_node(r);
@@ -1039,7 +1046,7 @@ struct node_raw: public node_base<Tree, node_raw<Tree, Data>, vector<node_raw<Tr
 
         // remove src from its current location
         node_type* s = &src;
-        _excise(s);
+        base_type::_excise(s);
 
         // graft src to current location
         this->_children.push_back(s);
@@ -1138,7 +1145,8 @@ struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare>, m
     typedef typename base_type::iterator iterator;
     typedef typename base_type::const_iterator const_iterator;
 
-    friend class tree_type::tree_type;
+        //friend class tree_type::tree_type;
+    friend class ootree::tree<data_type, typename Tree::cs_model_type, allocator_type>;
     friend class node_base<Tree, node_type, cs_type>;
 
     protected:
@@ -1166,7 +1174,7 @@ struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare>, m
         node_type* t = this;
         node_type* r = const_cast<node_type*>(&rhs);
         bool ancestor = is_ancestor(rhs);
-        if (ancestor) _excise(r);
+        if (ancestor) base_type::_excise(r);
 
         node_type* p;
         if (!this->is_root()) {
@@ -1231,7 +1239,7 @@ struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare>, m
 
         // remove src from its current location
         node_type* s = &src;
-        _excise(s);
+        base_type::_excise(s);
 
         // graft src to current location
         this->_children.insert(s);
@@ -1336,7 +1344,8 @@ struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare>, 
     typedef typename base_type::iterator iterator;
     typedef typename base_type::const_iterator const_iterator;
 
-    friend class tree_type::tree_type;
+        //friend class tree_type::tree_type;
+    friend class ootree::tree<data_type, typename Tree::cs_model_type, allocator_type>;
     friend class node_base<Tree, node_type, cs_type>;
 
     protected:
@@ -1365,7 +1374,7 @@ struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare>, 
         // note, rhs may be child of 'this', and get erased too, otherwise
         node_type* r = const_cast<node_type*>(&rhs);
         bool ancestor = is_ancestor(rhs);
-        if (ancestor) _excise(r);
+        if (ancestor) base_type::_excise(r);
 
         // I'm going to define semantics of assignment as analogous to raw:
         // the key of the LHS node does not change
@@ -1488,7 +1497,7 @@ struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare>, 
 
         // remove src from its current location
         node_type* s = &src;
-        _excise(s);
+        base_type::_excise(s);
 
         // graft src to current location
         s->_key = key;
@@ -1562,7 +1571,7 @@ struct node_type_dispatch<Tree, keyed<Key, Compare> > {
 };
 
 
-template <typename Data, typename CSModel=raw<>, typename Alloc=std::allocator<Data> >
+template <typename Data, typename CSModel, typename Alloc>
 struct tree {
     typedef tree<Data, CSModel, Alloc> tree_type;
     typedef Data data_type;
@@ -1659,7 +1668,7 @@ struct tree {
 
     void graft(node_type& src) {
         node_type* s = &src;
-        node_type::_excise(s);
+        node_base_type::_excise(s);
         clear();
         _root = s;
         _graft(s);
@@ -1672,7 +1681,7 @@ struct tree {
 
     void insert(const node_type& src) {
         node_type* n = src._copy_data(*this);
-        node_type::base_type::_thread(n);
+        node_base_type::_thread(n);
         clear();
         _root = n;
         _graft(n);
@@ -1720,8 +1729,13 @@ struct tree {
     const_df_pre_iterator df_pre_end() const { return const_df_pre_iterator(); }
 
     // compile will not let me use just node_type here
-    friend class node_type_dispatch<tree_type, CSModel>::node_type;
-    friend class node_type_dispatch<tree_type, CSModel>::base_type;
+    template <typename _Tree, typename _Node, typename _ChildContainer> friend struct node_base;
+    template <typename _Tree, typename _Data> friend struct node_raw;
+    template <typename _Tree, typename _Data, typename _Compare> friend struct node_ordered;
+    template <typename _Tree, typename _Data, typename _Key, typename _Compare> friend struct node_keyed;
+
+        //friend class node_type_dispatch<tree_type, CSModel>::node_type;
+        //friend class node_type_dispatch<tree_type, CSModel>::base_type;
 
     protected:
     node_type* _root;
