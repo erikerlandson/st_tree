@@ -30,6 +30,8 @@ limitations under the License.
 #include <algorithm>
 #include <iterator>
 #include <iostream>
+#include <string>
+#include <exception>
 #include "stdio.h"
 
 namespace ootree {
@@ -39,6 +41,7 @@ using std::multiset;
 using std::map;
 using std::less;
 using std::pair;
+using std::string;
 using std::cerr;
 
 
@@ -58,10 +61,49 @@ template <typename Key, typename Compare = less<Key> >
 struct keyed {};
 
 
-struct exception {
-    exception() {}
-    virtual ~exception() {}
-    // Stub
+// generic exception base class for tree package
+struct exception: public std::exception {
+    exception() throw(): std::exception(), _what() {}
+    virtual ~exception() throw() {}
+    exception(const string& w) throw(): std::exception(), _what(w) {}
+    virtual const char* what() const throw() { return _what.c_str(); }
+    protected:
+    string _what;
+};
+
+// attempting operations undefined without a parent node
+struct parent_exception: public exception {
+    parent_exception() throw(): exception() {}
+    virtual ~parent_exception() throw() {}
+    parent_exception(const string& w) throw(): exception(w) {}
+};
+
+// attempting operations on a node unassociated with a tree
+struct orphan_exception: public exception {
+    orphan_exception() throw(): exception() {}
+    virtual ~orphan_exception() throw() {}
+    orphan_exception(const string& w) throw(): exception(w) {}
+};
+
+// attempting operation that would create a cycle in tree
+struct cycle_exception: public exception {
+    cycle_exception() throw(): exception() {}
+    virtual ~cycle_exception() throw() {}
+    cycle_exception(const string& w) throw(): exception(w) {}
+};
+
+// attempting operation that is undefined on an empty tree 
+struct empty_exception: public exception {
+    empty_exception() throw(): exception() {}
+    virtual ~empty_exception() throw() {}
+    empty_exception(const string& w) throw(): exception(w) {}
+};
+
+// data, node, key, etc was undefined or not present
+struct missing_exception: public exception {
+    missing_exception() throw(): exception() {}
+    virtual ~missing_exception() throw() {}
+    missing_exception(const string& w) throw(): exception(w) {}
 };
 
 
@@ -746,14 +788,14 @@ struct node_base {
     tree_type& tree() {
         node_type* q = static_cast<node_type*>(this);
         while (!q->is_root())  q = q->_parent;
-        if (NULL == q->_tree) throw exception();
+        if (NULL == q->_tree) throw orphan_exception("tree(): orphan node has no associated tree");
         return *(q->_tree);
     }
 
     const tree_type& tree() const {
         const node_type* q = static_cast<const node_type*>(this);
         while (!q->is_root())  q = q->_parent;
-        if (NULL == q->_tree) throw exception();
+        if (NULL == q->_tree) throw orphan_exception("tree(): orphan node has no associated tree");
         return *(q->_tree);
     }
 
@@ -774,11 +816,11 @@ struct node_base {
     }
 
     node_type& parent() {
-        if (is_root()) throw exception();
+        if (is_root()) throw parent_exception("parent(): node has no parent");
         return *(_parent);
     }
     const node_type& parent() const {
-        if (is_root()) throw exception();
+        if (is_root()) throw parent_exception("parent(): node has no parent");
         return *(_parent); 
     }
 
@@ -969,7 +1011,7 @@ struct node_raw: public node_base<Tree, node_raw<Tree, Data>, vector<node_raw<Tr
         }
 
         // this would introduce cycles
-        if (rhs.is_ancestor(*this)) throw exception();
+        if (rhs.is_ancestor(*this)) throw cycle_exception("op=(): operation introduces cycle");
 
         node_type* r = const_cast<node_type*>(&rhs);
         // important if rhs is child of "this", to prevent it from getting deallocated by clear()
@@ -997,7 +1039,7 @@ struct node_raw: public node_base<Tree, node_raw<Tree, Data>, vector<node_raw<Tr
         if (&a == &b) return;
 
         // this would introduce cycles 
-        if (a.is_ancestor(b) || b.is_ancestor(a)) throw exception();
+        if (a.is_ancestor(b) || b.is_ancestor(a)) throw cycle_exception("swap(): operation introduces cycle");
 
         tree_type* ta = &a.tree();
         tree_type* tb = &b.tree();
@@ -1025,8 +1067,8 @@ struct node_raw: public node_base<Tree, node_raw<Tree, Data>, vector<node_raw<Tr
 
     void graft(node_type& src) {
         // this would introduce cycles 
-        if (this == &src) throw exception();
-        if (src.is_ancestor(*this)) throw exception();
+        if (this == &src) throw cycle_exception("graft(): operation introduces cycle");
+        if (src.is_ancestor(*this)) throw cycle_exception("graft(): operation introduces cycle");
 
         // remove src from its current location
         node_type* s = &src;
@@ -1089,11 +1131,11 @@ struct node_raw: public node_base<Tree, node_raw<Tree, Data>, vector<node_raw<Tr
     typedef typename base_type::cs_const_iterator cs_const_iterator;
 
     static cs_iterator _cs_iterator(node_type& n) {
-        if (n.is_root()) throw exception();
+        if (n.is_root()) throw parent_exception("_cs_iterator(): node nas no parent");
         cs_iterator j(n.parent()._children.begin());
         cs_iterator jend(n.parent()._children.end());
         for (;  j != jend;  ++j) if (*j == &n) break;
-        if (j == jend) throw exception();
+        if (j == jend) throw missing_exception("_cs_iterator(): requested node does not exist");
         return j;
     }
 
@@ -1170,7 +1212,7 @@ struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare>, m
         }
 
         // this would introduce cycles
-        if (rhs.is_ancestor(*this)) throw exception();
+        if (rhs.is_ancestor(*this)) throw cycle_exception("op=(): operation introduces cycle");
 
         // important to save these prior to clearing 'this'
         // note, rhs may be child of 'this', and get erased too, otherwise
@@ -1211,7 +1253,7 @@ struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare>, m
         if (&a == &b) return;
 
         // this would introduce cycles 
-        if (a.is_ancestor(b) || b.is_ancestor(a)) throw exception();
+        if (a.is_ancestor(b) || b.is_ancestor(a)) throw cycle_exception("swap(): operation introduces cycle");
 
         bool ira = a.is_root();
         bool irb = b.is_root();
@@ -1237,8 +1279,8 @@ struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare>, m
 
     void graft(node_type& src) {
         // this would introduce cycles 
-        if (this == &src) throw exception();
-        if (src.is_ancestor(*this)) throw exception();
+        if (this == &src) throw cycle_exception("graft(): operation introduces cycle");
+        if (src.is_ancestor(*this)) throw cycle_exception("graft(): operation introduces cycle");
 
         // remove src from its current location
         node_type* s = &src;
@@ -1301,12 +1343,12 @@ struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare>, m
 
     protected:
     static cs_iterator _cs_iterator(node_type& n) {
-        if (n.is_root()) throw exception();
+        if (n.is_root()) throw parent_exception("_cs_iterator(): node has no parent");
         pair<cs_iterator, cs_iterator> r(n.parent()._children.equal_range(&n));
-        if (r.first == r.second) throw exception();
+        if (r.first == r.second) throw missing_exception("_cs_iterator(): requested node does not exist");
         for (cs_iterator j(r.first);  j != r.second;  ++j)
             if (*j == &n) return j;
-        throw exception();
+        throw missing_exception("_cs_iterator(): requested node does not exist");
         // to satisfy compiler:
         return r.first;
     }
@@ -1390,7 +1432,7 @@ struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare>, 
         }
 
         // this would introduce cycles
-        if (rhs.is_ancestor(*this)) throw exception();
+        if (rhs.is_ancestor(*this)) throw cycle_exception("op=(): operation introduces cycle");
 
         // important to save these prior to clearing 'this'
         // note, rhs may be child of 'this', and get erased too, otherwise
@@ -1427,7 +1469,7 @@ struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare>, 
     }
     const node_type& operator[](const key_type& key) const {
         const_iterator f(this->find(key));
-        if (this->end() == f) throw exception();
+        if (this->end() == f) throw missing_exception("op[](): key undefined");
         return *f;
     }
 
@@ -1485,7 +1527,7 @@ struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare>, 
         if (&a == &b) return;
 
         // this would introduce cycles 
-        if (a.is_ancestor(b) || b.is_ancestor(a)) throw exception();
+        if (a.is_ancestor(b) || b.is_ancestor(a)) throw cycle_exception("swap(): operation introduces cycle");
 
         bool ira = a.is_root();
         bool irb = b.is_root();
@@ -1514,8 +1556,8 @@ struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare>, 
 
     void graft(const key_type& key, node_type& src) {
         // this would introduce cycles 
-        if (this == &src) throw exception();
-        if (src.is_ancestor(*this)) throw exception();
+        if (this == &src) throw cycle_exception("graft(): operation introduces cycle");
+        if (src.is_ancestor(*this)) throw cycle_exception("graft(): operation introduces cycle");
 
         // remove src from its current location
         node_type* s = &src;
@@ -1535,9 +1577,9 @@ struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare>, 
 
     protected:
     static cs_iterator _cs_iterator(node_type& n) {
-        if (n.is_root()) throw exception();
+        if (n.is_root()) throw parent_exception("_cs_iterator(): node has no parent");
         cs_iterator j(n.parent()._children.find(&n._key));
-        if (j == n.parent()._children.end()) throw exception();
+        if (j == n.parent()._children.end()) throw missing_exception("_cs_iterator(): requested node does not exist");
         return j;
     }
 
@@ -1657,12 +1699,12 @@ struct tree {
     size_type depth() const { return (empty()) ? 0 : root().depth(); }
 
     node_type& root() {
-        if (empty()) throw exception();
+        if (empty()) throw empty_exception("root(): empty tree has no root node");
         return *_root;
     }
 
     const node_type& root() const {
-        if (empty()) throw exception();
+        if (empty()) throw empty_exception("root(): empty tree has no root node");
         return *_root;
     }
 
