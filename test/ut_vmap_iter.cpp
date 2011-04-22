@@ -7,6 +7,36 @@ using namespace std;
 
 BOOST_AUTO_TEST_SUITE(ut_valmap_iterator_adaptor)
 
+template <typename Iterator, typename ValMap>
+struct valmap_iterator_adaptor : public valmap_iterator_dispatch<Iterator, ValMap, typename Iterator::iterator_category>::adaptor_type {
+    typedef typename valmap_iterator_dispatch<Iterator, ValMap, typename Iterator::iterator_category>::adaptor_type adaptor_type;
+
+    typedef typename adaptor_type::iterator_category iterator_category;
+    typedef typename adaptor_type::value_type value_type;
+    typedef typename adaptor_type::difference_type difference_type;
+    typedef typename adaptor_type::pointer pointer;
+    typedef typename adaptor_type::reference reference;
+
+    typedef Iterator base_iterator;
+
+    valmap_iterator_adaptor() : adaptor_type() {}
+    virtual ~valmap_iterator_adaptor() {}
+    
+    explicit valmap_iterator_adaptor(const valmap_iterator_adaptor& src) : adaptor_type(src) {}
+    valmap_iterator_adaptor& operator=(const valmap_iterator_adaptor& src) {
+        if (this == &src) return *this;
+        adaptor_type::operator=(src);
+        return *this;
+    }
+
+    operator base_iterator() const { return this->_base; }
+    valmap_iterator_adaptor(const base_iterator& src) : adaptor_type(src) {}
+    valmap_iterator_adaptor& operator=(const base_iterator& src) {
+        adaptor_type::operator=(src);
+        return *this;
+    }
+};
+
 BOOST_AUTO_TEST_CASE(dref_map) {
     int* t1 = new int(4);
     dref_vmap<int*> vmap;

@@ -36,25 +36,6 @@ struct data_lt {
     }
 };
 
-template <typename X, typename Y>
-inline void test(X a, X b, Y c) {
-        //__glibcxx_function_requires(_Mutable_RandomAccessIteratorConcept<X>)
-    for (X j=a;  j < b;  ++j) cout << j->data() << "\n";
-}
-
-template<typename _RandomAccessIterator>
-void
-myisort(_RandomAccessIterator __first, _RandomAccessIterator __last)
-{    
-    for (_RandomAccessIterator j=__first;  j < __last;  ++j) cout << j->data() << "\n";
-}
-
-template<typename _RandomAccessIterator, typename _Compare>
-inline void
-mysort(_RandomAccessIterator __first, _RandomAccessIterator __last, _Compare __comp)
-{
-    myisort(__first, __last);
-}
 
 int main(int argc, char** argv) {
     // Declare a tree of strings.
@@ -85,17 +66,12 @@ int main(int argc, char** argv) {
 
     // Child node iterators are random-access for the raw<> storage model,
     // so that means we can do things like call sort() on them
-
-    // currently this is not compiling -- I suspect a compiler limit on
-    // size/complexity of type expression matching, but I'm not sure yet
-    //sort(t.root()[1].begin(), t.root()[1].end(), data_lt());
-    // why does this match correctly, but invocation of sort() above doesn't match?
-    test(t.root()[1].begin(), t.root()[1].end(), data_lt());
-    mysort(t.root()[1].begin(), t.root()[1].end(), data_lt());
-        //sort(t.root()[1].begin(), t.root()[1].end(), data_lt());
+    // (If you actually want ordered nodes, you should consider using the
+    // ordered<> child storage model)
+    sort(t.root()[1].begin(), t.root()[1].end(), data_lt());
 
     // Output data in breadth first order
-    // Observe that only children of t.root()[1] ("C") are sorted.
+    // Observe that only children of t.root()[1] ("C") are sorted: P Q R
     for (iterator j(t.begin());  j != t.end();  ++j)
         cout << j->data() << " ";
     cout << "\n";

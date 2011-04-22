@@ -3,6 +3,8 @@
 #include "ootree.h"
 #include "ut_common.h"
 
+#include <algorithm>
+
 
 BOOST_AUTO_TEST_SUITE(ut_raw)
 
@@ -1071,6 +1073,24 @@ BOOST_AUTO_TEST_CASE(random_access) {
 
     BOOST_CHECK_EQUAL(j >= j, true);
     BOOST_CHECK_EQUAL(j >= j-1, true);
+}
+
+BOOST_AUTO_TEST_CASE(sort_children) {
+    tree<int> t1;
+    typedef tree<int>::node_type::iterator iterator;
+
+    t1.insert(2);
+    t1.root().push_back(3);
+    t1.root().push_back(7);
+    t1.root().push_back(5);
+    t1.root().push_back(13);
+    t1.root().push_back(11);
+
+    CHECK_TREE(t1, data(), "2 3 7 5 13 11");
+
+    std::sort(t1.root().begin(), t1.root().end());
+
+    CHECK_TREE(t1, data(), "2 3 5 7 11 13");
 }
 
 BOOST_AUTO_TEST_SUITE_END()

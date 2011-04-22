@@ -58,12 +58,10 @@ template <typename Key, typename Compare = less<Key> >
 struct keyed {};
 
 
-
-
 struct exception {
     exception() {}
     virtual ~exception() {}
-// stub.  This will need some work.
+    // Stub
 };
 
 
@@ -199,9 +197,6 @@ struct valmap_iterator_adaptor_forward {
         return *this;
     }
 
-    // construct from specific valmap obj
-    valmap_iterator_adaptor_forward(const valmap& vmap): _base(), _vmap(vmap) {}
-
     // casting
     operator base() const { return _base; }
     valmap_iterator_adaptor_forward(const base& src): _base(src), _vmap() {}
@@ -212,7 +207,7 @@ struct valmap_iterator_adaptor_forward {
     }
 
     // pre-increment:
-    valmap_iterator_adaptor_forward operator++() {
+    valmap_iterator_adaptor_forward& operator++() {
         ++_base;
         return *this;
     }
@@ -238,76 +233,75 @@ struct valmap_iterator_adaptor_forward {
 
 
 template <typename Iterator, typename ValMap>
-struct valmap_iterator_adaptor_bidirectional : public valmap_iterator_adaptor_forward<Iterator, ValMap> {
-    typedef valmap_iterator_adaptor_forward<Iterator, ValMap> base_type;
+struct valmap_iterator_adaptor_random {
+    typedef Iterator base_iterator_type;
+    typedef ValMap valmap_type;
 
-    typedef std::bidirectional_iterator_tag iterator_category;
-    typedef typename base_type::value_type value_type;
-    typedef typename base_type::difference_type difference_type;
-    typedef typename base_type::pointer pointer;
-    typedef typename base_type::reference reference;
+    typedef std::random_access_iterator_tag iterator_category;
+    typedef typename ValMap::value_type value_type;
+    typedef typename base_iterator_type::difference_type difference_type;
+    typedef value_type* pointer;
+    typedef value_type& reference;
 
-    typedef Iterator base_iterator;
+    protected:
+    base_iterator_type _base;
+    valmap_type _vmap;
 
-    valmap_iterator_adaptor_bidirectional() : base_type() {}
-    virtual ~valmap_iterator_adaptor_bidirectional() {}
+    public:
+    valmap_iterator_adaptor_random() : _base(), _vmap() {}
+    virtual ~valmap_iterator_adaptor_random() {}
     
-    valmap_iterator_adaptor_bidirectional(const valmap_iterator_adaptor_bidirectional& src) : base_type(src) {}
-    valmap_iterator_adaptor_bidirectional& operator=(const valmap_iterator_adaptor_bidirectional& src) {
+    valmap_iterator_adaptor_random(const valmap_iterator_adaptor_random& src): _base(src._base), _vmap(src._vmap) {}
+    valmap_iterator_adaptor_random& operator=(const valmap_iterator_adaptor_random& src) {
         if (this == &src) return *this;
-        base_type::operator=(src);
+        _base = src._base;
+        _vmap = src._vmap;
         return *this;
     }
 
-    operator base_iterator() const { return this->_base; }
-    valmap_iterator_adaptor_bidirectional(const base_iterator& src) : base_type(src) {}
-    valmap_iterator_adaptor_bidirectional& operator=(const base_iterator& src) {
-        base_type::operator=(src);
+    operator base_iterator_type() const { return this->_base; }
+    valmap_iterator_adaptor_random(const base_iterator_type& src) : _base(src), _vmap() {}
+    valmap_iterator_adaptor_random& operator=(const base_iterator_type& src) {
+        _base = src;
         return *this;
+    }
+
+    // access methods
+    reference operator*() const { return _vmap(*_base); }
+
+    pointer operator->() const { return &(_vmap(*_base)); }
+
+    reference operator[](const difference_type& n) {
+        return this->_vmap(*(this->_base+n));
+    }
+
+
+    // pre-increment:
+    valmap_iterator_adaptor_random& operator++() {
+        ++_base;
+        return *this;
+    }
+
+    // post-increment:
+    valmap_iterator_adaptor_random operator++(int) {
+        valmap_iterator_adaptor_random r(*this);
+        ++(*this);
+        return r;
     }
 
     // pre-dec:
-    valmap_iterator_adaptor_bidirectional operator--() {
+    valmap_iterator_adaptor_random& operator--() {
         --(this->_base);
         return *this;
     }
 
     // post-dec:
-    valmap_iterator_adaptor_bidirectional operator--(int) {
-        valmap_iterator_adaptor_bidirectional r(*this);
+    valmap_iterator_adaptor_random operator--(int) {
+        valmap_iterator_adaptor_random r(*this);
         --(*this);
         return r;
     }
-};
 
-template <typename Iterator, typename ValMap>
-struct valmap_iterator_adaptor_random : public valmap_iterator_adaptor_bidirectional<Iterator, ValMap> {
-    typedef valmap_iterator_adaptor_bidirectional<Iterator, ValMap> base_type;
-
-    typedef std::random_access_iterator_tag iterator_category;
-    typedef typename base_type::value_type value_type;
-    typedef typename base_type::difference_type difference_type;
-    typedef typename base_type::pointer pointer;
-    typedef typename base_type::reference reference;
-
-    typedef Iterator base_iterator;
-
-    valmap_iterator_adaptor_random() : base_type() {}
-    virtual ~valmap_iterator_adaptor_random() {}
-    
-    valmap_iterator_adaptor_random(const valmap_iterator_adaptor_random& src) : base_type(src) {}
-    valmap_iterator_adaptor_random& operator=(const valmap_iterator_adaptor_random& src) {
-        if (this == &src) return *this;
-        base_type::operator=(src);
-        return *this;
-    }
-
-    operator base_iterator() const { return this->_base; }
-    valmap_iterator_adaptor_random(const base_iterator& src) : base_type(src) {}
-    valmap_iterator_adaptor_random& operator=(const base_iterator& src) {
-        base_type::operator=(src);
-        return *this;
-    }
 
     valmap_iterator_adaptor_random& operator+=(const difference_type& n) {
         this->_base += n;
@@ -329,9 +323,13 @@ struct valmap_iterator_adaptor_random : public valmap_iterator_adaptor_bidirecti
         return this->_base - s._base;
     }
 
-    reference operator[](const difference_type& n) {
-        return this->_vmap(*(this->_base+n));
+
+    bool operator==(const valmap_iterator_adaptor_random& rhs) const {
+        if (_base != rhs._base) return false;
+        if (!(_vmap == rhs._vmap)) return false;
+        return true;
     }
+    bool operator!=(const valmap_iterator_adaptor_random& rhs) const { return !(*this == rhs); }
 
     bool operator<(const valmap_iterator_adaptor_random& rhs) const {
         return this->_base < rhs._base;
@@ -360,46 +358,11 @@ struct valmap_iterator_dispatch {
     typedef valmap_iterator_adaptor_forward<Iterator, ValMap> adaptor_type;
 };
 
-// bidirectional iterators
-template <typename Iterator, typename ValMap>
-struct valmap_iterator_dispatch<Iterator, ValMap, std::bidirectional_iterator_tag> {
-    typedef valmap_iterator_adaptor_bidirectional<Iterator, ValMap> adaptor_type;
-};
 
 // random access iterators
 template <typename Iterator, typename ValMap>
 struct valmap_iterator_dispatch<Iterator, ValMap, std::random_access_iterator_tag> {
     typedef valmap_iterator_adaptor_random<Iterator, ValMap> adaptor_type;
-};
-
-template <typename Iterator, typename ValMap>
-struct valmap_iterator_adaptor : public valmap_iterator_dispatch<Iterator, ValMap, typename Iterator::iterator_category>::adaptor_type {
-    typedef typename valmap_iterator_dispatch<Iterator, ValMap, typename Iterator::iterator_category>::adaptor_type adaptor_type;
-
-    typedef typename adaptor_type::iterator_category iterator_category;
-    typedef typename adaptor_type::value_type value_type;
-    typedef typename adaptor_type::difference_type difference_type;
-    typedef typename adaptor_type::pointer pointer;
-    typedef typename adaptor_type::reference reference;
-
-    typedef Iterator base_iterator;
-
-    valmap_iterator_adaptor() : adaptor_type() {}
-    virtual ~valmap_iterator_adaptor() {}
-    
-    valmap_iterator_adaptor(const valmap_iterator_adaptor& src) : adaptor_type(src) {}
-    valmap_iterator_adaptor& operator=(const valmap_iterator_adaptor& src) {
-        if (this == &src) return *this;
-        adaptor_type::operator=(src);
-        return *this;
-    }
-
-    operator base_iterator() const { return this->_base; }
-    valmap_iterator_adaptor(const base_iterator& src) : adaptor_type(src) {}
-    valmap_iterator_adaptor& operator=(const base_iterator& src) {
-        adaptor_type::operator=(src);
-        return *this;
-    }
 };
 
 
@@ -726,8 +689,10 @@ struct node_base {
     typedef typename cs_type::const_iterator cs_const_iterator;
     
     public:
-    typedef valmap_iterator_adaptor<cs_iterator, typename vmap_dispatch<node_type, typename cs_iterator::value_type>::vmap> iterator;
-    typedef valmap_iterator_adaptor<cs_const_iterator, typename vmap_dispatch<node_type, typename cs_const_iterator::value_type>::vmap> const_iterator;
+    typedef typename valmap_iterator_dispatch<cs_iterator, typename vmap_dispatch<node_type, typename cs_iterator::value_type>::vmap, typename cs_iterator::iterator_category>::adaptor_type iterator;
+    typedef typename valmap_iterator_dispatch<cs_const_iterator, typename vmap_dispatch<node_type, typename cs_const_iterator::value_type>::vmap, typename cs_const_iterator::iterator_category>::adaptor_type const_iterator;
+        //typedef valmap_iterator_adaptor<cs_iterator, typename vmap_dispatch<node_type, typename cs_iterator::value_type>::vmap> iterator;
+        //typedef valmap_iterator_adaptor<cs_const_iterator, typename vmap_dispatch<node_type, typename cs_const_iterator::value_type>::vmap> const_iterator;
 
     iterator begin() { return iterator(_children.begin()); }
     iterator end() { return iterator(_children.end()); }
@@ -984,6 +949,25 @@ struct node_raw: public node_base<Tree, node_raw<Tree, Data>, vector<node_raw<Tr
     node_raw& operator=(const node_raw& rhs) {
         if (this == &rhs) return *this;
 
+        // LHS is non-default, but RHS is default:
+        if (rhs._default_constructed()) {
+            // both are default-constructed, no-op:
+            if (this->_default_constructed()) return *this;
+
+            // Seems sane to define semantic as 'empty'
+            // should also consider removing from tree?
+            this->clear();
+            this->_data = rhs._data;
+            return *this;
+        }
+
+        // LHS is default-constructed (RHS is non-default)
+        if (this->_default_constructed()) {
+            // A workable semantic is a sort of free-standing node, who shares rhs tree
+            // and is deep-copied, but is not actually a full-fledged member of a tree
+            this->_tree = const_cast<tree_type*>(&(rhs.tree()));
+        }
+
         // this would introduce cycles
         if (rhs.is_ancestor(*this)) throw exception();
 
@@ -1165,6 +1149,25 @@ struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare>, m
     }
     node_ordered& operator=(const node_ordered& rhs) {
         if (this == &rhs) return *this;
+
+        // LHS is non-default, but RHS is default:
+        if (rhs._default_constructed()) {
+            // both are default-constructed, no-op:
+            if (this->_default_constructed()) return *this;
+
+            // Seems sane to define semantic as 'empty'
+            // should also consider removing from tree?
+            this->clear();
+            this->_data = rhs._data;
+            return *this;
+        }
+
+        // LHS is default-constructed (RHS is non-default)
+        if (this->_default_constructed()) {
+            // A workable semantic is a sort of free-standing node, who shares rhs tree
+            // and is deep-copied, but is not actually a full-fledged member of a tree
+            this->_tree = const_cast<tree_type*>(&(rhs.tree()));
+        }
 
         // this would introduce cycles
         if (rhs.is_ancestor(*this)) throw exception();
@@ -1366,6 +1369,25 @@ struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare>, 
     }
     node_keyed& operator=(const node_keyed& rhs) {
         if (this == &rhs) return *this;
+
+        // LHS is non-default, but RHS is default:
+        if (rhs._default_constructed()) {
+            // both are default-constructed, no-op:
+            if (this->_default_constructed()) return *this;
+
+            // Seems sane to define semantic as 'empty'
+            // should also consider removing from tree?
+            this->clear();
+            this->_data = rhs._data;
+            return *this;
+        }
+
+        // LHS is default-constructed (RHS is non-default)
+        if (this->_default_constructed()) {
+            // A workable semantic is a sort of free-standing node, who shares rhs tree
+            // and is deep-copied, but is not actually a full-fledged member of a tree
+            this->_tree = const_cast<tree_type*>(&(rhs.tree()));
+        }
 
         // this would introduce cycles
         if (rhs.is_ancestor(*this)) throw exception();
