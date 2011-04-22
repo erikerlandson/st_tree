@@ -29,14 +29,6 @@ using namespace std;
 using namespace ootree;
 
 
-struct data_lt {
-    template <typename N>
-    bool operator()(const N& a, const N& b) const {
-        return a.data() < b.data();
-    }
-};
-
-
 int main(int argc, char** argv) {
     // Declare a tree of strings.
     tree<string> t;
@@ -65,10 +57,13 @@ int main(int argc, char** argv) {
     t.root().back().push_back("W");
 
     // Child node iterators are random-access for the raw<> storage model,
-    // so that means we can do things like call sort() on them
-    // (If you actually want ordered nodes, you should consider using the
+    // so that means we can do things like call sort() on them.
+    // This sort takes advantage of the default ordering relation on nodes,
+    // which compares data() value as the primary comparison, and then compares
+    // child nodes, recursively, in lex order.
+    sort(t.root()[1].begin(), t.root()[1].end());
+    // (If you actually want ordered nodes, you should also consider using the
     // ordered<> child storage model)
-    sort(t.root()[1].begin(), t.root()[1].end(), data_lt());
 
     // Output data in breadth first order
     // Observe that only children of t.root()[1] ("C") are sorted: P Q R
