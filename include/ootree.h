@@ -1311,6 +1311,38 @@ struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare>, m
         return const_iterator(this->_children.find(&s));
     }
 
+    iterator lower_bound(const data_type& data) {
+        node_type s;
+        s._data = data;
+        return iterator(this->_children.lower_bound(&s));
+    }
+    const_iterator lower_bound(const data_type& data) const {
+        node_type s;
+        s._data = data;
+        return const_iterator(this->_children.lower_bound(&s));
+    }
+    iterator upper_bound(const data_type& data) {
+        node_type s;
+        s._data = data;
+        return iterator(this->_children.upper_bound(&s));
+    }
+    const_iterator upper_bound(const data_type& data) const {
+        node_type s;
+        s._data = data;
+        return const_iterator(this->_children.upper_bound(&s));
+    }
+    pair<iterator, iterator> equal_range(const data_type& data) {
+        node_type s;
+        s._data = data;
+        return pair<iterator, iterator>(this->_children.equal_range(&s));
+    }
+    pair<const_iterator, const_iterator> equal_range(const data_type& data) const {
+        node_type s;
+        s._data = data;
+        return pair<const_iterator, const_iterator>(this->_children.equal_range(&s));
+    }
+
+
     size_type count(const data_type& data) const {
         node_type s;
         s._data = data;
@@ -1475,6 +1507,25 @@ struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare>, 
 
     iterator find(const key_type& key) { return iterator(this->_children.find(&key)); }
     const_iterator find(const key_type& key) const { return const_iterator(this->_children.find(&key)); }
+
+    iterator lower_bound(const key_type& key) {
+        return iterator(this->_children.lower_bound(&key));
+    }
+    const_iterator lower_bound(const key_type& key) const {
+        return const_iterator(this->_children.lower_bound(&key));
+    }
+    iterator upper_bound(const key_type& key) {
+        return iterator(this->_children.upper_bound(&key));
+    }
+    const_iterator upper_bound(const key_type& key) const {
+        return const_iterator(this->_children.upper_bound(&key));
+    }
+    pair<iterator, iterator> equal_range(const key_type& key) {
+        return pair<iterator, iterator>(this->_children.equal_range(&key));
+    }
+    pair<const_iterator, const_iterator> equal_range(const key_type& key) const {
+        return pair<const_iterator, const_iterator>(this->_children.equal_range(&key));
+    }
 
     size_type count(const key_type& key) const {
         return this->_children.count(&key);

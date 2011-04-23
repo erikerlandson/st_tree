@@ -1059,4 +1059,39 @@ BOOST_AUTO_TEST_CASE(find) {
     BOOST_CHECK(jc == tc.root().end());
 }
 
+BOOST_AUTO_TEST_CASE(lower_upper_equal) {
+    tree<int, keyed<std::string> > t1;
+    typedef tree<int, keyed<std::string> >::node_type::iterator iterator;
+    typedef tree<int, keyed<std::string> >::node_type::const_iterator const_iterator;
+
+    t1.insert(2);
+    t1.root().insert("5", 5);
+    t1.root().insert("3", 3);
+    t1.root().insert("7", 7);
+
+    CHECK_TREE(t1, data(), "2 3 5 7");
+
+    iterator l1 = t1.root().lower_bound("5");
+    iterator u1 = t1.root().upper_bound("5");
+    pair<iterator, iterator> r1 = t1.root().equal_range("5");
+    BOOST_CHECK_EQUAL(l1->data(), 5);
+    BOOST_CHECK_EQUAL(u1->data(), 7);
+    BOOST_CHECK(r1.first == l1);
+    BOOST_CHECK(r1.second == u1);
+    ++l1;
+    BOOST_CHECK_EQUAL(l1->data(), 7);
+
+    const tree<int, keyed<std::string> >& tc = t1;
+    const_iterator lc = tc.root().lower_bound("5");
+    const_iterator uc = tc.root().upper_bound("5");
+    pair<const_iterator, const_iterator> rc = tc.root().equal_range("5");
+    BOOST_CHECK_EQUAL(lc->data(), 5);
+    BOOST_CHECK_EQUAL(uc->data(), 7);
+    BOOST_CHECK(rc.first == lc);
+    BOOST_CHECK(rc.second == uc);
+    ++lc;
+    BOOST_CHECK_EQUAL(lc->data(), 7);    
+}
+
+
 BOOST_AUTO_TEST_SUITE_END()
