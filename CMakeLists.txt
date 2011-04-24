@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.6)
-project(ootree)
+project(st_tree)
 
 # Build against ANSI c++ standards
 IF (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_GNUCC OR MINGW)

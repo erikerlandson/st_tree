@@ -1,5 +1,5 @@
 /******
-ootree: A highly configurable C++ template tree class, using STL style interfaces.
+st_tree: A highly configurable C++ template tree class, using STL style interfaces.
 
 Copyright (c) 2010 Erik Erlandson
 
@@ -18,8 +18,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ******/
 
-#if !defined(__ootree_h__)
-#define __ootree_h__ 1
+#if !defined(__st_tree_h__)
+#define __st_tree_h__ 1
 
 
 #include <vector>
@@ -34,7 +34,7 @@ limitations under the License.
 #include <exception>
 #include "stdio.h"
 
-namespace ootree {
+namespace st_tree {
 using std::vector;
 using std::deque;
 using std::multiset;
@@ -876,7 +876,7 @@ struct node_base {
     bool operator>=(const node_base& rhs) const { return !(*this < rhs); }
 
         //friend class tree_type::tree_type;
-    friend class ootree::tree<data_type, typename Tree::cs_model_type, allocator_type>;
+    friend class st_tree::tree<data_type, typename Tree::cs_model_type, allocator_type>;
     friend class b1st_iterator<node_type, node_type, allocator_type>;
     friend class b1st_iterator<node_type, const node_type, allocator_type>;
     friend class d1st_post_iterator<node_type, node_type, allocator_type>;
@@ -976,7 +976,7 @@ struct node_raw: public node_base<Tree, node_raw<Tree, Data>, vector<node_raw<Tr
     typedef typename base_type::const_iterator const_iterator;
 
         //friend class tree_type::tree_type;
-    friend class ootree::tree<data_type, typename Tree::cs_model_type, allocator_type>;
+    friend class st_tree::tree<data_type, typename Tree::cs_model_type, allocator_type>;
     friend class node_base<Tree, node_type, cs_type>;
 
     node_raw() : base_type() {}
@@ -1172,7 +1172,7 @@ struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare>, m
     typedef typename base_type::const_iterator const_iterator;
 
         //friend class tree_type::tree_type;
-    friend class ootree::tree<data_type, typename Tree::cs_model_type, allocator_type>;
+    friend class st_tree::tree<data_type, typename Tree::cs_model_type, allocator_type>;
     friend class node_base<Tree, node_type, cs_type>;
 
     protected:
@@ -1422,7 +1422,7 @@ struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare>, 
     typedef typename base_type::const_iterator const_iterator;
 
         //friend class tree_type::tree_type;
-    friend class ootree::tree<data_type, typename Tree::cs_model_type, allocator_type>;
+    friend class st_tree::tree<data_type, typename Tree::cs_model_type, allocator_type>;
     friend class node_base<Tree, node_type, cs_type>;
 
     protected:
@@ -1882,31 +1882,31 @@ template <typename Data, typename CSModel, typename Alloc>
 const typename tree<Data, CSModel, Alloc>::node_type tree<Data, CSModel, Alloc>::_node_init_val;
 
 
-}  // namespace ootree
+}  // namespace st_tree
 
 
 namespace std {
 
 template <typename Data, typename CSModel, typename Alloc>
-void swap(ootree::tree<Data, CSModel, Alloc>& a, ootree::tree<Data, CSModel, Alloc>& b) {
+void swap(st_tree::tree<Data, CSModel, Alloc>& a, st_tree::tree<Data, CSModel, Alloc>& b) {
     a.swap(b);
 }
 
 template <typename Tree, typename Data>
-void swap(ootree::node_raw<Tree, Data>& a, ootree::node_raw<Tree, Data>& b) {
+void swap(st_tree::node_raw<Tree, Data>& a, st_tree::node_raw<Tree, Data>& b) {
     a.swap(b);
 }
 
 template <typename Tree, typename Data, typename Compare>
-void swap(ootree::node_ordered<Tree, Data, Compare>& a, ootree::node_ordered<Tree, Data, Compare>& b) {
+void swap(st_tree::node_ordered<Tree, Data, Compare>& a, st_tree::node_ordered<Tree, Data, Compare>& b) {
     a.swap(b);
 }
 
 template <typename Tree, typename Data, typename Key, typename Compare>
-void swap(ootree::node_keyed<Tree, Data, Key, Compare>& a, ootree::node_keyed<Tree, Data, Key, Compare>& b) {
+void swap(st_tree::node_keyed<Tree, Data, Key, Compare>& a, st_tree::node_keyed<Tree, Data, Key, Compare>& b) {
     a.swap(b);
 }
 
 }  // namespace std
 
-#endif  // __ootree_h__
+#endif  // __st_tree_h__
