@@ -1,6 +1,6 @@
 #include <boost/test/unit_test.hpp>
 
-#include "ootree.h"
+#include "st_tree.h"
 #include "ut_common.h"
 
 #include <algorithm>
@@ -14,7 +14,7 @@ BOOST_AUTO_TEST_CASE(default_ctor) {
     BOOST_CHECK(t1.empty());
     BOOST_CHECK_EQUAL(t1.size(), 0);
     BOOST_CHECK_EQUAL(t1.depth(), 0);
-    BOOST_CHECK_THROW(t1.root(), ootree::exception);
+    BOOST_CHECK_THROW(t1.root(), st_tree::exception);
 }
 
 BOOST_AUTO_TEST_CASE(insert_root) {
@@ -25,7 +25,7 @@ BOOST_AUTO_TEST_CASE(insert_root) {
     BOOST_CHECK_EQUAL(t1.depth(), 1);
     BOOST_CHECK_EQUAL(t1.root().is_root(), true);
     BOOST_CHECK_EQUAL(t1.root().data(), 7);
-    BOOST_CHECK_THROW(t1.root().parent(), ootree::exception);
+    BOOST_CHECK_THROW(t1.root().parent(), st_tree::exception);
 }
 
 
@@ -71,7 +71,7 @@ BOOST_AUTO_TEST_CASE(clear) {
     BOOST_CHECK_EQUAL(t1.size(), 0);
     BOOST_CHECK_EQUAL(t1.depth(), 0);
     BOOST_CHECK_EQUAL(t1.empty(), true);
-    BOOST_CHECK_THROW(t1.root(), ootree::exception);
+    BOOST_CHECK_THROW(t1.root(), st_tree::exception);
 }
 
 
@@ -341,7 +341,7 @@ BOOST_AUTO_TEST_CASE(node_subtree_size) {
 BOOST_AUTO_TEST_CASE(node_parent) {
     tree<int> t1;
     t1.insert(2);
-    BOOST_CHECK_THROW(t1.root().parent(), ootree::exception);
+    BOOST_CHECK_THROW(t1.root().parent(), st_tree::exception);
     t1.root().insert(3);
     BOOST_CHECK_EQUAL(t1.root()[0].parent().data(), 2);
     const tree<int>& t2 = t1;
@@ -467,7 +467,7 @@ BOOST_AUTO_TEST_CASE(node_op_equal_subtree) {
     t1.root()[1].insert(13);
     t1.root()[1].insert(17);
 
-    BOOST_CHECK_THROW(t1.root()[0] = t1.root(), ootree::exception);
+    BOOST_CHECK_THROW(t1.root()[0] = t1.root(), st_tree::exception);
 
     t1.root() = t1.root()[0];
     CHECK_TREE(t1, data(), "3 7 11");
@@ -583,8 +583,8 @@ BOOST_AUTO_TEST_CASE(node_swap) {
     swap(t1.root()[0], t1.root()[1]);
 
     // no-no
-    BOOST_CHECK_THROW(swap(t1.root(), t1.root()[0]), ootree::exception);
-    BOOST_CHECK_THROW(swap(t1.root()[1], t1.root()), ootree::exception);
+    BOOST_CHECK_THROW(swap(t1.root(), t1.root()[0]), st_tree::exception);
+    BOOST_CHECK_THROW(swap(t1.root()[1], t1.root()), st_tree::exception);
 }
 
 

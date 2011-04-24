@@ -1,8 +1,8 @@
 #include <boost/test/unit_test.hpp>
 
-#include "ootree.h"
+#include "st_tree.h"
 
-using namespace ootree;
+using namespace st_tree;
 using namespace std;
 
 BOOST_AUTO_TEST_SUITE(ut_valmap_iterator_adaptor)

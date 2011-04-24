@@ -1,6 +1,6 @@
 #include <boost/test/unit_test.hpp>
 
-#include "ootree.h"
+#include "st_tree.h"
 #include "ut_common.h"
 
 
@@ -12,7 +12,7 @@ BOOST_AUTO_TEST_CASE(default_ctor) {
     BOOST_CHECK(t1.empty());
     BOOST_CHECK_EQUAL(t1.size(), 0);
     BOOST_CHECK_EQUAL(t1.depth(), 0);
-    BOOST_CHECK_THROW(t1.root(), ootree::exception);
+    BOOST_CHECK_THROW(t1.root(), st_tree::exception);
 }
 
 BOOST_AUTO_TEST_CASE(insert_root) {
@@ -23,7 +23,7 @@ BOOST_AUTO_TEST_CASE(insert_root) {
     BOOST_CHECK_EQUAL(t1.depth(), 1);
     BOOST_CHECK_EQUAL(t1.root().is_root(), true);
     BOOST_CHECK_EQUAL(t1.root().data(), 7);
-    BOOST_CHECK_THROW(t1.root().parent(), ootree::exception);
+    BOOST_CHECK_THROW(t1.root().parent(), st_tree::exception);
 }
 
 
@@ -70,7 +70,7 @@ BOOST_AUTO_TEST_CASE(clear) {
     BOOST_CHECK_EQUAL(t1.size(), 0);
     BOOST_CHECK_EQUAL(t1.depth(), 0);
     BOOST_CHECK_EQUAL(t1.empty(), true);
-    BOOST_CHECK_THROW(t1.root(), ootree::exception);
+    BOOST_CHECK_THROW(t1.root(), st_tree::exception);
 }
 
 
@@ -347,7 +347,7 @@ BOOST_AUTO_TEST_CASE(node_parent) {
     typedef tree<int, ordered<> >::node_type node_type;
 
     t1.insert(2);
-    BOOST_CHECK_THROW(t1.root().parent(), ootree::exception);
+    BOOST_CHECK_THROW(t1.root().parent(), st_tree::exception);
 
     node_type& n3 = *t1.root().insert(3);
     BOOST_CHECK_EQUAL(n3.parent().data(), 2);
@@ -495,7 +495,7 @@ BOOST_AUTO_TEST_CASE(node_op_equal_subtree) {
     n5.insert(13);
     n5.insert(17);
 
-    BOOST_CHECK_THROW(n3 = t1.root(), ootree::exception);
+    BOOST_CHECK_THROW(n3 = t1.root(), st_tree::exception);
 
     t1.root() = n3;
     CHECK_TREE(t1, data(), "3 7 11");
@@ -649,8 +649,8 @@ BOOST_AUTO_TEST_CASE(node_swap) {
     CHECK_TREE(t2, depth(), "3 2 1 1 1")
 
     // no-no
-    BOOST_CHECK_THROW(swap(n2, n3), ootree::exception);
-    BOOST_CHECK_THROW(swap(n3, n2), ootree::exception);
+    BOOST_CHECK_THROW(swap(n2, n3), st_tree::exception);
+    BOOST_CHECK_THROW(swap(n3, n2), st_tree::exception);
 }
 
 

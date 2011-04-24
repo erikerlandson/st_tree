@@ -1,5 +1,5 @@
 /******
-ootree: An easy to use and highly configurable C++ template tree class, 
+st_tree: An easy to use and highly configurable C++ template tree class, 
 using STL container style interfaces.
 
 Copyright (c) 2010-2011 Erik Erlandson
@@ -22,9 +22,9 @@ limitations under the License.
 #include <iostream>
 using namespace std;
 
-// use the ootree header and namespace
-#include "ootree.h"
-using namespace ootree;
+// use the st_tree header and namespace
+#include "st_tree.h"
+using namespace st_tree;
 
 int main(int argc, char** argv) {
     // Declare a tree of strings.
