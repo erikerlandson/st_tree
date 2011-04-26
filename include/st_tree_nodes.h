@@ -50,8 +50,6 @@ struct node_base {
     public:
     typedef typename valmap_iterator_dispatch<cs_iterator, typename vmap_dispatch<node_type, typename cs_iterator::value_type>::vmap, typename cs_iterator::iterator_category>::adaptor_type iterator;
     typedef typename valmap_iterator_dispatch<cs_const_iterator, typename vmap_dispatch<node_type, typename cs_const_iterator::value_type>::vmap, typename cs_const_iterator::iterator_category>::adaptor_type const_iterator;
-        //typedef valmap_iterator_adaptor<cs_iterator, typename vmap_dispatch<node_type, typename cs_iterator::value_type>::vmap> iterator;
-        //typedef valmap_iterator_adaptor<cs_const_iterator, typename vmap_dispatch<node_type, typename cs_const_iterator::value_type>::vmap> const_iterator;
 
     iterator begin() { return iterator(_children.begin()); }
     iterator end() { return iterator(_children.end()); }
@@ -474,6 +472,8 @@ struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare>, m
     typedef node_base<Tree, node_type, cs_type> base_type;
     typedef Data data_type;
 
+    typedef data_type key_type;
+    typedef Compare key_compare;
     typedef node_type value_type;
     typedef node_type* pointer;
     typedef node_type const* const_pointer;
@@ -720,9 +720,9 @@ struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare>, 
     typedef map<const Key*, node_type*, ptr_less<Compare>, allocator_type> cs_type;
     typedef node_base<Tree, node_type, cs_type> base_type;
     typedef Data data_type;
-    typedef Key key_type;
-    typedef pair<const key_type, data_type> kv_pair;
 
+    typedef Key key_type;
+    typedef Compare key_compare;
     typedef node_type value_type;
     typedef node_type* pointer;
     typedef node_type const* const_pointer;
@@ -731,6 +731,8 @@ struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare>, 
 
     typedef size_t size_type;
     typedef ptrdiff_t difference_type;
+
+    typedef pair<const key_type, data_type> kv_pair;
 
     typedef typename base_type::iterator iterator;
     typedef typename base_type::const_iterator const_iterator;
