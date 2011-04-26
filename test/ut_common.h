@@ -4,8 +4,8 @@
 #include "st_tree.h"
 
 using namespace st_tree;
-using namespace std;
-
+using std::string;
+using std::pair;
 
 template <typename Tree>
 typename Tree::const_bf_iterator bf_begin(const Tree& t) {
@@ -52,7 +52,7 @@ typename Tree::const_df_post_iterator& df_post_j(const Tree& t) {
 
 // These were more elegant with typedef(), but does ansi support typedef?  Nooooo.
 #define CHECK_TREE(t, meth, ref) { \
-    stringstream tst; \
+    std::stringstream tst; \
     for (bf_j(t) = bf_begin(t);  bf_j(t) != bf_end(t);  ++bf_j(t)) { \
         if (bf_j(t) != bf_begin(t)) tst << " ";  \
         tst << bf_j(t)->meth; \
@@ -62,7 +62,7 @@ typename Tree::const_df_post_iterator& df_post_j(const Tree& t) {
 
 
 #define CHECK_TREE_DF_POST(t, meth, ref) { \
-    stringstream tst; \
+    std::stringstream tst;                                          \
     for (df_post_j(t) = df_post_begin(t);  df_post_j(t) != df_post_end(t);  ++df_post_j(t)) { \
         if (df_post_j(t) != df_post_begin(t)) tst << " "; \
         tst << df_post_j(t)->meth; \
@@ -72,7 +72,7 @@ typename Tree::const_df_post_iterator& df_post_j(const Tree& t) {
 
 
 #define CHECK_TREE_DF_PRE(t, meth, ref) { \
-    stringstream tst; \
+    std::stringstream tst; \
     for (df_pre_j(t) = df_pre_begin(t);  df_pre_j(t) != df_pre_end(t);  ++df_pre_j(t)) { \
         if (df_pre_j(t) != df_pre_begin(t)) tst << " "; \
         tst << df_pre_j(t)->meth; \

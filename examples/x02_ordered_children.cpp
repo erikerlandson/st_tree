@@ -21,7 +21,8 @@ limitations under the License.
 
 #include <iostream>
 #include <string>
-using namespace std;
+using std::cout;
+using std::string;
 
 // use the st_tree header and namespace
 #include "st_tree.h"

@@ -1,9 +1,13 @@
 #include <boost/test/unit_test.hpp>
 
 #include "st_tree.h"
-
 using namespace st_tree;
-using namespace std;
+using st_tree::detail::valmap_iterator_dispatch;
+using st_tree::detail::dref_vmap;
+
+#include "ut_common.h"
+using std::vector;
+
 
 BOOST_AUTO_TEST_SUITE(ut_valmap_iterator_adaptor)
 

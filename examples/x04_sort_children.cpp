@@ -22,7 +22,9 @@ limitations under the License.
 #include <string>
 #include <iostream>
 #include <algorithm>
-using namespace std;
+using std::cout;
+using std::string;
+using std::sort;
 
 // use the st_tree header and namespace
 #include "st_tree.h"
