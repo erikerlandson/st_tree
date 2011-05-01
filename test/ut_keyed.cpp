@@ -1093,5 +1093,23 @@ BOOST_AUTO_TEST_CASE(lower_upper_equal) {
     BOOST_CHECK_EQUAL(lc->data(), 7);    
 }
 
+BOOST_AUTO_TEST_CASE(erase_key) {
+    tree<int, keyed<std::string> > t1;
+
+    t1.insert(2);
+    t1.root().insert("3",3);
+    t1.root().insert("5",5);
+    t1.root().insert("7",7);
+
+    CHECK_TREE(t1, data(), "2 3 5 7");
+
+    unsigned c = t1.root().erase("11");
+    BOOST_CHECK_EQUAL(c, unsigned(0));
+    CHECK_TREE(t1, data(), "2 3 5 7");
+
+    c = t1.root().erase("5");
+    BOOST_CHECK_EQUAL(c, unsigned(1));
+    CHECK_TREE(t1, data(), "2 3 7");
+}
 
 BOOST_AUTO_TEST_SUITE_END()

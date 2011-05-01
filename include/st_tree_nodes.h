@@ -142,32 +142,8 @@ struct node_base {
     size_type size() const { return _children.size(); }
     bool empty() const { return _children.empty(); }
 
-    void erase(const iterator& j) {
-        node_type* n = &*j;
-        _prune(n);
-        _children.erase(j);
-        this->tree()._delete_node(n);
-    }
-
-    void erase(const iterator& F, const iterator& L) {
-        vector<node_type*> d;
-        for (iterator j(F);  j != L;  ++j) {
-            node_type* n = &*j;
-            _prune(n);
-            d.push_back(n);
-        }
-        _children.erase(F, L);
-        tree_type& tree_ = this->tree();
-        for (typename vector<node_type*>::iterator e(d.begin());  e != d.end();  ++e) tree_._delete_node(*e);
-    }
-
-    void erase() {
-        if (is_root()) _tree->erase();
-        else parent().erase(_iterator());
-    }
-
     void clear() {
-        erase(begin(), end());
+        _erase(begin(), end());
     }
 
     bool operator==(const node_base& rhs) const {
@@ -211,6 +187,30 @@ struct node_base {
     }
 
     iterator _iterator() { return iterator(node_type::_cs_iterator(*static_cast<node_type*>(this))); }
+
+    void _erase(const iterator& j) {
+        node_type* n = &*j;
+        _prune(n);
+        _children.erase(j);
+        this->tree()._delete_node(n);
+    }
+
+    void _erase(const iterator& F, const iterator& L) {
+        vector<node_type*> d;
+        for (iterator j(F);  j != L;  ++j) {
+            node_type* n = &*j;
+            _prune(n);
+            d.push_back(n);
+        }
+        _children.erase(F, L);
+        tree_type& tree_ = this->tree();
+        for (typename vector<node_type*>::iterator e(d.begin());  e != d.end();  ++e) tree_._delete_node(*e);
+    }
+
+    void _erase() {
+        if (is_root()) _tree->erase();
+        else parent().erase(_iterator());
+    }
 
     void _prune(node_type* n) {
         // percolate the new subtree size up the chain of parents
@@ -403,6 +403,10 @@ struct node_raw: public node_base<Tree, node_raw<Tree, Data>, vector<node_raw<Tr
 
     node_type& operator[](size_type n) { return *(this->_children[n]); }
     const node_type& operator[](size_type n) const { return *(this->_children[n]); }
+
+    void erase() { this->_erase(); }
+    void erase(const iterator& j) { this->_erase(j); }
+    void erase(const iterator& F, const iterator& L) { this->_erase(F, L); }
 
     iterator insert(const data_type& data) {
         node_type* n = this->tree()._new_node();
@@ -663,6 +667,18 @@ struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare>, m
         return this->_children.count(&s);
     }
 
+    void erase() { this->_erase(); }
+    void erase(const iterator& j) { this->_erase(j); }
+    void erase(const iterator& F, const iterator& L) { this->_erase(F, L); }
+
+    size_type erase(const data_type& data) {
+        size_type c = count(data);
+        if (c <= 0) return 0;
+        pair<iterator, iterator> r = equal_range(data);
+        erase(r.first, r.second);
+        return c;
+    }
+
     iterator insert(const data_type& data) {
         node_type* n = this->tree()._new_node();
         n->_data = data;
@@ -844,6 +860,18 @@ struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare>, 
 
     size_type count(const key_type& key) const {
         return this->_children.count(&key);
+    }
+
+    void erase() { this->_erase(); }
+    void erase(const iterator& j) { this->_erase(j); }
+    void erase(const iterator& F, const iterator& L) { this->_erase(F, L); }
+
+    size_type erase(const key_type& key) {
+        size_type c = count(key);
+        if (c <= 0) return 0;
+        pair<iterator, iterator> r = equal_range(key);
+        erase(r.first, r.second);
+        return c;
     }
 
     pair<iterator, bool> insert(const key_type& key, const data_type& data) {
