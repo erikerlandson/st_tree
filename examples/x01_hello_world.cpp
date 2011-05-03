@@ -36,14 +36,13 @@ int main(int argc, char** argv) {
     // Insert a string at root (ply 0).
     t.insert("Hello");
 
-    // Insert strings at ply 1
-    // For raw child storage model, push_back() and insert() are equivalent
-    t.root().push_back(" ");
-    t.root().push_back("world");
+    // Insert strings at ply 1: children of root ("Hello")
+    t.root().insert(" ");
+    t.root().insert("world");
 
     // Insert strings at ply 2
-    t.root()[0].push_back("!");
-    t.root()[1].push_back("\n");
+    t.root()[0].insert("!");    // a child of (" ")
+    t.root()[1].insert("\n");   // a child of ("world")
 
     // Output data in breadth first order to print a traditional message
     for (iterator j(t.begin());  j != t.end();  ++j)
