@@ -30,14 +30,19 @@ inline const char* indent_padding(unsigned n) {
 }
 
 
-template <typename Tree, typename Stream>
-void serialize_indented(const Tree& t, Stream& s, unsigned indent=4) {
-    typedef typename Tree::const_df_pre_iterator iterator;
-    for (iterator j(t.df_pre_begin());  j != t.df_pre_end();  ++j) {
+template <typename Iterator, typename Stream>
+void serialize_indented(const Iterator& F, const Iterator& L, Stream& s, unsigned indent=2) {
+    for (Iterator j(F);  j != L;  ++j) {
         s << indent_padding(j->ply() * indent);
         s << j->data();
         s << "\n";
     }
+}
+
+
+template <typename Tree, typename Stream>
+void serialize_indented(const Tree& t, Stream& s, unsigned indent=2) {
+    serialize_indented(t.df_pre_begin(), t.df_pre_end(), s, indent);
 }
 
 #endif
