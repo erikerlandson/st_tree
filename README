@@ -1,7 +1,7 @@
 ==========
 INTRODUCTION
 ==========
-The st_tree library implements an STL-style template container class for storing data in arbitrary tree structures.  st_tree is short for "standard template tree," and supports STL-compatible interfaces including standard STL container methods, iterators, allocators and typedefs.
+The st_tree library implements a C++ template tree container class for storing data in arbitrary tree structures. st_tree is short for “standard template tree,” and supports STL-compatible interfaces including iterators, allocators and standard STL container methods.
 
 The st_tree library allows the programmer to easily declare and manipulate data in a tree:
 
