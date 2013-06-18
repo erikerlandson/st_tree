@@ -115,7 +115,7 @@ struct tree {
     typedef CSModel cs_model_type;
     typedef Alloc allocator_type;
     typedef size_t size_type;
-    typedef ptrdiff_t difference_type;
+    typedef st_tree::detail::difference_type difference_type;
 
     protected:
     typedef detail::node_type_dispatch<tree_type, CSModel> nt_dispatch;

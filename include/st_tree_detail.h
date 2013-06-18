@@ -43,6 +43,9 @@ using std::map;
 using std::less;
 using std::pair;
 
+// ptrdiff_t no longer working
+typedef vector<int>::difference_type difference_type;
+
 // forward declarations
 template <typename Tree, typename Data> struct node_raw;
 template <typename Tree, typename Data, typename Compare> struct node_ordered;

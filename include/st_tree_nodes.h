@@ -284,7 +284,7 @@ struct node_raw: public node_base<Tree, node_raw<Tree, Data>, vector<node_raw<Tr
     typedef node_type const& const_reference;
 
     typedef size_t size_type;
-    typedef ptrdiff_t difference_type;
+    typedef st_tree::detail::difference_type difference_type;
 
     typedef typename base_type::iterator iterator;
     typedef typename base_type::const_iterator const_iterator;
@@ -485,7 +485,7 @@ struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare>, m
     typedef node_type const& const_reference;
 
     typedef size_t size_type;
-    typedef ptrdiff_t difference_type;
+    typedef st_tree::detail::difference_type difference_type;
 
     typedef typename base_type::iterator iterator;
     typedef typename base_type::const_iterator const_iterator;
@@ -746,7 +746,7 @@ struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare>, 
     typedef node_type const& const_reference;
 
     typedef size_t size_type;
-    typedef ptrdiff_t difference_type;
+    typedef st_tree::detail::difference_type difference_type;
 
     typedef pair<const key_type, data_type> kv_pair;
 
