@@ -119,11 +119,14 @@ struct tree {
 
     protected:
     typedef detail::node_type_dispatch<tree_type, CSModel> nt_dispatch;
-    typedef typename nt_dispatch::node_type::base_type node_base_type;
 
     public:
     typedef typename nt_dispatch::node_type node_type;
 
+    protected:
+    typedef typename node_type::base_type node_base_type;
+
+    public:
     typedef node_type value_type;
     typedef node_type* pointer;
     typedef node_type const* const_pointer;
