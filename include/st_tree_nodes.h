@@ -536,7 +536,7 @@ struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare>, m
         // note, rhs may be child of 'this', and get erased too, otherwise
         node_type* t = this;
         node_type* r = const_cast<node_type*>(&rhs);
-        bool ancestor = is_ancestor(rhs);
+        bool ancestor = this->is_ancestor(rhs);
         if (ancestor) base_type::_excise(r);
 
         node_type* p;
@@ -800,7 +800,7 @@ struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare>, 
         // important to save these prior to clearing 'this'
         // note, rhs may be child of 'this', and get erased too, otherwise
         node_type* r = const_cast<node_type*>(&rhs);
-        bool ancestor = is_ancestor(rhs);
+        bool ancestor = this->is_ancestor(rhs);
         if (ancestor) base_type::_excise(r);
 
         // I'm going to define semantics of assignment as analogous to raw:
