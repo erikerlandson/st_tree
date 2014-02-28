@@ -146,7 +146,7 @@ struct tree {
     tree() : _root(NULL), _node_allocator() {}
     virtual ~tree() { clear(); }
 
-    tree(const tree& src) { *this = src; }
+    tree(const tree& src) : _root(NULL) { *this = src; }
 
     tree& operator=(const tree& src) {
         if (&src == this) return *this;
