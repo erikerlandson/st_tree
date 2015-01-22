@@ -166,13 +166,13 @@ struct node_base {
     bool operator<=(const node_base& rhs) const { return !(rhs < *this); }
     bool operator>=(const node_base& rhs) const { return !(*this < rhs); }
 
-    friend class st_tree::tree<data_type, typename Tree::cs_model_type, allocator_type>;
-    friend class b1st_iterator<node_type, node_type, allocator_type>;
-    friend class b1st_iterator<node_type, const node_type, allocator_type>;
-    friend class d1st_post_iterator<node_type, node_type, allocator_type>;
-    friend class d1st_post_iterator<node_type, const node_type, allocator_type>;
-    friend class d1st_pre_iterator<node_type, node_type, allocator_type>;
-    friend class d1st_pre_iterator<node_type, const node_type, allocator_type>;
+    friend struct st_tree::tree<data_type, typename Tree::cs_model_type, allocator_type>;
+    friend struct b1st_iterator<node_type, node_type, allocator_type>;
+    friend struct b1st_iterator<node_type, const node_type, allocator_type>;
+    friend struct d1st_post_iterator<node_type, node_type, allocator_type>;
+    friend struct d1st_post_iterator<node_type, const node_type, allocator_type>;
+    friend struct d1st_pre_iterator<node_type, node_type, allocator_type>;
+    friend struct d1st_pre_iterator<node_type, const node_type, allocator_type>;
 
     protected:
     tree_type* _tree;
@@ -289,8 +289,8 @@ struct node_raw: public node_base<Tree, node_raw<Tree, Data>, vector<node_raw<Tr
     typedef typename base_type::iterator iterator;
     typedef typename base_type::const_iterator const_iterator;
 
-    friend class st_tree::tree<data_type, typename Tree::cs_model_type, allocator_type>;
-    friend class node_base<Tree, node_type, cs_type>;
+    friend struct st_tree::tree<data_type, typename Tree::cs_model_type, allocator_type>;
+    friend struct node_base<Tree, node_type, cs_type>;
 
     node_raw() : base_type() {}
     virtual ~node_raw() {}
@@ -490,8 +490,8 @@ struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare>, m
     typedef typename base_type::iterator iterator;
     typedef typename base_type::const_iterator const_iterator;
 
-    friend class st_tree::tree<data_type, typename Tree::cs_model_type, allocator_type>;
-    friend class node_base<Tree, node_type, cs_type>;
+    friend struct st_tree::tree<data_type, typename Tree::cs_model_type, allocator_type>;
+    friend struct node_base<Tree, node_type, cs_type>;
 
     protected:
     typedef typename base_type::cs_iterator cs_iterator;
@@ -753,8 +753,8 @@ struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare>, 
     typedef typename base_type::iterator iterator;
     typedef typename base_type::const_iterator const_iterator;
 
-    friend class st_tree::tree<data_type, typename Tree::cs_model_type, allocator_type>;
-    friend class node_base<Tree, node_type, cs_type>;
+    friend struct st_tree::tree<data_type, typename Tree::cs_model_type, allocator_type>;
+    friend struct node_base<Tree, node_type, cs_type>;
 
     protected:
     typedef typename base_type::cs_iterator cs_iterator;
