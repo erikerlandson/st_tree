@@ -191,7 +191,7 @@ struct node_base {
     void _erase(const iterator& j) {
         node_type* n = &*j;
         _prune(n);
-        _children.erase(j);
+        _children.erase(j.base());
         this->tree()._delete_node(n);
     }
 
@@ -202,7 +202,7 @@ struct node_base {
             _prune(n);
             d.push_back(n);
         }
-        _children.erase(F, L);
+        _children.erase(F.base(), L.base());
         tree_type& tree_ = this->tree();
         for (typename vector<node_type*>::iterator e(d.begin());  e != d.end();  ++e) tree_._delete_node(*e);
     }
