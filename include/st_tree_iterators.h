@@ -43,7 +43,7 @@ struct b1st_iterator {
     virtual ~b1st_iterator() {}
 
     b1st_iterator(const b1st_iterator& rhs) : _queue(rhs._queue) {}
-    b1st_iterator& operator=(const b1st_iterator& rhs) { _queue = rhs._queue; }
+    b1st_iterator& operator=(const b1st_iterator& rhs) { _queue = rhs._queue; return *this; }
 
     b1st_iterator(value_type* root) {
         if (root == NULL) return;
@@ -99,7 +99,7 @@ struct d1st_post_iterator {
         frame(): first(), second(), visited() {}
         virtual ~frame() {}
         frame(const frame& rhs): first(rhs.first), second(rhs.second), visited(rhs.visited) {}
-        frame& operator=(const frame& rhs) { first=rhs.first; second=rhs.second; visited=rhs.visited; }
+        frame& operator=(const frame& rhs) { first=rhs.first; second=rhs.second; visited=rhs.visited; return *this; }
         frame(node_type* first_, const iterator& second_, const bool& visited_) {
             first = first_;  second = second_;  visited = visited_;
         }
@@ -119,7 +119,7 @@ struct d1st_post_iterator {
     virtual ~d1st_post_iterator() {}
 
     d1st_post_iterator(const d1st_post_iterator& rhs) : _stack(rhs._stack) { }
-    d1st_post_iterator& operator=(const d1st_post_iterator& rhs) { _stack = rhs._stack; }
+    d1st_post_iterator& operator=(const d1st_post_iterator& rhs) { _stack = rhs._stack; return *this; }
 
     d1st_post_iterator(value_type* root) {
         if (root == NULL) return;
@@ -201,7 +201,7 @@ struct d1st_pre_iterator {
         frame(): first(), second(), visited() {}
         virtual ~frame() {}
         frame(const frame& rhs): first(rhs.first), second(rhs.second), visited(rhs.visited) {}
-        frame& operator=(const frame& rhs) { first=rhs.first; second=rhs.second; visited=rhs.visited; }
+        frame& operator=(const frame& rhs) { first=rhs.first; second=rhs.second; visited=rhs.visited; return *this; }
         frame(node_type* first_, const iterator& second_, const bool& visited_) {
             first = first_;  second = second_;  visited = visited_;
         }
@@ -221,7 +221,7 @@ struct d1st_pre_iterator {
     virtual ~d1st_pre_iterator() {}
 
     d1st_pre_iterator(const d1st_pre_iterator& rhs) : _stack(rhs._stack) { }
-    d1st_pre_iterator& operator=(const d1st_pre_iterator& rhs) { _stack = rhs._stack; }
+    d1st_pre_iterator& operator=(const d1st_pre_iterator& rhs) { _stack = rhs._stack; return *this; }
 
     d1st_pre_iterator(value_type* root) {
         if (root == NULL) return;
