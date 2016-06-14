@@ -155,20 +155,18 @@ struct dref_second_vmap {
 template <typename Iterator, typename ValMap>
 struct valmap_iterator_adaptor_forward {
     protected:
-    typedef Iterator base;
+    typedef Iterator base_iterator_type;
     typedef ValMap valmap;
 
-    base _base;
+    base_iterator_type _base;
     valmap _vmap;
 
     public:
     typedef std::forward_iterator_tag iterator_category;
     typedef typename ValMap::value_type value_type;
-    typedef typename base::difference_type difference_type;
+    typedef typename base_iterator_type::difference_type difference_type;
     typedef value_type* pointer;
     typedef value_type& reference;
-
-    typedef Iterator base_iterator;
 
     // default ctor/dtor
     valmap_iterator_adaptor_forward(): _base(), _vmap() {}
@@ -184,10 +182,10 @@ struct valmap_iterator_adaptor_forward {
     }
 
     // casting
-    operator base() const { return _base; }
-    valmap_iterator_adaptor_forward(const base& src): _base(src), _vmap() {}
-    valmap_iterator_adaptor_forward(const base& src, const valmap& vmap): _base(src), _vmap(vmap) {}
-    valmap_iterator_adaptor_forward& operator=(const base& rhs) {
+    base_iterator_type base() const { return this->_base; }
+    valmap_iterator_adaptor_forward(const base_iterator_type& src): _base(src), _vmap() {}
+    valmap_iterator_adaptor_forward(const base_iterator_type& src, const valmap& vmap): _base(src), _vmap(vmap) {}
+    valmap_iterator_adaptor_forward& operator=(const base_iterator_type& rhs) {
         _base = rhs;
         return *this;
     }
@@ -245,7 +243,7 @@ struct valmap_iterator_adaptor_random {
         return *this;
     }
 
-    operator base_iterator_type() const { return this->_base; }
+    base_iterator_type base() const { return this->_base; }
     valmap_iterator_adaptor_random(const base_iterator_type& src) : _base(src), _vmap() {}
     valmap_iterator_adaptor_random& operator=(const base_iterator_type& src) {
         _base = src;
