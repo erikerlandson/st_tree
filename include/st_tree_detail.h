@@ -108,8 +108,9 @@ struct max_maintainer {
     }
 
     protected:
+    typedef typename Alloc::template rebind<Unsigned>::other unsigned_allocator;
     Unsigned _max;
-    vector<Unsigned, Alloc> _hist;
+    vector<Unsigned, unsigned_allocator> _hist;
 };
 
 
@@ -407,29 +408,34 @@ template <typename Tree, typename CSModel>
 struct node_type_dispatch {
     // catch-all should be compile error
     typedef node_type_dispatch_failed node_type;
+    typedef node_type_dispatch_failed cs_value_type;
 };
 
 
 template <typename Tree, typename Unused>
 struct node_type_dispatch<Tree, raw<Unused> > {
     typedef node_raw<Tree, typename Tree::data_type> node_type;
+    typedef node_type* cs_value_type;
 };
 
 template <typename Tree, typename Compare>
 struct node_type_dispatch<Tree, ordered<Compare> > {
     typedef node_ordered<Tree, typename Tree::data_type, Compare> node_type;
+    typedef node_type* cs_value_type;
 };
 
 
 template <typename Tree>
 struct node_type_dispatch<Tree, ordered<arg_default> > {
     typedef node_ordered<Tree, typename Tree::data_type, less<typename Tree::data_type> > node_type;
+    typedef node_type* cs_value_type;
 };
 
 
 template <typename Tree, typename Key, typename Compare>
 struct node_type_dispatch<Tree, keyed<Key, Compare> > {
     typedef node_keyed<Tree, typename Tree::data_type, Key, Compare> node_type;
+    typedef std::pair<const Key* const, node_type*> cs_value_type;
 };
 
 

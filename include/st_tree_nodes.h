@@ -269,11 +269,11 @@ struct node_base {
 
 
 template <typename Tree, typename Data>
-struct node_raw: public node_base<Tree, node_raw<Tree, Data>, vector<node_raw<Tree, Data>*, typename Tree::allocator_type> > {
+struct node_raw: public node_base<Tree, node_raw<Tree, Data>, vector<node_raw<Tree, Data>*, typename Tree::cs_allocator_type> > {
     typedef Tree tree_type;
     typedef node_raw<Tree, Data> node_type;
     typedef typename Tree::allocator_type allocator_type;
-    typedef vector<node_type*, allocator_type> cs_type;
+    typedef vector<node_type*, typename Tree::cs_allocator_type> cs_type;
     typedef node_base<Tree, node_type, cs_type> base_type;
     typedef Data data_type;
 
@@ -468,11 +468,11 @@ struct node_raw: public node_base<Tree, node_raw<Tree, Data>, vector<node_raw<Tr
 
 
 template <typename Tree, typename Data, typename Compare>
-struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare>, multiset<node_ordered<Tree, Data, Compare>*, ptr_less_data<Compare>, typename Tree::allocator_type> > {
+struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare>, multiset<node_ordered<Tree, Data, Compare>*, ptr_less_data<Compare>, typename Tree::cs_allocator_type> > {
     typedef Tree tree_type;
     typedef typename Tree::allocator_type allocator_type;
     typedef node_ordered<Tree, Data, Compare> node_type;
-    typedef multiset<node_type*, ptr_less_data<Compare>, allocator_type> cs_type;
+    typedef multiset<node_type*, ptr_less_data<Compare>, typename Tree::cs_allocator_type> cs_type;
     typedef node_base<Tree, node_type, cs_type> base_type;
     typedef Data data_type;
 
@@ -729,11 +729,11 @@ struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare>, m
 
 
 template <typename Tree, typename Data, typename Key, typename Compare>
-struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare>, map<const Key*, node_keyed<Tree, Data, Key, Compare>*, ptr_less<Compare>, typename Tree::allocator_type> > {
+struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare>, map<const Key*, node_keyed<Tree, Data, Key, Compare>*, ptr_less<Compare>, typename Tree::cs_allocator_type> > {
     typedef Tree tree_type;
     typedef node_keyed<Tree, Data, Key, Compare> node_type;
     typedef typename Tree::allocator_type allocator_type;
-    typedef map<const Key*, node_type*, ptr_less<Compare>, allocator_type> cs_type;
+    typedef map<const Key*, node_type*, ptr_less<Compare>, typename Tree::cs_allocator_type> cs_type;
     typedef node_base<Tree, node_type, cs_type> base_type;
     typedef Data data_type;
 
