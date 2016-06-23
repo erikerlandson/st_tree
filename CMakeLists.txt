@@ -13,4 +13,4 @@ add_subdirectory(include)
 add_subdirectory(examples)
 
 # testing programs
-add_subdirectory(test)
+add_subdirectory(tests)
