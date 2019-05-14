@@ -177,10 +177,10 @@ struct node_base {
     protected:
     tree_type* _tree;
     size_type _size;
-    max_maintainer<size_type, allocator_type> _depth;
     node_type* _parent;
     data_type _data;
     cs_type _children;
+    max_maintainer<size_type, allocator_type> _depth;
 
     bool _default_constructed() const {
         return (NULL == _parent) && (NULL == _tree);
