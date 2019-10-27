@@ -1,10 +1,9 @@
-==========
-INTRODUCTION
-==========
+# Introduction
 The st_tree library implements a C++ template tree container class for storing data in arbitrary tree structures. st_tree is short for “standard template tree,” and supports STL-compatible interfaces including iterators, allocators and standard STL container methods.
 
 The st_tree library allows the programmer to easily declare and manipulate data in a tree:
 
+```cpp
 // declare a tree of integers, where children are stored using a vector storage model
 tree<int> t1;  
 
@@ -13,54 +12,55 @@ tree<string, ordered<> > t2;
 
 // declare a tree of floating point, where children are indexed by a string label
 tree<float, keyed<string> > t3;
+```
 
-
-==========
-FEATURES
-==========
+# Features
 The st_tree template container class provides the following features
 
 * Fully featured standard STL container interface, including standard container methods, iterators, typedefs and allocators
-* Common tree-related methods, including ply(), depth(), subtree_size(), is_root() and parent()
+* Common tree-related methods, including `ply()`, `depth()`, `subtree_size()`, `is_root()` and `parent()`
 * Computational efficiency — all operations execute in logarithmic time, except those involving deep copy
-* Configurable storage models for child nodes — children of a node may be managed using a vector<> (“raw”), multiset<> (“ordered”) or map<> (“keyed”) container model.
+* Configurable storage models for child nodes — children of a node may be managed using a `vector<>` (“raw”), `multiset<>` (“ordered”) or `map<>` (“keyed”) container model.
 * Compiles under standard ANSI C++
 * Unit tested
 * Memory tested with valgrind
 * Open sourced under the Apache 2.0 License
 
 
-==========
-DOCUMENTATION
-==========
-
+# Documentation
 Documentation for the st_tree template container class and its components can be found here:
 https://github.com/erikerlandson/st_tree/wiki/st_tree-documentation
 
 The st_tree wiki is here:
 https://github.com/erikerlandson/st_tree/wiki
 
-
-==========
-INSTALL
-==========
+# Install
 The st_tree project home is here:
 https://github.com/erikerlandson/st_tree
 
 Instructions for download and install are here:
 https://github.com/erikerlandson/st_tree/wiki/st_tree-installation-and-building
 
+Quick start:
+```sh
+# generate makefiles from cmake
+$ cd /path/to/st_tree
+$ cmake .
 
-==========
-EXAMPLES
-==========
+# make examples and tests:
+$ make
+
+# run unit tests
+$ ./tests/unit_tests
+
+# installs header files and cmake integrations to /usr/local
+$ make install
+```
+
+# Examples
 Examples reside in the .../st_tree/examples subdirectory.   You can also view an annotated list here:
 https://github.com/erikerlandson/st_tree/wiki/st_tree-examples
 
-
-==========
-LICENSE
-==========
+# License
 The st_tree repository is published under the Apache License, Version 2.0:
 http://www.apache.org/licenses/LICENSE-2.0
-
