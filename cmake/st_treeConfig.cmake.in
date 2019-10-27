@@ -1,0 +1,15 @@
+# st_tree cmake module
+# This module sets the following variables in your project:
+#
+#   st_tree_FOUND        - true if st_tree found on the system
+#   st_tree_INCLUDE_DIRS - the directory containing st_tree headers
+#   st_tree_LIBRARY      - not set, unneeded for header-only library
+
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+
+if(NOT TARGET @PROJECT_NAME@)
+  include("${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@Targets.cmake")
+  get_target_property(@PROJECT_NAME@_INCLUDE_DIRS st_tree INTERFACE_INCLUDE_DIRECTORIES)
+endif()
