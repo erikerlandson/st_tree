@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.0)
 project(st_tree VERSION 1.0.6)
 
+option(ENABLE_TESTS "Enable the tests. Requires boost." ON)
+
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
@@ -16,7 +18,9 @@ add_subdirectory(include)
 add_subdirectory(examples)
 
 # testing programs
-add_subdirectory(tests)
+if(ENABLE_TESTS)
+    add_subdirectory(tests)
+endif()
 
 set(ST_TREE_HEADERS
     include/st_tree_detail.h
