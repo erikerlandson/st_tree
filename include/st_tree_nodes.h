@@ -408,14 +408,17 @@ struct node_raw: public node_base<Tree, node_raw<Tree, Data>, vector<node_raw<Tr
     void erase(const iterator& j) { this->_erase(j); }
     void erase(const iterator& F, const iterator& L) { this->_erase(F, L); }
 
-    iterator insert(const data_type& data) {
+    template<class... Args>
+    iterator emplace_insert(Args&&... args){
         node_type* n = this->tree()._new_node();
-        n->_data = data;
+        n->_data = data_type(std::forward<Args>(args) ... );
         n->_depth.insert(1);
         this->_children.push_back(n);
         this->_graft(n);
         return iterator(this->_children.begin()+(this->_children.size()-1));
     }
+
+    iterator insert(const data_type& data) { return emplace_insert(data); }
 
     iterator insert(const node_type& src) {
         node_type* n = src._copy_data(this->tree());
@@ -429,6 +432,8 @@ struct node_raw: public node_base<Tree, node_raw<Tree, Data>, vector<node_raw<Tr
         return insert(src.root());
     }
 
+    template< class... Args >
+    void emplace_back(Args&&... args){ emplace_insert(std::forward<Args>(args) ... ); }
     void push_back(const data_type& data) { insert(data); }
     void push_back(const node_type& src) { insert(src); }
     void push_back(const tree_type& src) { insert(src); }
@@ -679,15 +684,18 @@ struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare>, m
         return c;
     }
 
-    iterator insert(const data_type& data) {
+    template<class... Args>
+    iterator emplace_insert(Args&&... args){
         node_type* n = this->tree()._new_node();
-        n->_data = data;
+        n->_data = data_type(std::forward<Args>(args) ... );
         iterator r(this->_children.insert(n));
         // insertions always happen for multiset, hence no checking
         n->_depth.insert(1);
         this->_graft(n);
         return r;
     }
+
+    iterator insert(const data_type& data) { return emplace_insert(data); }
 
     iterator insert(const node_type& src) {
         node_type* n = src._copy_data(this->tree());
@@ -874,7 +882,8 @@ struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare>, 
         return c;
     }
 
-    pair<iterator, bool> insert(const key_type& key, const data_type& data) {
+    template<class... Args>
+    pair<iterator, bool> emplace_insert(const key_type& key, Args&&... args){
         node_type* n = this->tree()._new_node();
         n->_key = key;
         pair<cs_iterator, bool> r = this->_children.insert(cs_value_type(&(n->_key), n));
@@ -885,11 +894,13 @@ struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare>, 
             return rr;
         }
         // do this work if we know we actually inserted 
-        n->_data = data;
+        n->_data = data_type(std::forward<Args>(args) ... );
         n->_depth.insert(1);
         this->_graft(n);
         return rr;
     }
+
+    pair<iterator, bool> insert(const key_type& key, const data_type& data) { return emplace_insert(key, data); }
 
     pair<iterator, bool> insert(const kv_pair& kv) { return insert(kv.first, kv.second); }
 
