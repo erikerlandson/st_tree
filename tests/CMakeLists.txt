@@ -15,9 +15,11 @@ if (Boost_FOUND)
                    ut_ordered.cpp
                    ut_keyed.cpp
                   )
-    include_directories(${Boost_INCLUDE_DIR})
     target_compile_definitions(unit_tests PRIVATE BOOST_ALL_NO_LIB=1)
-    target_link_libraries(unit_tests ${Boost_LIBRARIES})
+    if (NOT Boost_USE_STATIC_LIBS)
+        target_compile_definitions(unit_tests PRIVATE BOOST_TEST_DYN_LINK=1)
+    endif ()
+    target_link_libraries(unit_tests Boost::unit_test_framework)
 
     add_test(NAME unit_tests COMMAND unit_tests)
     add_custom_target(test COMMAND unit_tests DEPENDS unit_tests)
