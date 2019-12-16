@@ -8,7 +8,7 @@ include(CMakePackageConfigHelpers)
 
 # Build against ANSI c++ standards
 IF (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_GNUCC OR MINGW)
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ansi -pedantic")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ansi -pedantic -std=c++11")
 ENDIF()
 
 # include

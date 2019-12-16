@@ -186,13 +186,16 @@ struct tree {
         return *_root;
     }
 
-    void insert(const data_type& data) {
+    template< class... Args >
+    void emplace( Args&&... args ){
         clear();
         _root = _new_node();
-        _root->_data = data;
+        _root->_data = data_type(std::forward<Args>(args) ... );
         _root->_tree = this;
         _root->_depth.insert(1);
     }
+
+    void insert(const data_type& data) { emplace(data); };
 
     // there is only one node to erase from the tree: the root
     void erase() { clear(); }

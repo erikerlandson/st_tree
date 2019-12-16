@@ -54,6 +54,48 @@ BOOST_AUTO_TEST_CASE(insert_subnodes) {
     CHECK_TREE(t1, subtree_size(), "3 1 1");
 }
 
+BOOST_AUTO_TEST_CASE(emplace_subnodes){
+    struct str1 {
+        int i1;
+        std::string s1;
+        str1() {
+            i1 = 0;
+            s1 = "";
+        }
+        str1(int i, const std::string s) {
+            i1 = i;
+            s1 = s;
+        }
+        bool operator<(const str1& b) const {
+            return i1 < b.i1;
+        }
+    };
+
+    tree<str1, ordered<>> t1;
+
+    t1.emplace(7, "7");
+    BOOST_CHECK_EQUAL(t1.empty(), false);
+    BOOST_CHECK_EQUAL(t1.size(), 1);
+    BOOST_CHECK_EQUAL(t1.depth(), 1);
+    BOOST_CHECK_EQUAL(t1.root().size(), 0);
+
+    t1.root().emplace_insert(9, "9");
+    BOOST_CHECK_EQUAL(t1.size(), 2);
+    BOOST_CHECK_EQUAL(t1.depth(), 2);
+    BOOST_CHECK_EQUAL(t1.empty(), false);
+    BOOST_CHECK_EQUAL(t1.root().size(), 1);
+
+    t1.root().emplace_insert(8, "8");
+    BOOST_CHECK_EQUAL(t1.size(), 3);
+    BOOST_CHECK_EQUAL(t1.depth(), 2);
+    BOOST_CHECK_EQUAL(t1.empty(), false);
+    BOOST_CHECK_EQUAL(t1.root().size(), 2);
+
+    CHECK_TREE(t1, ply(), "0 1 1");
+    CHECK_TREE(t1, depth(), "2 1 1");
+    CHECK_TREE(t1, subtree_size(), "3 1 1");
+}
+
 
 BOOST_AUTO_TEST_CASE(clear) {
     tree<int, ordered<> > t1;
