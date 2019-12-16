@@ -54,6 +54,48 @@ BOOST_AUTO_TEST_CASE(insert_subnodes) {
     BOOST_CHECK_EQUAL(t1.root()["1"].data(), 9);
 }
 
+BOOST_AUTO_TEST_CASE(emplace_subnodes) {
+    struct str1 {
+        int i1;
+        std::string s1;
+        str1() {
+            i1 = 0;
+            s1 = "";
+        }
+        str1(int i, const std::string s) {
+            i1 = i;
+            s1 = s;
+        }
+    };
+
+    tree<str1, keyed<std::string> > t1;
+
+    t1.emplace(7 , "7");
+    BOOST_CHECK_EQUAL(t1.empty(), false);
+    BOOST_CHECK_EQUAL(t1.size(), 1);
+    BOOST_CHECK_EQUAL(t1.depth(), 1);
+    BOOST_CHECK_EQUAL(t1.root().size(), 0);
+
+    t1.root().emplace_insert("0", 8, "8");
+    BOOST_CHECK_EQUAL(t1.size(), 2);
+    BOOST_CHECK_EQUAL(t1.depth(), 2);
+    BOOST_CHECK_EQUAL(t1.empty(), false);
+    BOOST_CHECK_EQUAL(t1.root().size(), 1);
+
+    t1.root().emplace_insert("1", 9, "9");
+    BOOST_CHECK_EQUAL(t1.size(), 3);
+    BOOST_CHECK_EQUAL(t1.depth(), 2);
+    BOOST_CHECK_EQUAL(t1.empty(), false);
+    BOOST_CHECK_EQUAL(t1.root().size(), 2);
+
+    BOOST_CHECK_EQUAL(t1.root().data().i1, 7);
+    BOOST_CHECK_EQUAL(t1.root()["0"].data().i1, 8);
+    BOOST_CHECK_EQUAL(t1.root()["1"].data().i1, 9);
+
+    BOOST_CHECK_EQUAL(t1.root().data().s1, "7");
+    BOOST_CHECK_EQUAL(t1.root()["0"].data().s1, "8");
+    BOOST_CHECK_EQUAL(t1.root()["1"].data().s1, "9");
+}
 
 BOOST_AUTO_TEST_CASE(clear) {
     tree<int, keyed<std::string> > t1;
