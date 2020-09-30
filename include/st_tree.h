@@ -150,6 +150,8 @@ struct tree {
 
     tree(const tree& src) : _root(NULL) { *this = src; }
 
+    tree(const node_allocator_type& a) : _root(NULL), _node_allocator(a) {}
+
     tree& operator=(const tree& src) {
         if (&src == this) return *this;
 
