@@ -1,4 +1,8 @@
-# Introduction
+# st_tree: A fast and flexible c++ template class for tree data structures
+
+![Build Status](https://github.com/erikerlandson/st_tree/workflows/build/badge.svg?branch=develop)
+
+## Introduction
 The st_tree library implements a C++ template tree container class for storing data in arbitrary tree structures. st_tree is short for “standard template tree,” and supports STL-compatible interfaces including iterators, allocators and standard STL container methods.
 
 The st_tree library allows the programmer to easily declare and manipulate data in a tree:
@@ -14,7 +18,7 @@ tree<string, ordered<> > t2;
 tree<float, keyed<string> > t3;
 ```
 
-# Features
+## Features
 The st_tree template container class provides the following features
 
 * Fully featured standard STL container interface, including standard container methods, iterators, typedefs and allocators
@@ -27,14 +31,14 @@ The st_tree template container class provides the following features
 * Open sourced under the Apache 2.0 License
 
 
-# Documentation
+## Documentation
 Documentation for the st_tree template container class and its components can be found here:
 https://github.com/erikerlandson/st_tree/wiki/st_tree-documentation
 
 The st_tree wiki is here:
 https://github.com/erikerlandson/st_tree/wiki
 
-# Install
+## Install
 The st_tree project home is here:
 https://github.com/erikerlandson/st_tree
 
@@ -62,7 +66,7 @@ To build `st_tree` with a particular c++ standard (e.g. c++ 11, 14, 17, etc):
 $ cmake -D CMAKE_CXX_STANDARD=14 .
 ```
 
-# Examples
+## Examples
 Examples reside in the .../st_tree/examples subdirectory.   You can also view an annotated list here:
 https://github.com/erikerlandson/st_tree/wiki/st_tree-examples
 
