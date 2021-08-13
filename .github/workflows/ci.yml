@@ -9,11 +9,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - cppstd: 11
-          - cppstd: 14
-          - cppstd: 17
-          - cppstd: 20
+        cppstd: [11, 14, 17, 20]
     steps:
       - uses: actions/checkout@v2
       - name: install-build-tools
@@ -26,3 +22,13 @@ jobs:
       - name: unit-tests
         run: |
           ./tests/unit_tests
+      - name: run-examples
+        run: |
+          export EXAMPLES=(
+            x01_hello_world
+            x02_ordered_children
+            )
+          for x in ${EXAMPLES[*]}; do
+            echo ===
+            ./examples/$x
+          done
