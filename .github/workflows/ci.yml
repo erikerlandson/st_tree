@@ -27,8 +27,15 @@ jobs:
           export EXAMPLES=(
             x01_hello_world
             x02_ordered_children
+            x03_keyed_children
+            x04_sort_children
+            x05_node_methods
+            x06_graft
+            x07_iterators
             )
           for x in ${EXAMPLES[*]}; do
-            echo ===
+            echo === $x
             ./examples/$x
+            echo ===
+            echo
           done
