@@ -57,6 +57,11 @@ $ ./tests/unit_tests
 $ make install
 ```
 
+To build `st_tree` with a particular c++ standard (e.g. c++ 11, 14, 17, etc):
+```sh
+$ cmake -D CMAKE_CXX_STANDARD=14 .
+```
+
 # Examples
 Examples reside in the .../st_tree/examples subdirectory.   You can also view an annotated list here:
 https://github.com/erikerlandson/st_tree/wiki/st_tree-examples
