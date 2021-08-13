@@ -108,7 +108,7 @@ struct max_maintainer {
     }
 
     protected:
-    typedef typename Alloc::template rebind<Unsigned>::other unsigned_allocator;
+    typedef typename std::allocator<Unsigned> unsigned_allocator;
     vector<Unsigned, unsigned_allocator> _hist;
     Unsigned _max;
 };

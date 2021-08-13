@@ -122,8 +122,8 @@ struct tree {
 
     public:
     typedef typename nt_dispatch::node_type node_type;
-    typedef typename Alloc::template rebind<node_type>::other node_allocator_type;
-    typedef typename Alloc::template rebind<typename nt_dispatch::cs_value_type>::other cs_allocator_type;
+    typedef typename std::allocator<node_type> node_allocator_type;
+    typedef typename std::allocator<typename nt_dispatch::cs_value_type> cs_allocator_type;
 
     protected:
     typedef typename node_type::base_type node_base_type;
@@ -287,13 +287,13 @@ struct tree {
 
     node_type* _new_node() {
         node_type* n = _node_allocator.allocate(1);
-        _node_allocator.construct(n, _node_init_val);
+        std::allocator_traits<node_allocator_type>::construct(_node_allocator, n, _node_init_val);
         return n;
     }
 
     void _delete_node(node_type* n) {
-        _node_allocator.destroy(n);
-        _node_allocator.deallocate(n, 1);
+        std::allocator_traits<node_allocator_type>::destroy(_node_allocator, n);
+        std::allocator_traits<node_allocator_type>::deallocate(_node_allocator, n, 1);
     }
 
     void _prune(node_type* n) {

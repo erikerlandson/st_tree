@@ -80,7 +80,7 @@ struct b1st_iterator {
     bool operator!=(const b1st_iterator& rhs) const { return _queue != rhs._queue; }
 
     protected:
-    typedef typename Alloc::template rebind<node_type*>::other node_ptr_allocator_type;
+    typedef typename std::allocator<node_type*> node_ptr_allocator_type;
     deque<node_type*, node_ptr_allocator_type> _queue;
 };
 
@@ -183,7 +183,7 @@ struct d1st_post_iterator {
     bool operator!=(const d1st_post_iterator& rhs) const { return _stack != rhs._stack; }
 
     protected:
-    typedef typename Alloc::template rebind<frame>::other frame_allocator_type;
+    typedef typename std::allocator<frame> frame_allocator_type;
     vector<frame, frame_allocator_type> _stack;
 };
 
@@ -276,7 +276,7 @@ struct d1st_pre_iterator {
     bool operator!=(const d1st_pre_iterator& rhs) const { return _stack != rhs._stack; }
 
     protected:
-    typedef typename Alloc::template rebind<frame>::other frame_allocator_type;
+    typedef typename std::allocator<frame> frame_allocator_type;
     vector<frame, frame_allocator_type> _stack;
 };
 
