@@ -69,7 +69,3 @@ $ cmake -D CMAKE_CXX_STANDARD=14 .
 ## Examples
 Examples reside in the .../st_tree/examples subdirectory.   You can also view an annotated list here:
 https://github.com/erikerlandson/st_tree/wiki/st_tree-examples
-
-# License
-The st_tree repository is published under the Apache License, Version 2.0:
-http://www.apache.org/licenses/LICENSE-2.0
