@@ -1,4 +1,7 @@
-CMakeFiles
+CMakeFiles/
+Makefile
+*.cmake
+CMakeCache.txt
 x01_hello_world
 x02_ordered_children
 x03_keyed_children
