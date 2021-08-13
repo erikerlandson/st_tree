@@ -1,0 +1,29 @@
+name: build-and-test
+
+on:
+  - push
+  - pull_request
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - cppstd: 11
+          - cppstd: 14
+          - cppstd: 17
+          - cppstd: 20
+    steps:
+      - uses: actions/checkout@v2
+      - name: install-build-tools
+        run: |
+          sudo apt-get install -y gcc g++ cmake make
+      - name: build
+        run: |
+          cmake -D CMAKE_CXX_STANDARD=${{ matrix.cppstd }} .
+          make
+      - name: unit-tests
+        run: |
+          ./tests/unit_tests
