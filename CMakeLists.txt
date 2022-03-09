@@ -17,7 +17,7 @@ add_subdirectory(include)
 
 # tutorial examples
 if(BUILD_EXAMPLES)
-add_subdirectory(examples)
+    add_subdirectory(examples)
 endif()
 
 # testing programs
