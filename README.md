@@ -53,7 +53,6 @@ $ cmake .
 
 # generate makefiles to build examples from cmake
 $ cd /path/to/st_tree
-<<<<<<< HEAD
 $ cmake . -DBUILD_EXAMPLES=ON
 
 # make examples and tests:
