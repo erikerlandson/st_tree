@@ -1,7 +1,11 @@
 name: build
 
 on:
-  push
+  pull_request:
+    branches: ['**']
+  push:
+    branches: ['**']
+    tags: [v*]
 
 jobs:
   build:
@@ -17,7 +21,7 @@ jobs:
           sudo apt-get install -y gcc g++ cmake make libboost-all-dev
       - name: build
         run: |
-          cmake -D CMAKE_CXX_STANDARD=${{ matrix.cppstd }} .
+          cmake -DCMAKE_CXX_STANDARD=${{ matrix.cppstd }} -DBUILD_EXAMPLES=ON .
           make
       - name: unit-tests
         run: |
