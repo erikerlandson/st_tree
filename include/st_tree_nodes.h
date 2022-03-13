@@ -121,11 +121,9 @@ struct node_base {
 
     bool is_ancestor(const node_type& n) const {
         const node_type* a = static_cast<const node_type*>(this);
-        const node_type* q = &n;
-        while (true) {
-            if (q->is_root()) return false;
-            q = q->_parent;
-            if (q == a) return true;
+        for(const node_type* q = &n; !q->is_root(); q = q->_parent)
+        {
+            if(q == a) return true;
         }
         return false;
     }
