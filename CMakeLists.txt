@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.0)
 project(st_tree VERSION 1.0.6)
 
+option(BUILD_EXAMPLES "Build the examples." OFF)
 option(ENABLE_TESTS "Enable the tests. Requires boost." ON)
 
 include(GNUInstallDirs)
@@ -15,7 +16,9 @@ ENDIF()
 add_subdirectory(include)
 
 # tutorial examples
-add_subdirectory(examples)
+if(BUILD_EXAMPLES)
+    add_subdirectory(examples)
+endif()
 
 # testing programs
 if(ENABLE_TESTS)
