@@ -59,7 +59,11 @@ $ cmake . -DBUILD_EXAMPLES=ON
 $ make
 
 # run unit tests
-$ ./tests/unit_tests
+$ make test
+
+# run unit tests with valgrind memory checking
+# (cmake will create this target if it finds valgrind)
+$ make memtest
 
 # installs header files and cmake integrations to /usr/local
 $ make install
