@@ -1,5 +1,5 @@
 # unit testing is built on the boost unit testing package
-find_package(Boost 1.36 COMPONENTS unit_test_framework)
+find_package(Boost 1.70 COMPONENTS unit_test_framework)
 
 # include path to st_tree.h
 include_directories(${st_tree_SOURCE_DIR}/include)

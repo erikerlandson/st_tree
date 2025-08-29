@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.30)
 project(st_tree VERSION 1.0.6)
 
 option(BUILD_EXAMPLES "Build the examples." OFF)
@@ -6,6 +6,11 @@ option(ENABLE_TESTS "Enable the tests. Requires boost." ON)
 
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
+
+# remove deprecated find boost behavior warnings
+if(POLICY CMP0167)
+  cmake_policy(SET CMP0167 NEW)
+endif()
 
 # Build against ANSI c++ standards
 IF (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_GNUCC OR MINGW)
