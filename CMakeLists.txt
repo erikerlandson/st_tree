@@ -20,6 +20,9 @@ ENDIF()
 # include
 add_subdirectory(include)
 
+# if valgrind is found can be used for memtest target
+find_program(VALGRIND valgrind)
+
 # tutorial examples
 if(BUILD_EXAMPLES)
     add_subdirectory(examples)
