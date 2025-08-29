@@ -341,7 +341,15 @@ struct node_raw: public node_base<Tree, node_raw<Tree, Data>, vector<node_raw<Tr
             base_type::_thread(n);
             this->_graft(n);
         }
+
+#if defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfree-nonheap-object"
+#endif
         if (ancestor) this->tree()._delete_node(r);
+#if defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
 
         return *this;
     }
@@ -560,7 +568,15 @@ struct node_ordered: public node_base<Tree, node_ordered<Tree, Data, Compare>, m
             base_type::_thread(n);
             this->_graft(n);
         }
+
+#if defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfree-nonheap-object"
+#endif
         if (ancestor) this->tree()._delete_node(r);
+#if defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
 
         if (!this->is_root()) {
             p->_children.insert(t);
@@ -822,7 +838,15 @@ struct node_keyed: public node_base<Tree, node_keyed<Tree, Data, Key, Compare>, 
             base_type::_thread(n);
             this->_graft(n);
         }
+
+#if defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfree-nonheap-object"
+#endif
         if (ancestor) this->tree()._delete_node(r);
+#if defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
 
         return *this;
     }
