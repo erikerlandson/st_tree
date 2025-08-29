@@ -26,5 +26,5 @@ add_custom_target(test DEPENDS unit_tests COMMAND ./unit_tests)
 
 if (VALGRIND)
     message(STATUS "found: ${VALGRIND}: adding memtest target")
-    add_custom_target(memtest DEPENDS unit_tests COMMAND ${VALGRIND} --tool=memcheck --leak-check=full ./unit_tests)
+    add_custom_target(memtest DEPENDS unit_tests COMMAND ${VALGRIND} --tool=memcheck --leak-check=full -s ./unit_tests)
 endif ()
