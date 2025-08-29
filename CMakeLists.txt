@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.30)
-project(st_tree VERSION 1.2.2)
+project(st_tree VERSION 1.3.0)
 
 option(BUILD_EXAMPLES "Build the examples." OFF)
 option(ENABLE_TESTS "Enable the tests. Requires boost." ON)
