@@ -117,6 +117,29 @@ struct node_base {
     size_type depth() const { return _depth.max(); }
     size_type subtree_size() const { return _size; }
 
+    size_type breadth() const
+    {
+        size_t w{ 1 };
+        size_t b{ 0 };
+        int _ply{ -1 };
+
+        for (auto i = bf_begin(); i != bf_end(); i++)
+        {
+            if (i->ply() != _ply)
+            {
+                b = std::max(w, b);
+                _ply = i->ply();
+                w = 1;
+            }
+            else
+            {
+                w++;
+            }
+        }
+
+        return std::max(w, b);
+    }
+
     bool is_root() const { return NULL == _parent; }
 
     bool is_ancestor(const node_type& n) const {

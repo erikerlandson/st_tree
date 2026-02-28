@@ -177,6 +177,7 @@ struct tree {
     bool empty() const { return _root == NULL; }
     size_type size() const { return (empty()) ? 0 : root().subtree_size(); }
     size_type depth() const { return (empty()) ? 0 : root().depth(); }
+    size_type breadth() const { return (empty()) ? 0 : root().breadth(); }
 
     node_type& root() {
         if (empty()) throw empty_exception("root(): empty tree has no root node");
